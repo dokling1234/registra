@@ -1,0 +1,99 @@
+/* Add spacing above the Navbar */
+.events-grid {
+    margin-top: 8rem; /* Adjust as needed */
+  }
+  
+
+  /* Section heading */
+  .section-heading {
+    text-align: center;
+    margin-top: 8rem;
+    width: 100%; /* Ensures it spans the full container */
+  }
+  
+  /* Container spacing */
+  .registered-events-container {
+    padding: 0 1rem;
+  margin-top: 2rem;
+  margin-bottom: 6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* centers content horizontally */
+  }
+  
+  /* Grid layout */
+  .events-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  
+  @media (min-width: 640px) {
+    .events-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .events-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  
+  /* No events message */
+  .no-events-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #6b7280; /* Tailwind gray-500 */
+  }
+  
+  /* Highlighted word */
+  .highlight {
+    color: #2563eb;
+  }
+  /* Ensure the footer stays at the bottom */
+.page-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Full viewport height */
+}
+
+.registered-events-container {
+  flex-grow: 1; /* Pushes the footer to the bottom */
+  padding: 0 1rem;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centers content horizontally */
+}
+
+/* Footer spacing */
+.Footer-spacing {
+  width: 100%; /* Ensures the footer spans the full width */
+  background-color: #f8f9fa; /* Optional: Add a background color */
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1); /* Optional: Add a shadow for better visibility */
+}
+.filter-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 80px; /* pushes it below the navbar */
+  justify-content: center;
+}
+
+.filter-buttons button {
+  padding: 8px 16px;
+  border: 1px solid #aaa;
+  background-color: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.filter-buttons button.active,
+.filter-buttons button:hover {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}

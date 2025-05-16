@@ -1,0 +1,143 @@
+/* Theme */
+:root {
+    --primary-color: #1a4870;
+    --secondary-color: #f7941d;
+    --text-color: #333;
+    --light-bg: #f8f9fa;
+}
+
+body {
+    font-family: "Poppins", serif;
+    font-weight: 400;
+    font-style: normal;
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Poppins", serif;
+    font-weight: 600;
+    font-style: normal;
+}
+
+/* Navbar */
+.split-dropdown {
+    a {
+        text-decoration: none;
+    }
+    .nav-link {
+        padding-right: 0 !important;
+    }
+}
+.navbar {
+    position: fixed; /* Ensure the navbar stays at the top */
+    top: 0;
+    left: 0;
+    width: 100%; /* Make the navbar span the full width */
+    z-index: 1000; /* Set a high z-index to ensure it is above other elements */
+    background-color: white; /* Ensure the navbar has a background color */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optional: Add a shadow for better visibility */
+    padding: 0.5rem 2; /* Adjust padding for better spacing */
+    height: 7rem; /* Set a fixed height for the navbar */
+    display: flex; /* Ensure proper alignment of navbar content */
+    align-items: center; /* Vertically center the content */
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    transform: translateY(-2px);
+}
+
+/* Center the container */
+.container {
+    max-width: 1200px; /* Set a maximum width for the container */
+    margin: 0 auto; /* Center the container horizontally */
+    padding: 0 1rem; /* Add minimal padding on the left and right */
+}
+
+/* Hero Section */
+.hero {
+    background-image: url('/storage/images/bg.jpg');
+    background-size: cover;
+    background-position: center;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Center content horizontally */
+    color: white;
+    position: relative;
+    text-shadow: 0px 0px 8px rgba(0, 0, 0, 0.6);
+    text-align: center; /* Center text */
+}
+
+.hero .container {
+    position: relative;
+    z-index: 1;
+    text-align: center; /* Center text inside the hero */
+}
+
+.hero h1 {
+    font-size: 3.5rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+}
+
+.hero .lead {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+/* Cards */
+.card {
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease; /* Smooth transition for hover effects */
+    border-radius: 8px;
+    margin: 0 auto; /* Center the card */
+    max-width: 800px; /* Limit the width of the card */
+    text-align: center; /* Center text inside the card */
+    background-color: white; /* Ensure a visible background color */
+    margin-bottom: 5rem;
+}
+
+.card:hover {
+    transform: translateY(-5px); /* Move the card slightly upward on hover */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Add a stronger shadow on hover */
+    background-color: #f9f9f9; /* Optional: Slightly change the background color on hover */
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+/* Section Heading */
+.section-heading {
+    color: var(--primary-color);
+    font-weight: bold;
+    margin-bottom: 2rem;
+    position: relative;
+    display: inline-block;
+    text-align: center;
+    margin: 0 auto; /* Center the heading */
+}
+
+.section-heading::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 3px;
+    background-color: var(--secondary-color);
+}

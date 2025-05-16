@@ -1,0 +1,19 @@
+.home-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;;
+    padding-top: 10rem; /* To account for Navbar height */
+  }
+  
+  /* Add margin between Navbar and Header */
+  .home-container > *:nth-child(2) {
+    margin-top: 1.5rem; /* Space between Navbar and Header */
+  }
+  
+  /* Add smaller margin between Header and EventList */
+  .home-container > *:nth-child(3) {
+    margin-top: 0.5rem;
+  }
+
