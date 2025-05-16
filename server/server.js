@@ -11,6 +11,7 @@ import mobileUserRouter from "./mobile_routes/user.router.js";
 import mobileEventRouter from "./mobile_routes/events.router.js";
 import mobileAdminRouter from "./mobile_admin_routes/admin.router.js";
 import feedbackRoutes from "./routes/feedbackRoutes.js";
+import path from "path";
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -46,6 +47,14 @@ app.use((req, res, next) => {
   console.log(`Request from IP: ${ip}, Method: ${req.method}, URL: ${req.url}`);
   next();
 });
+
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../client/build")));
+  app.get("*", (req, res) => {
+    res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
+  });
+}
+
 app.listen(port, "0.0.0.0", () =>
   console.log(`Server is running on port ${port}`)
 );
