@@ -1,0 +1,49 @@
+/* Add spacing above the Navbar */
+.navbar-spacing {
+  margin-top: 2rem; /* Adjust as needed */
+}
+
+.section-heading {
+  text-align: center;
+padding-top: 10rem;
+  width: 100%; /* ensures it spans the full container */
+}
+/* Container spacing */
+.event-list-container {
+  padding: 0 1rem;
+  margin-top: 2rem;
+  margin-bottom: 6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* centers content horizontally */
+}
+/* Grid layout */
+.event-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 640px) {
+  .event-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .event-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+
+.no-events-message {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #6b7280; 
+}
+
+
+.highlight {
+  color: #2563eb;
+}

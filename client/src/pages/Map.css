@@ -1,0 +1,82 @@
+.cpemap-wrapper {
+    margin-top: 7rem;
+    position: relative;
+    width: 100%;
+    height: 100vh;
+  }
+  
+  .cpemap-map {
+    width: 100%;
+    height: 100%;
+  }
+  
+  .cpemap-event-card {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem;
+    width: 24rem;
+    max-width: 100%;
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+    z-index: 10;
+  }
+  
+  .cpemap-event-graphic {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #22d3ee;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    width: 80px;
+    min-width: 80px;
+    height: 80px;
+    text-align: center;
+  }
+  
+  .cpemap-line {
+    font-size: 10px;
+    font-weight: bold;
+    line-height: 1;
+  }
+  
+  .cpemap-event-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  
+  .cpemap-event-time {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #3b82f6;
+    margin-bottom: 0.25rem;
+  }
+  
+  .cpemap-event-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+  
+  .cpemap-event-location {
+    font-size: 0.875rem;
+    color: #4b5563;
+  }
+  .cpemap-close-btn {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.5rem;
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    z-index: 20;
+  }
+  

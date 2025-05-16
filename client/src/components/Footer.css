@@ -1,0 +1,77 @@
+/* Footer.css */
+.footer {
+    background-color: #0a0a84; /* Dark blue background */
+    color: white;
+    padding: 2rem 1rem;
+    text-align: center;
+    font-family: 'Poppins', sans-serif;
+    width: 100%;
+  }
+  
+  .footer-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .footer-logo {
+    font-size: 2rem;
+    font-weight: 700;
+  }
+  
+  .footer-logo span {
+    color: #007bff; /* Light blue color for "stra" */
+  }
+  
+  .footer-nav {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    font-size: 1rem;
+  }
+  
+  .footer-nav a {
+    color: white;
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  
+  .footer-nav a:hover {
+    color: #007bff;
+  }
+  
+  .footer-divider {
+    margin: 2rem 0;
+    border: none;
+    border-top: 1px solid #ccc;
+  }
+  
+  .footer-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .footer-socials {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 1.5rem;
+  }
+  
+  .footer-socials a {
+    color: white;
+    transition: color 0.3s;
+  }
+  
+  .footer-socials a:hover {
+    color: #007bff;
+  }
+  
+  .footer-copy {
+    font-size: 0.9rem;
+    color: #ccc;
+  }
+  
