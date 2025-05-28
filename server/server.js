@@ -21,6 +21,7 @@ const allowedOrigins = [
   "http://localhost:5174",
   "http://192.168.1.212:4000",
   "http://192.168.1.212:3000",
+  "https://registra-b7181b9e50a0.herokuapp.com"
 ]; // allowed to add to frontend
 
 app.use(express.json());
