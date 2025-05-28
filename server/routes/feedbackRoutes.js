@@ -4,15 +4,15 @@ const userAuth = require('../middleware/userAuth.js');
 
 const feedbackRoutes = express.Router();
 
-feedbackRoutes.get('/getFeedback/:eventId', getFeedbackForm);
+feedbackRoutes.get('/getFeedback/:id', getFeedbackForm); //eventId
 feedbackRoutes.put('/createFeedback', createFeedbackForm);
-feedbackRoutes.post('/submitFeedback/:formId',userAuth, submitFeedback);
-feedbackRoutes.get('/checkSubmission/:eventId', userAuth, checkSubmission);
+feedbackRoutes.post('/submitFeedback/:id',userAuth, submitFeedback); // formId
+feedbackRoutes.get('/checkSubmission/:id', userAuth, checkSubmission);//eventId
 
 
 const mobileFeedbackRoutes = express.Router();
 
-mobileFeedbackRoutes.post('/submitFeedback/:formId', mobileSubmitFeedback);
+mobileFeedbackRoutes.post('/submitFeedback/:id', mobileSubmitFeedback); //formId
 mobileFeedbackRoutes.get('/checkSubmission', mobileCheckSubmission);
 
 

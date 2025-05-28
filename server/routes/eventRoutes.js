@@ -26,7 +26,7 @@ eventRouter.post("/create", createEvent);
 eventRouter.get("/registered", userAuth, getRegisteredEvents);
 eventRouter.get("/", getAllEvents);
 eventRouter.get("/:id", getEventById);
-eventRouter.post("/register/:eventId", userAuth, registerForEvent);
+eventRouter.post("/register/:id", userAuth, registerForEvent);// eventId
 eventRouter.put("/:id", updateEvent);
 eventRouter.put("/events/:id/confirm-payment", confirmPayment);
 eventRouter.post("/location/geocode", geocodeAddress);
