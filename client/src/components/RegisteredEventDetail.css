@@ -158,3 +158,54 @@
 .likert-statement-text {
   font-weight: 500;
 }
+
+/* Certificate Styles */
+.certificate-container {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  background-color: #f8fafc;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.certificate {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.certificate-container button {
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.certificate-container button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Print styles for certificate */
+@media print {
+  .certificate-container {
+    padding: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .certificate {
+    box-shadow: none;
+  }
+
+  .certificate-container button {
+    display: none;
+  }
+}

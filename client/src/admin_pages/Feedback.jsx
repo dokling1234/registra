@@ -24,9 +24,17 @@ const Feedback = () => {
             <h1 className="text-3xl font-bold">Dashboard</h1> {/* Dashboard title */}
 
             {userData ? (
-              <div className="w-10 h-10 flex justify-center items-center rounded-full bg-black text-white relative group">
-                {userData.fullName[0].toUpperCase()}
-              </div>
+               <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-lg shadow-sm">
+               <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                 <span className="text-blue-600 font-semibold text-lg">
+                   {userData.fullName.charAt(0).toUpperCase()}
+                 </span>
+               </div>
+               <div className="flex flex-col">
+                 <p className="text-sm text-gray-500">Welcome back,</p>
+                 <p className="text-lg font-semibold text-gray-800">{userData.fullName}</p>
+               </div>
+             </div>
             ) : (
               <button
                 onClick={() => navigate("/")}

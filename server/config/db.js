@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const connection = mongoose.createConnection(
     'mongodb+srv://ashikirobatumbakers:matthewadami@registradatabase.1uei8.mongodb.net/test',
@@ -16,4 +16,4 @@ connection.on('error', (err) => {
     console.error('MongoDB Connection Error:', err);
 });
 
-export default connection;
+module.exports = connection;

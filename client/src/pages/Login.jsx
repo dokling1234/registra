@@ -153,7 +153,7 @@ const Login = () => {
                   <input
                     onChange={(e) => setIcpepId(e.target.value)}
                     value={icpepId}
-                    className="bg-transparent outline-none"
+                    className="bg-transparent outline-none focus:outline-none border-transparent"
                     type="text"
                     placeholder="ICPEP ID"
                     required={membership === "member"}

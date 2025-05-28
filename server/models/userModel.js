@@ -1,28 +1,29 @@
-import mongoose from "mongoose"
+const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   fullName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  confirmPassword: { type: String},
-  contactNumber: {type: Number},
-  icpepId: {type: String},
-  verifyOtp: { type: String, default: "" },
-  verifyOtpExpireAt: { type: Number, default: 0 },
+  confirmPassword: { type: String }, //remove
+  contactNumber: { type: Number },
+  icpepId: { type: String },
+  otp: { type: String, default: "" },//otp
+  otpExpireAt: { type: Number, default: 0 },//otpExpireAt
+  //isAdmin: { type: Boolean, default: false },
   isVerified: { type: Boolean, default: false },
-  resetOtp: { type: String, default: "" },
-  resetOtpExpireAt: { type: Number, default: 0 },
-  age:{type: Number},
-  profileImage:{type: String},
+  //resetOtp: { type: String, default: "" },
+  //resetOtpExpireAt: { type: Number, default: 0 },
+  age: { type: Number }, //remove
+  profileImage: { type: String },
+  disabled: { type: Boolean },
   userType: {
     type: String,
-    enum: ['student', 'professional'],
-    default: 'student'
+    enum: ["student", "professional"],
+    default: "student",
   },
   membership: {
     type: String,
-    enum: ["member", "non-member"],
     default: "member",
   },
   aboutMe: { type: String, default: "" },
@@ -30,4 +31,5 @@ const userSchema = new mongoose.Schema({
 
 const userModel = mongoose.model.user || mongoose.model("User", userSchema);
 
-export default userModel;
+// export default userModel;
+module.exports = userModel;

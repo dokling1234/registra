@@ -1,5 +1,6 @@
-import nodemailer from 'nodemailer';
-export let otpStorage = {}; // Store OTPs for email verification
+const nodemailer = require("nodemailer");
+
+let otpStorage = {}; // Store OTPs for email verification
 let otpTimestamps = {}; // Store timestamps for OTP requests
 
 const transporter = nodemailer.createTransport({
@@ -12,11 +13,11 @@ const transporter = nodemailer.createTransport({
 });
 
 // Function to generate a random 4-digit OTP
-export function generateOTP() {
+ function generateOTP() {
   return Math.floor(1000 + Math.random() * 9000).toString();
 }
 
-export async function sendOTP(email, otp) {
+ async function sendOTP(email, otp) {
   console.log("1111111111111111111111111111111111111111",otp)
   if (!canResendOTP(email)) {
     throw new Error('You can only request a new OTP every 5 minutes.');
@@ -46,3 +47,11 @@ function canResendOTP(email) {
   }
   return false;
 }
+module.exports = {
+  generateOTP,
+  sendOTP,
+  canResendOTP,
+  otpStorage,
+  transporter,
+  otpTimestamps,
+};

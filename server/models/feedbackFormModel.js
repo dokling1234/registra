@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const questionSchema = new mongoose.Schema({
   type: { type: String, enum: ["Choice", "Text", "Rating", "Likert"], required: true },
@@ -17,4 +17,4 @@ const feedbackFormSchema = new mongoose.Schema({
 
 const FeedbackForm = mongoose.model("FeedbackForm", feedbackFormSchema);
 
-export default FeedbackForm;
+module.exports = FeedbackForm;

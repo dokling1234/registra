@@ -43,8 +43,8 @@
 .carousel-container {
   position: relative;
   width: 300%;
-  max-width: 64rem; /* increased width from 36rem to 64rem */
-  height: 28rem; /* new fixed height */
+  max-width: 80rem; /* increased width from 36rem to 64rem */
+  height: 30rem; /* new fixed height */
   overflow: hidden;
   border-radius: 0.75rem;
   box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
@@ -113,6 +113,7 @@ img[alt="INSTITUTE OF COMPUTER ENGINEERS OF THE PHILIPPINES"] {
 }
 
 .search-filter {
+  margin-top: 2.5rem;
   background-color: #1e293b; /* dark background */
   color: white;
   padding: 2rem;
@@ -137,8 +138,8 @@ img[alt="INSTITUTE OF COMPUTER ENGINEERS OF THE PHILIPPINES"] {
 }
 
 .filter-group label {
-  margin-bottom: 0.25rem;
-  font-size: 0.9rem;
+  color: white;
+  font-weight: 600;
 }
 
 .filter-group select,
@@ -148,9 +149,15 @@ img[alt="INSTITUTE OF COMPUTER ENGINEERS OF THE PHILIPPINES"] {
   border: none;
   font-size: 1rem;
   min-width: 12rem;
-  background-color: #334155; /* dark slate background */
-  color: white; /* white text */
+  background-color: #334155;
+  color: white;
+  box-sizing: border-box;
+  height: 3.3rem;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
+
 
 .filter-group select::placeholder,
 .filter-group input[type="date"]::placeholder {

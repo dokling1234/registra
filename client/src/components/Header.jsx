@@ -111,7 +111,7 @@ const Header = ({ filters, setFilters, onSearch }) => {
             />
           </div>
           <button className="search-btn" onClick={handleSearch}>
-            🔍 Search
+            Search 🔍 
           </button>
         </div>
       </div>
