@@ -461,7 +461,7 @@ const getEventByTitle = async (req, res) => {
     }
 
     const events = await eventModel.find({
-      //title: { $regex: title, $options: "i" }, // Case-insensitive search
+      title: { $regex: title, $options: "i" }, // Case-insensitive search
     });
 
     // Ensure the response is structured as expected
