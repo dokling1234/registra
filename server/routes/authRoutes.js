@@ -1,6 +1,7 @@
-import express from 'express';
-import { isAuthenticated, login, logout, register, resetPassword, sendResetOtp, sendVerifyOtp, verifyEmail} from '../controllers/authController.js';
-import { userAuth, userTypeAuth } from '../middleware/userAuth.js';
+const express = require('express');
+const {isAuthenticated, login, logout, register, resetPassword, sendResetOtp, sendVerifyOtp, verifyEmail} = require('../controllers/authController.js');
+const userAuth = require('../middleware/userAuth.js');
+
 const authRouter = express.Router();
 
 authRouter.post('/register', register);
@@ -13,4 +14,4 @@ authRouter.post('/send-reset-otp', sendResetOtp);
 authRouter.post('/reset-password', resetPassword);
 
 
-export default authRouter;
+module.exports = authRouter;

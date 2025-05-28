@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const likertAnswerSchema = new mongoose.Schema({
   statement: String,
@@ -21,4 +21,4 @@ const feedbackAnswerSchema = new mongoose.Schema({
 
 const FeedbackAnswer = mongoose.model("FeedbackAnswer", feedbackAnswerSchema);
 
-export default FeedbackAnswer;
+module.exports = FeedbackAnswer;

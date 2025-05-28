@@ -1,6 +1,6 @@
 /* Add spacing above the Navbar */
 .events-grid {
-    margin-top: 8rem; /* Adjust as needed */
+    margin-top: 4rem; /* Adjust as needed */
   }
   
 
@@ -79,7 +79,7 @@
 .filter-buttons {
   display: flex;
   gap: 10px;
-  margin-top: 80px; /* pushes it below the navbar */
+  margin-top: 7rem; /* pushes it below the navbar */
   justify-content: center;
 }
 
@@ -87,6 +87,7 @@
   padding: 8px 16px;
   border: 1px solid #aaa;
   background-color: white;
+  border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }

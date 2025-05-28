@@ -5,6 +5,8 @@ import { AppContent } from "../context/AppContext";
 import axios from "axios"; // Import Axios for API calls
 import "./Profile.css"; // Import the CSS file for styling
 import { assets } from "../assets/assets";
+import EventCard from "../components/EventCard";
+import Swal from "sweetalert2";
 
 const Profile = () => {
   const { userData, backendUrl, getUserData } = useContext(AppContent); // Access user data and backend URL from context
@@ -26,6 +28,10 @@ const Profile = () => {
     newPassword: false,
     confirmPassword: false,
   }); // State to toggle visibility of password fields
+  const [pastEvents, setPastEvents] = useState([]);
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [eventFilter, setEventFilter] = useState('all'); // 'all', 'past', 'upcoming'
+
   useEffect(() => {
     if (userData) {
       setFormData({
@@ -39,6 +45,32 @@ const Profile = () => {
       setaboutMe(userData.aboutMe || ""); // Initialize About Us description
     }
   }, [userData]);
+
+  useEffect(() => {
+    const fetchRegisteredEvents = async () => {
+      if (!userData?.id) return;
+      try {
+        const res = await axios.get(
+          `${backendUrl}/api/mobile-events/events/events_registered`,
+          {
+            params: { userId: userData.id },
+          }
+        );
+        
+        // Separate past and upcoming events
+        const currentDate = new Date();
+        const past = res.data.filter(event => new Date(event.date) < currentDate);
+        const upcoming = res.data.filter(event => new Date(event.date) >= currentDate);
+        
+        setPastEvents(past);
+        setUpcomingEvents(upcoming);
+      } catch (error) {
+        console.error("Failed to fetch registered events:", error);
+      }
+    };
+
+    fetchRegisteredEvents();
+  }, [userData, backendUrl]);
 
   const handleEditProfile = () => {
     setIsEditing(true); // Enable edit mode
@@ -72,23 +104,47 @@ const Profile = () => {
       setIsUploading(false);
     } catch (error) {
       console.error("Error uploading image:", error);
-      alert("Failed to upload image. Please try again.");
+      await Swal.fire({
+        icon: 'error',
+        title: 'Upload Failed',
+        text: 'Failed to upload image. Please try again.',
+        confirmButtonText: 'OK'
+      });
       setIsUploading(false);
     }
   };
 
   const handleCancelEdit = () => {
-    setIsEditing(false);
-    setSelectedImage(null); // Reset preview
-    setFormData({
-      fullName: userData.fullName || "",
-      email: userData.email || "",
-      contactNumber: userData.contactNumber || "",
-      userType: userData.userType || "",
-      icpepId: userData.icpepId || "",
-      profileImage: userData.profileImage || "",
+    Swal.fire({
+      title: "Are you sure?",
+      text: "Changes you made won't be saved!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, cancel editing!",
+      cancelButtonText: "No, keep editing",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire({
+          title: "Canceled!",
+          text: "Your changes have been discarded.",
+          icon: "success",
+        });
+
+        setIsEditing(false);
+        setSelectedImage(null); // Reset preview
+        setFormData({
+          fullName: userData.fullName || "",
+          email: userData.email || "",
+          contactNumber: userData.contactNumber || "",
+          userType: userData.userType || "",
+          icpepId: userData.icpepId || "",
+          profileImage: userData.profileImage || "",
+        });
+        setaboutMe(userData.aboutMe || "");
+      }
     });
-    setaboutMe(userData.aboutMe || "");
   };
 
   const handleChange = (e) => {
@@ -126,33 +182,74 @@ const Profile = () => {
       console.log("Server Response:", response.data); // Log the server response
 
       if (response.data.success) {
-        alert("Profile updated successfully!");
+        Swal.fire({
+          position: "center",
+          icon: "success",
+          title: "Your work has been saved",
+          showConfirmButton: false,
+          timer: 1500,
+        });
         setIsEditing(false); // Exit edit mode
         await getUserData(); // Refresh user data
       } else {
-        alert(response.data.message || "Failed to update profile.");
+        await Swal.fire({
+          icon: 'error',
+          title: 'Update Failed',
+          text: response.data.message || "Failed to update profile.",
+          confirmButtonText: 'OK'
+        });
       }
     } catch (error) {
       console.error("Error updating profile:", error); // Log the error
-      alert(
-        error.response?.data?.message ||
-          "An error occurred while updating the profile."
-      );
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.response?.data?.message || "An error occurred while updating the profile.",
+        confirmButtonText: 'OK'
+      });
     }
   };
 
   const handleResetPassword = async () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("New password and confirm password do not match.");
+    const { currentPassword, newPassword, confirmPassword } = passwordData;
+
+    // 1. Check for empty fields
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      Swal.fire({
+        icon: "error",
+        title: "Missing Fields",
+        text: "Please fill in all password fields before resetting.",
+      });
       return;
     }
 
+    // 2. Check password length
+    if (newPassword.length < 8) {
+      Swal.fire({
+        icon: "error",
+        title: "Weak Password",
+        text: "Password must be at least 8 characters long.",
+      });
+      return;
+    }
+
+    // 3. Check password match
+    if (newPassword !== confirmPassword) {
+      Swal.fire({
+        icon: "error",
+        title: "Password Mismatch",
+        text: "New password and confirm password do not match.",
+      });
+      return;
+    }
+
+    // 4. Proceed with API call
     try {
       const response = await axios.post(
         `${backendUrl}/api/user/reset-password`,
         {
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword,
+          currentPassword,
+          newPassword,
         },
         {
           withCredentials: true,
@@ -160,156 +257,99 @@ const Profile = () => {
       );
 
       if (response.data.success) {
-        alert("Password reset successfully!");
-        setIsResettingPassword(false); // Exit reset password mode
+        Swal.fire({
+          position: "center",
+          icon: "success",
+          title: "Password reset successfully!",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+        setIsResettingPassword(false);
         setPasswordData({
           currentPassword: "",
           newPassword: "",
           confirmPassword: "",
         });
       } else {
-        alert(response.data.message || "Failed to reset password.");
+        Swal.fire({
+          icon: "error",
+          title: "Reset Failed",
+          text: response.data.message || "Failed to reset password.",
+        });
       }
     } catch (error) {
-      alert(
-        error.response?.data?.message ||
-          "An error occurred while resetting the password."
-      );
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text:
+          error.response?.data?.message ||
+          "An error occurred while resetting the password.",
+      });
     }
   };
 
   return (
     <>
-      <div>
-        <Navbar className="navbar-spacing" /> {/* Add the Navbar */}
-        <h1 className="profile-heading">My Profile</h1>
-        <div className="profile-container">
-          <div className="profile-header">
-            <input
-              type="file"
-              ref={fileInputRef}
-              style={{ display: "none" }}
-              accept="image/*"
-              onChange={handleImageChange}
-            />
-             <div className="profile-picture-wrapper">
+      <Navbar />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-12 px-4 flex flex-col items-center">
+        <h1 className="text-4xl font-bold mb-10 text-gray-800">My Profile</h1>
+        <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center mb-10">
+          <div className="relative mb-6">
             <img
-      src={
-        selectedImage || formData.profileImage || assets.default_profile
-      }
-      className="profile-picture"
-      alt="Profile"
-      onClick={handleImageClick}
-      style={{ cursor: isEditing ? "pointer" : "default" }}
-    />
-    {isEditing && (
-  <button
-    className="edit-icon-hover"
-    onClick={handleImageClick}
-    type="button"
-  >
-    Change Profile Picture
-  </button>
-    )}
-    </div>
-            {isUploading && <p>Uploading...</p>}
+              src={selectedImage || formData.profileImage || assets.default_profile}
+              className="w-40 h-40 rounded-full border-4 border-blue-200 object-cover shadow-lg"
+              alt="Profile"
+              onClick={handleImageClick}
+              style={{ cursor: isEditing ? "pointer" : "default" }}
+            />
+            {isEditing && (
+              <button
+                className="absolute bottom-2 right-2 bg-blue-600 text-white px-3 py-1 rounded-full text-xs shadow hover:bg-blue-700 transition"
+                onClick={handleImageClick}
+                type="button"
+              >
+                Change
+              </button>
+            )}
           </div>
-          <div className="profile-details">
+          {isUploading && <p className="text-blue-600 mb-2">Uploading...</p>}
+          <div className="w-full flex flex-col items-center">
             {isEditing ? (
               <>
-                {/* Profile Editing Form */}
-                <div className="form-group">
-                  <label htmlFor="fullName">Name:</label>
-                  <input
-                    type="text"
-                    id="fullName"
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleChange}
-                  />
+                <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} className="w-full border px-4 py-2 rounded focus:ring-2 focus:ring-blue-200" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" name="email" value={formData.email} readOnly className="w-full border px-4 py-2 rounded bg-gray-100 text-gray-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
+                    <input type="tel" name="contactNumber" value={formData.contactNumber} onChange={handleChange} className="w-full border px-4 py-2 rounded focus:ring-2 focus:ring-blue-200" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">User Type</label>
+                    <input type="text" name="userType" value={formData.userType} readOnly className="w-full border px-4 py-2 rounded bg-gray-100 text-gray-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ICPEP ID</label>
+                    <input type="text" name="icpepId" value={formData.icpepId} readOnly className="w-full border px-4 py-2 rounded bg-gray-100 text-gray-500" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">About Me</label>
+                    <textarea name="aboutMe" value={aboutMe} onChange={handleaboutMeChange} rows="3" className="w-full border px-4 py-2 rounded focus:ring-2 focus:ring-blue-200" />
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label htmlFor="email">Email:</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    readOnly // Lock the email field
-                    className="read-only-input" // Apply the read-only style
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="contactNumber">Contact Number:</label>
-                  <input
-                    type="tel"
-                    id="contactNumber"
-                    name="contactNumber"
-                    value={formData.contactNumber}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="userType">userType:</label>
-                  <input
-                    type="text"
-                    id="userType"
-                    name="userType"
-                    value={formData.userType}
-                    readOnly // Lock the userType field
-                    className="read-only-input" // Apply the read-only style
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="icpepId">ICPEP ID:</label>
-                  <input
-                    type="text"
-                    id="icpepId"
-                    name="icpepId"
-                    value={formData.icpepId}
-                    readOnly // Lock the ICPEP ID field
-                    className="read-only-input" // Apply the read-only style
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="aboutMe">About Me:</label>
-                  <textarea
-                    id="aboutMe"
-                    name="aboutMe"
-                    value={aboutMe}
-                    onChange={handleaboutMeChange}
-                    rows="4"
-                    className="about-us-textarea"
-                  />
-                </div>
-
-                <div className="edit-buttons-container">
-                  <button
-                    className="save-profile-button"
-                    onClick={handleSaveProfile}
-                  >
-                    Save
-                  </button>
-                  <button
-                    className="cancel-edit-button"
-                    onClick={handleCancelEdit}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="reset-password-button"
-                    onClick={() => {
-                      setIsEditing(false);
-                      setIsResettingPassword(true);
-                    }}
-                  >
-                    Reset Password
-                  </button>
+                <div className="flex gap-3 mt-4">
+                  <button className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition" onClick={handleSaveProfile}>Save</button>
+                  <button className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-semibold shadow hover:bg-gray-400 transition" onClick={handleCancelEdit}>Cancel</button>
+                  <button className="bg-yellow-500 text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-yellow-600 transition" onClick={() => { setIsEditing(false); setIsResettingPassword(true); }}>Reset Password</button>
                 </div>
               </>
             ) : isResettingPassword ? (
               <>
-                {/* Reset Password Form */}
                 <div className="form-group">
                   <label htmlFor="currentPassword">Current Password:</label>
                   <div className="password-input-container">
@@ -425,62 +465,80 @@ const Profile = () => {
               </>
             ) : (
               <>
-                {/* Profile Details */}
-                <p className="profile-name">
-                   {userData?.fullName || "N/A"}
-                </p>
-                <p classname ="profile-userType">
-                   {userData?.userType || "N/A"}
-                </p>
-                <p className="profile-email">
-                   {userData?.email || "N/A"}
-                </p>
-
-                <button
-                  className="edit-profile-button"
-                  onClick={handleEditProfile}
-                >
-                  Edit Profile
-                </button>
+                <h2 className="text-2xl font-bold mb-1 text-gray-800">{userData?.fullName || "N/A"}</h2>
+                <p className="text-gray-500 mb-1 capitalize">{userData?.userType || "N/A"}</p>
+                <p className="text-gray-500 mb-4">{userData?.email || "N/A"}</p>
+                <button className="bg-blue-600 text-white px-8 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition mb-2" onClick={handleEditProfile}>Edit Profile</button>
               </>
             )}
           </div>
         </div>
-        <p className="about-me-description">
-          <strong>About Me:</strong>
-          <p>{userData?.aboutMe || "N/A"}</p>
-        </p>
-        <h2 className="PastEvent-heading">
-        Upcoming <span className="highlight">Events</span>
-      </h2>
-        <div className="additional-containers">
-          <div className="custom-container">
-            <img
-              src="https://via.placeholder.com/150"
-              alt="Placeholder 1"
-              className="placeholder-img"
-            />
-            <p>Container 1 Content</p>
+        <div className="profile-section">
+          <h3 className="profile-section-title">About Me</h3>
+          <p className="profile-section-content">{userData?.aboutMe || "N/A"}</p>
+        </div>
+        <div className="events-section">
+          <h2 className="events-title">My <span>Events</span></h2>
+          
+          <div className="event-filters">
+            <button 
+              className={`filter-button ${eventFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setEventFilter('all')}
+            >
+              All Events
+            </button>
+            <button 
+              className={`filter-button ${eventFilter === 'upcoming' ? 'active' : ''}`}
+              onClick={() => setEventFilter('upcoming')}
+            >
+              Upcoming
+            </button>
+            <button 
+              className={`filter-button ${eventFilter === 'past' ? 'active' : ''}`}
+              onClick={() => setEventFilter('past')}
+            >
+              Past
+            </button>
           </div>
-          <div className="custom-container">
-            <img
-              src="https://via.placeholder.com/150"
-              alt="Placeholder 2"
-              className="placeholder-img"
-            />
-            <p>Container 2 Content</p>
-          </div>
-          <div className="custom-container">
-            <img
-              src="https://via.placeholder.com/150"
-              alt="Placeholder 3"
-              className="placeholder-img"
-            />
-            <p>Container 3 Content</p>
+
+          {eventFilter === 'all' && pastEvents.length === 0 && upcomingEvents.length === 0 && (
+            <p className="no-events-message">No events found.</p>
+          )}
+          {eventFilter === 'past' && pastEvents.length === 0 && (
+            <p className="no-events-message">No past events found.</p>
+          )}
+          {eventFilter === 'upcoming' && upcomingEvents.length === 0 && (
+            <p className="no-events-message">No upcoming events found.</p>
+          )}
+
+          <div className="events-grid">
+            {eventFilter === 'all' && (
+              <>
+                {upcomingEvents.map((event) => (
+                  <div key={event._id} className="event-card">
+                    <EventCard event={event} />
+                  </div>
+                ))}
+                {pastEvents.map((event) => (
+                  <div key={event._id} className="event-card">
+                    <EventCard event={event} />
+                  </div>
+                ))}
+              </>
+            )}
+            {eventFilter === 'upcoming' && upcomingEvents.map((event) => (
+              <div key={event._id} className="event-card">
+                <EventCard event={event} />
+              </div>
+            ))}
+            {eventFilter === 'past' && pastEvents.map((event) => (
+              <div key={event._id} className="event-card">
+                <EventCard event={event} />
+              </div>
+            ))}
           </div>
         </div>
       </div>
-
       <Footer />
     </>
   );

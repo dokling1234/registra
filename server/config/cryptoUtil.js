@@ -1,4 +1,4 @@
-import crypto from "crypto";
+const crypto = require('crypto');
 // env key
 const AES_KEY = Buffer.from(process.env.AES_SECRET_KEY, 'hex'); 
 
@@ -23,4 +23,7 @@ function decryptData(encryptedData, ivHex) {
 }
 
 
-export { encryptData, decryptData };
+module.exports = {
+  encryptData,
+  decryptData
+};

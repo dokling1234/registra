@@ -1,17 +1,16 @@
-import express from "express";
-import cors from "cors";
-import "dotenv/config";
-import cookieParser from "cookie-parser";
-import connectDB from "./config/mongodb.js";
-import authRouter from "./routes/authRoutes.js";
-import userRouter from "./routes/userRoutes.js";
-import eventRouter from "./routes/eventRoutes.js";
-import adminRouter from "./routes/adminRoutes.js";
-import mobileUserRouter from "./mobile_routes/user.router.js";
-import mobileEventRouter from "./mobile_routes/events.router.js";
-import mobileAdminRouter from "./mobile_admin_routes/admin.router.js";
-import feedbackRoutes from "./routes/feedbackRoutes.js";
-import path from "path";
+const express = require("express");
+const cors = require("cors");
+require("dotenv/config");
+const cookieParser = require("cookie-parser");
+const connectDB = require("./config/mongodb.js");
+const authRouter = require("./routes/authRoutes.js");
+const {userRouter, mobileUserRouter} = require("./routes/userRoutes.js");
+const {eventRouter, mobileEventRouter} = require("./routes/eventRoutes.js");
+const adminRouter = require("./routes/adminRoutes.js");
+const {feedbackRoutes, mobileFeedbackRoutes} = require("./routes/feedbackRoutes.js");
+const certificateRoutes = require("./routes/certificateRoutes.js");
+const superAdminRouter = require("./routes/superAdminRoutes.js");
+const path = require("path");
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -26,7 +25,19 @@ const allowedOrigins = [
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ origin: allowedOrigins, credentials: true })); // allow cross-origin requests
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API ENDPOINTS
 app.get("/", (req, res) => {
@@ -35,13 +46,15 @@ app.get("/", (req, res) => {
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/auth", authRouter); // auth routes
 app.use("/api/user", userRouter); // user routes
+app.use("/api/mobile-user", mobileUserRouter); 
 app.use("/api/events", eventRouter);
+app.use("/api/mobile-events", mobileEventRouter); 
 app.use("/api/admin", adminRouter);
 app.use("/api/location", eventRouter);
+app.use("/api/certificate", certificateRoutes);
+app.use("/api/mobile-feedback", mobileFeedbackRoutes);
+app.use("/api/superadmin", superAdminRouter);
 
-app.use("/", mobileUserRouter);
-app.use("/", mobileEventRouter);
-app.use("/admin", mobileAdminRouter);
 app.use((req, res, next) => {
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   console.log(`Request from IP: ${ip}, Method: ${req.method}, URL: ${req.url}`);

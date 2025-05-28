@@ -1,5 +1,10 @@
 import React, { useRef, useEffect, useState, useContext } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import {
+  Navigate,
+  useNavigate,
+  useParams,
+  useLocation,
+} from "react-router-dom";
 import axios from "axios";
 import { AppContent } from "../context/AppContext";
 import Navbar from "../components/Navbar";
@@ -9,6 +14,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 const EventDetail = () => {
+  const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
   const [event, setEvent] = useState(null);
@@ -64,35 +70,8 @@ const EventDetail = () => {
     markerRef.current = marker;
   }, [event]);
 
-  const handleRegister = async () => {
-    try {
-      const res = await axios.post(
-        `/api/events/register/${id}`,
-        {
-          fullName: userData.fullName,
-          userId: userData.id,
-          userType: userData.userType,
-        },
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-      if (res.data.success) {
-        setIsRegistered(true);
-        alert("Success");
-      } else {
-        alert(res.data.message || "Failed");
-      }
-    } catch (err) {
-      console.error(
-        "Error during registration:",
-        err.response?.data || err.message
-      );
-      alert("Error registration");
-    }
-  };
-
   if (loading || !event) return <div className="loading">Loading...</div>;
+  const isPastEvent = new Date(event.date) < new Date();
 
   return (
     <>
@@ -106,18 +85,23 @@ const EventDetail = () => {
               alt={event.title}
               className="event-banner-img"
             />
+            <span className="event-detail-price-badge">
+              ₱{event.price?.toLocaleString() || "Free"}
+            </span>
             <div className="event-date-card">
               <p>{new Date(event.date).toDateString()}</p>
               <p>{event.time}</p>
-              <button
-                onClick={handleRegister}
-                disabled={isRegistered}
-                className={`register-button ${
-                  isRegistered ? "registered" : "not-registered"
-                }`}
-              >
-                {isRegistered ? "Already Registered" : "Book Now"}
-              </button>
+              {!isPastEvent && (
+                <button
+                  onClick={() => navigate(`/uploadreceipt/${id}`)}
+                  disabled={isRegistered}
+                  className={`register-button ${
+                    isRegistered ? "registered" : "not-registered"
+                  }`}
+                >
+                  {isRegistered ? "Already Registered" : "Book Now"}
+                </button>
+              )}
             </div>
             <div className="event-banner-text">
               <h1>{event.title}</h1>
@@ -142,7 +126,6 @@ const EventDetail = () => {
       </div>
       <Footer />
     </>
-     
   );
 };
 

@@ -1,12 +1,13 @@
-import userModel from '../models/userModel.js';
-import jwt from 'jsonwebtoken';
+
+const userModel = require('../models/userModel.js');
+const jwt = require('jsonwebtoken');
 
 class UserService {
   static async registerUser(
     fullName,
     contactNumber,
     email,
-    password,
+    hashedPassword,
     confirmPassword,
     icpepId,
     age,
@@ -20,9 +21,9 @@ class UserService {
         fullName,
         contactNumber,
         email,
-        password,
+        password: hashedPassword,
         confirmPassword,
-        icpepId: membership === "Member" ? icpepId : null,
+        icpepId,
         age,
         userType,
         membership,
@@ -72,4 +73,4 @@ class UserService {
   }
 }
 
-export default UserService;
+module.exports = UserService;

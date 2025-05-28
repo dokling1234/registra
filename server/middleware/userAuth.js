@@ -1,5 +1,4 @@
-import jwt from "jsonwebtoken";
-import User from "../models/userModel.js";
+const jwt = require("jsonwebtoken");
 
 const userAuth = (req, res, next) => {
   const { token } = req.cookies;
@@ -24,18 +23,4 @@ const userAuth = (req, res, next) => {
   }
 };
 
-const userTypeAuth = (alloweduserTypes) => {
-  return async (req, res, next) => {
-    try {
-      const user = await User.findById(req.body.userId);
-      if (!user || !alloweduserTypes.includes(user.userType)) {
-        return res.status(403).json({ success: false, message: "Access Denied" });
-      }
-      next();
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  };
-};
-export { userAuth, userTypeAuth };
-
+module.exports = userAuth;

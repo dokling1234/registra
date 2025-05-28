@@ -1,15 +1,19 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { assets } from "../assets/assets";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AppContent } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
-import "./Navbar.css"; // 👈 Import the CSS file
+import Swal from 'sweetalert2';
+import "./Navbar.css";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { userData, backendUrl, setUserData, setIsLoggedin } =
     useContext(AppContent);
+
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const sendVerificationOtp = async () => {
     try {
@@ -30,18 +34,41 @@ const Navbar = () => {
 
   const logout = async () => {
     try {
-      axios.defaults.withCredentials = true;
-      const { data } = await axios.post(backendUrl + "/api/auth/logout");
-      data.success && setIsLoggedin(false);
-      data.success && setUserData(false);
-      navigate("/");
+      const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: "You will be logged out of your account",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, logout!'
+      });
+
+      if (result.isConfirmed) {
+        axios.defaults.withCredentials = true;
+        const { data } = await axios.post(backendUrl + "/api/auth/logout");
+        data.success && setIsLoggedin(false);
+        data.success && setUserData(false);
+        navigate("/");
+        Swal.fire(
+          'Logged Out!',
+          'You have been successfully logged out.',
+          'success'
+        );
+      }
     } catch (error) {
       toast.error(error.message);
     }
   };
 
+  // Close menu when navigating
+  const handleNav = (path) => {
+    setMenuOpen(false);
+    navigate(path);
+  };
+
   return (
-    <div className="navbar">
+    <div className={`navbar${menuOpen ? " navbar-menu-active" : ""}`}>
       {/* Left Logo */}
       <img
         src={assets.logo}
@@ -50,26 +77,44 @@ const Navbar = () => {
         onClick={() => window.location.reload()}
       />
 
-      {/* Centered Links */}
+      {/* Hamburger Icon */}
+      <div
+        className="navbar-hamburger"
+        onClick={() => setMenuOpen((prev) => !prev)}
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+
+      {/* Links and User Area (in hamburger on mobile) */}
       <div className="navbar-links">
-        <div onClick={() => navigate("/home")} className="navbar-text-link">
+        <div 
+          onClick={() => handleNav("/home")} 
+          className={`navbar-text-link ${location.pathname === "/home" ? "active" : ""}`}
+        >
           Home
         </div>
-        <div onClick={() => navigate("/about")} className="navbar-text-link">
+        <div 
+          onClick={() => handleNav("/about")} 
+          className={`navbar-text-link ${location.pathname === "/about" ? "active" : ""}`}
+        >
           About Us
         </div>
-        <div onClick={() => navigate("/map")} className="navbar-text-link">
-          View Map
+        <div 
+          onClick={() => handleNav("/map")} 
+          className={`navbar-text-link ${location.pathname === "/map" ? "active" : ""}`}
+        >
+          Event Map
         </div>
-        <div onClick={() => navigate("/events")} className="navbar-text-link">
-          View Events
-        </div>
-        <div onClick={() => navigate("/events/registered")} className="navbar-text-link">
-          My Events
+        <div 
+          onClick={() => handleNav("/events")} 
+          className={`navbar-text-link ${location.pathname === "/events" ? "active" : ""}`}
+        >
+          Events
         </div>
       </div>
 
-      {/* Right User or Login */}
       <div className="navbar-user-area">
         {userData ? (
           <div className="navbar-user">
@@ -77,19 +122,44 @@ const Navbar = () => {
             <div className="navbar-user-dropdown">
               <ul>
                 {!userData.isVerified && (
-                  <li onClick={sendVerificationOtp}>Verify Email</li>
+                  <li
+                    onClick={() => {
+                      sendVerificationOtp();
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Verify Email
+                  </li>
                 )}
-                <li onClick={() => navigate("/profile")}>Profile</li>
-                <li onClick={logout}>Logout</li>
+                <li
+                  onClick={() => {
+                    handleNav("/profile");
+                  }}
+                >
+                  Profile
+                </li>
+                <li
+                  onClick={() => {
+                    logout();
+                    setMenuOpen(false);
+                  }}
+                >
+                  Logout
+                </li>
               </ul>
             </div>
           </div>
         ) : (
           <button
-            onClick={() => navigate("/")}
+            onClick={() => handleNav("/")}
             className="navbar-login-button"
           >
-            Login <img src={assets.arrow_icon} alt="arrow icon" className="ml-1 inline" />
+            Login{" "}
+            <img
+              src={assets.arrow_icon}
+              alt="arrow icon"
+              className="ml-1 inline"
+            />
           </button>
         )}
       </div>

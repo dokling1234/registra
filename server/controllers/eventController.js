@@ -1,20 +1,22 @@
 // controllers/eventController.js
-import eventModel from "../models/eventModel.js";
-import userModel from "../models/userModel.js";
-import { encryptData, decryptData } from "../config/cryptoUtil.js";
-import QRCode from "qrcode";
-import axios from "axios";
+const eventModel = require("../models/eventModel.js");
+const userModel = require("../models/userModel.js");
+const { encryptData, decryptData } = require("../config/cryptoUtil.js");
+const QRCode = require("qrcode");
+const axios = require("axios");
+const e = require("express");
 
-export const createEvent = async (req, res) => {
+const formatTimeToAMPM = (time24) => {
+  if (!time24 || !time24.includes(":")) return time24;
+  const [hour, minute] = time24.split(":");
+  const h = parseInt(hour);
+  const suffix = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 || 12;
+  return `${hour12}:${minute} ${suffix}`;
+};
+const createEvent = async (req, res) => {
   try {
-    const formatTimeToAMPM = (time24) => {
-      if (!time24 || !time24.includes(":")) return time24;
-      const [hour, minute] = time24.split(":");
-      const h = parseInt(hour);
-      const suffix = h >= 12 ? "PM" : "AM";
-      const hour12 = h % 12 || 12;
-      return `${hour12}:${minute} ${suffix}`;
-    };
+
     const {
       title,
       date,
@@ -22,6 +24,7 @@ export const createEvent = async (req, res) => {
       coordinates,
       time,
       price,
+      cost,
       hostName,
       eventType,
       about,
@@ -40,6 +43,7 @@ export const createEvent = async (req, res) => {
       time: formatTimeToAMPM(time), // Convert to AM/PM format
       about,
       price,
+      cost,
       hostName,
       eventType,
       eventTarget,
@@ -47,6 +51,10 @@ export const createEvent = async (req, res) => {
     });
 
     console.log("test2");
+
+    if (req.body.organizers) {
+      event.organizers = req.body.organizers;
+    }
 
     await event.save();
 
@@ -63,7 +71,7 @@ export const createEvent = async (req, res) => {
   }
 };
 
-export const getAllEvents = async (req, res) => {
+const getAllEvents = async (req, res) => {
   try {
     const events = await eventModel.find();
 
@@ -88,15 +96,68 @@ export const getAllEvents = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      events: activeEvents,
-      count: activeEvents.length,
+      events: events,
+      count: events.length,
     });
+    console.log("Fetched all events successfully" + events.length);
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to fetch events" });
   }
 };
+// ========== GET EVENTS WITH FILTERS (Mobile) ==========
+const getEvents = async (req, res) => {
+  console.log("__________________________________________")
+  try {
+    const { type, location, month, longitude, latitude, maxDistance, userType, membership } = req.query;
+    const match = {};
 
-export const getEventById = async (req, res) => {
+    if (type) match.eventType = type;
+    if (location) match.location = location;
+
+    // Role-based filtering
+    if (userType === "Student" || membership === "non-member") {
+      match.eventTarget = { $nin: ["Admin"] };
+    } else if (userType === "Professional") {
+      match.eventTarget = { $in: ["Professional", "Both"] };
+    } else if (userType === "Admin") {
+      match.eventTarget = { $in: ["Admin", "Both"] };
+    }
+
+    const pipeline = [];
+
+    if (longitude && latitude) {
+      pipeline.push({
+        $geoNear: {
+          near: {
+            type: 'Point',
+            coordinates: [parseFloat(longitude), parseFloat(latitude)],
+          },
+          distanceField: 'distance',
+          spherical: true,
+          maxDistance: maxDistance ? parseInt(maxDistance) : 10000,
+        },
+      });
+    }
+
+    if (month && month !== 'All') {
+      pipeline.push({
+        $addFields: {
+          monthName: { $dateToString: { format: '%B', date: '$date' } }
+        },
+      });
+      match.monthName = month;
+    }
+
+    pipeline.push({ $match: match });
+
+    const events = await eventModel.aggregate(pipeline);
+    res.status(200).json(events);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const getEventById = async (req, res) => {
   try {
     const event = await eventModel.findById(req.params.id);
     if (!event) {
@@ -111,9 +172,9 @@ export const getEventById = async (req, res) => {
   }
 };
 
-export const registerForEvent = async (req, res) => {
+const registerForEvent = async (req, res) => {
   const { eventId } = req.params;
-  const { fullName, userType } = req.body;
+  const { fullName, userType, email, paymentStatus, ticketQR, receipt, membership } = req.body;
   const { userId } = req.user;
 
   try {
@@ -134,6 +195,12 @@ export const registerForEvent = async (req, res) => {
         .json({ success: false, message: "Already registered" });
     }
 
+    // Calculate price based on membership
+    let finalPrice = event.price;
+    if (membership && membership.toLowerCase() === 'non-member') {
+      finalPrice = Math.round(event.price * 1.05);
+    }
+
     const ticketQR = "";
     event.registrations.push({
       userId,
@@ -142,6 +209,9 @@ export const registerForEvent = async (req, res) => {
       paymentStatus: "pending",
       ticketQR,
       attended: false,
+      price: finalPrice,
+      membership: membership || 'Member',
+      receipt,
     });
     console.log("Registrations before save:", event.registrations);
 
@@ -154,7 +224,7 @@ export const registerForEvent = async (req, res) => {
   }
 };
 
-export const updateEvent = async (req, res) => {
+const updateEvent = async (req, res) => {
   try {
     console.log("Updating event with ID:", req.params.id);
     console.log("Update data:", req.body);
@@ -174,7 +244,7 @@ export const updateEvent = async (req, res) => {
   }
 };
 
-export const geocodeAddress = async (req, res) => {
+const geocodeAddress = async (req, res) => {
   const { address } = req.body;
   if (!address) return res.status(400).json({ message: "Address is required" });
 
@@ -201,7 +271,7 @@ export const geocodeAddress = async (req, res) => {
   }
 };
 
-export const reverseGeocode = async (req, res) => {
+const reverseGeocode = async (req, res) => {
   const { lat, lon } = req.body;
 
   if (!lat || !lon) {
@@ -228,7 +298,7 @@ export const reverseGeocode = async (req, res) => {
   }
 };
 
-export const getEventDetails = async (req, res) => {
+const getEventDetails = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id).populate("registrations");
     if (!event) {
@@ -242,7 +312,7 @@ export const getEventDetails = async (req, res) => {
   }
 };
 
-export const confirmPayment = async (req, res) => {
+const confirmPayment = async (req, res) => {
   const { id } = req.params;
   const { registrationId } = req.body;
 
@@ -261,7 +331,7 @@ export const confirmPayment = async (req, res) => {
   }
 };
 
-export const updatePaymentStatus = async (req, res) => {
+const updatePaymentStatus = async (req, res) => {
   const { id } = req.params;
   const { registrantId, paymentStatus, fullName, userType } = req.body;
 
@@ -315,7 +385,7 @@ export const updatePaymentStatus = async (req, res) => {
   }
 };
 
-export const getRegisteredEvents = async (req, res) => {
+const getRegisteredEvents = async (req, res) => {
   const { userId } = req.user;
   try {
     const registeredEvents = await eventModel.find({
@@ -339,7 +409,8 @@ export const getRegisteredEvents = async (req, res) => {
 
   res.status(200).json({ success: true, events: annotatedEvents });
 };
-export const getRegisteredEventDetail = async (req, res) => {
+
+const getRegisteredEventDetail = async (req, res) => {
   try {
     const eventId = req.params.id;
     const { userId } = req.user;
@@ -378,7 +449,7 @@ export const getRegisteredEventDetail = async (req, res) => {
   }
 };
 
-export const getEventByTitle = async (req, res) => {
+const getEventByTitle = async (req, res) => {
   try {
     const { title } = req.body;
     console.log("Searching for events with title:", title);
@@ -406,4 +477,125 @@ export const getEventByTitle = async (req, res) => {
         error: err.message,
       });
   }
+};
+
+const mobileRegisterForEvent = async (req, res) => {
+  const { eventId, userId, email, paymentStatus, ticketQR, fullName, receipt } = req.body;
+
+  try {
+    const event = await eventModel.findById(eventId);
+    if (!event) return res.status(404).json({ message: 'Event not found' });
+
+    const registrations = {
+      fullName,
+      eventId,
+      userId,
+      registeredAt: new Date(),
+      paymentStatus,
+      ticketQR,
+      attended: false,
+      receipt,
+    };
+
+    event.registrations.push(registrations);
+    await event.save();
+
+    res.status(200).json({ message: 'Registration successful!' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const mobileGetRegisteredEvents = async (req, res) => {
+  console.log("1");
+  const { userId } = req.query;
+console.log("User ID:", userId);
+  try {
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    const events = await eventModel.find({
+      'registrations.userId': userId,
+    });
+
+    res.status(200).json(events);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const getTicketQR = async (req, res) => {
+  const { registrationsId } = req.query;
+
+  try {
+    if (!registrationsId) {
+      return res.status(400).json({ message: 'Registration ID is required' });
+    }
+
+    const event = await eventModel.findOne({
+      'registrations._id': registrationsId,
+    });
+
+    if (!event) {
+      return res.status(404).json({ message: 'No event found for user.' });
+    }
+
+    const registration = event.registrations.find(
+      (r) => r._id.toString() === registrationsId
+    );
+
+    if (!registration) {
+      return res.status(404).json({ message: 'Registration not found.' });
+    }
+
+    return res.status(200).json({ ticketQR: registration.ticketQR });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+const getRegisteredPastEvents = async (req, res) => {
+  console.log("__________________________");
+  const { userId } = req.query;
+
+  try {
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    const now = new Date();
+
+    const events = await eventModel.find({
+      'registrations.userId': userId,
+      date: { $lt: now },
+    });
+
+    res.status(200).json(events);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+module.exports = {
+  createEvent,
+  getAllEvents,
+  getEventById,
+  registerForEvent,
+  updateEvent,
+  geocodeAddress,
+  reverseGeocode,
+  getEventDetails,
+  confirmPayment,
+  updatePaymentStatus,
+  getRegisteredEvents,
+  getRegisteredEventDetail,
+  getEventByTitle,
+  getEvents,
+  mobileRegisterForEvent,
+  mobileGetRegisteredEvents,
+  getTicketQR,
+  getRegisteredPastEvents,
 };

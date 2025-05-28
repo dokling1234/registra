@@ -1,15 +1,15 @@
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import userModel from "../models/userModel.js";
-import transporter from "../config/nodemailer.js";
-import adminModel from "../models/adminModel.js";
-import {
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const userModel = require("../models/userModel.js");
+const transporter = require("../config/nodemailer.js");
+const adminModel = require("../models/adminModel.js");
+const {
   EMAIL_VERIFY_TEMPLATE,
   PASSWORD_RESET_TEMPLATE,
-} from "../config/emailTemplates.js";
+} = require("../config/emailTemplates.js");
 
 // register controller
-export const register = async (req, res) => {
+const register = async (req, res) => {
   const {
     fullName,
     email,
@@ -19,6 +19,7 @@ export const register = async (req, res) => {
     userType,
     age,
     membership,
+    disabled = false, // default to false if not provided
   } = req.body;
 
   if (!fullName || !email || !password) {
@@ -42,6 +43,7 @@ export const register = async (req, res) => {
       userType,
       age: Number(age), // make sure it's a number if your schema expects that
       membership,
+      disabled,
     });
 
     await user.save();
@@ -50,7 +52,7 @@ export const register = async (req, res) => {
       { id: user._id, fullName: user.fullName },
       process.env.JWT_SECRET,
       {
-        expiresIn: "7d",
+        expiresIn: "24h",
       }
     );
 
@@ -68,11 +70,9 @@ export const register = async (req, res) => {
   }
 };
 // login controller
-export const login = async (req, res) => {
+const login = async (req, res) => {
   res.clearCookie("token");
-  console.log("Login request user=============================="); // Debugging
   const { email, password, isAdmin } = req.body;
-  console.log("isAdmin", isAdmin); // Debugging
   if (!email || !password) {
     return res.json({ success: false, message: "Please fill all the fields" });
   }
@@ -95,7 +95,7 @@ export const login = async (req, res) => {
       { id: account._id, fullName: account.fullName, isAdmin },
       process.env.JWT_SECRET,
       {
-        expiresIn: "7d",
+        expiresIn: "24h",
       }
     );
 
@@ -110,10 +110,11 @@ export const login = async (req, res) => {
       success: true,
       message: "Login successful auth",
       user: {
+        isVerified: account.isVerified,
         id: account._id,
         fullName: account.fullName,
         email: account.email,
-        userType: isAdmin ? "admin" : account.userType || "user",
+        userType: account.userType, // use exact userType from DB
       },
     });
   } catch (error) {
@@ -122,7 +123,7 @@ export const login = async (req, res) => {
   }
 };
 // logout controller
-export const logout = async (req, res) => {
+const logout = async (req, res) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
@@ -135,7 +136,7 @@ export const logout = async (req, res) => {
   }
 };
 // Send Verification OTP to the User Email
-export const sendVerifyOtp = async (req, res) => {
+const sendVerifyOtp = async (req, res) => {
   try {
     const { userId } = req.user;
 
@@ -146,8 +147,8 @@ export const sendVerifyOtp = async (req, res) => {
 
     const otp = String(Math.floor(100000 + Math.random() * 900000));
 
-    user.verifyOtp = otp;
-    user.verifyOtpExpireAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours expiration
+    user.otp = otp;
+    user.otpExpireAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours expiration
 
     await user.save();
 
@@ -168,7 +169,7 @@ export const sendVerifyOtp = async (req, res) => {
   }
 };
 // Reset password controller
-export const verifyEmail = async (req, res) => {
+const verifyEmail = async (req, res) => {
   const { otp } = req.body;
   const { userId } = req.user;
 
@@ -181,15 +182,15 @@ export const verifyEmail = async (req, res) => {
       return res.json({ success: false, message: "User not found" });
     }
 
-    if (user.verifyOtp === "" || user.verifyOtp !== otp) {
+    if (user.otp === "" || user.otp !== otp) {
       return res.json({ success: false, message: "Invalid OTP" });
     }
-    if (user.verifyOtpExpireAt < Date.now()) {
+    if (user.otpExpireAt < Date.now()) {
       return res.json({ success: false, message: "OTP expired" });
     }
     user.isVerified = true;
-    user.verifyOtp = "";
-    user.verifyOtpExpireAt = 0;
+    user.otp = "";
+    user.otpExpireAt = 0;
 
     await user.save();
     return res.json({
@@ -201,7 +202,7 @@ export const verifyEmail = async (req, res) => {
   }
 };
 // Check if the user authenticated or not
-export const isAuthenticated = async (req, res) => {
+const isAuthenticated = async (req, res) => {
   const { token } = req.cookies;
   if (!token) {
     return res.json({ success: false, message: "User not authenticated" });
@@ -221,7 +222,7 @@ export const isAuthenticated = async (req, res) => {
 };
 
 // Send Reset Password OTP to the User Email
-export const sendResetOtp = async (req, res) => {
+const sendResetOtp = async (req, res) => {
   const { email } = req.body;
   if (!email) {
     return res.json({ success: false, message: "Email is required" });
@@ -233,8 +234,8 @@ export const sendResetOtp = async (req, res) => {
     }
     const otp = String(Math.floor(100000 + Math.random() * 900000));
 
-    user.resetOtp = otp;
-    user.resetOtpExpireAt = Date.now() + 15 * 60 * 1000; // 24 hours expiration
+    user.otp = otp;
+    user.otpExpireAt = Date.now() + 15 * 60 * 1000; // 24 hours expiration
 
     await user.save();
 
@@ -256,8 +257,7 @@ export const sendResetOtp = async (req, res) => {
 };
 
 // Reset User Password
-
-export const resetPassword = async (req, res) => {
+const resetPassword = async (req, res) => {
   const { email, otp, newPassword } = req.body;
   if (!email || !otp || !newPassword) {
     return res.json({
@@ -272,22 +272,33 @@ export const resetPassword = async (req, res) => {
       return res.json({ success: false, message: "User not found" });
     }
 
-    if (user.resetOtp === "" || user.resetOtp !== otp) {
+    if (user.otp === "" || user.otp !== otp) {
       return res.json({ success: false, message: "Invalid OTP" });
     }
 
-    if (user.resetOtpExpireAt < Date.now()) {
+    if (user.otpExpireAt < Date.now()) {
       return res.json({ success: false, message: "OTP expired" });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
-    user.resetOtp = "";
-    user.resetOtpExpireAt = 0;
+    user.otp = "";
+    user.otpExpireAt = 0;
 
     await user.save();
     return res.json({ success: true, message: "Password reset successfully" });
   } catch (error) {
     return res.json({ success: false, message: error.message });
   }
+};
+
+module.exports = {
+  register,
+  login,
+  logout,
+  sendVerifyOtp,
+  verifyEmail,
+  isAuthenticated,
+  sendResetOtp,
+  resetPassword,
 };

@@ -9,8 +9,18 @@ const Map = () => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const [events, setEvents] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState(null); // NEW: Track clicked event
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
+  // Disable scroll only on this page
+  useEffect(() => {
+    document.body.style.overflow = "hidden"; // Disable scrolling
+
+    return () => {
+      document.body.style.overflow = ""; // Re-enable scrolling on unmount
+    };
+  }, []);
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
@@ -35,28 +45,43 @@ const Map = () => {
         const response = await axios.get("/api/events");
         const eventsData = response.data.events;
         setEvents(eventsData);
+        const currentDate = new Date();
+        const upcomingEvents = eventsData.filter(
+          (event) => new Date(event.date) >= currentDate
+        );
+        setEvents(upcomingEvents);
 
-        // Add markers to map
-        eventsData.forEach((event) => {
+        const bounds = new maplibregl.LngLatBounds();
+
+        upcomingEvents.forEach((event) => {
           if (event.coordinates && event.coordinates.length === 2) {
             const marker = new maplibregl.Marker({ color: "#FF0000" })
               .setLngLat(event.coordinates)
               .addTo(mapRef.current);
+            bounds.extend(event.coordinates);
 
-            // Set popup with a simple click
-            marker.getElement().addEventListener("click", () => {
-              setSelectedEvent(event); // 👈 when clicking, show this event card
+            const markerElement = marker.getElement();
+            markerElement.style.cursor = "pointer";
 
+            markerElement.addEventListener("click", () => {
+              setSelectedEvent(event);
               mapRef.current.flyTo({
-                center: event.coordinates, // focus on this event
-                zoom: 15, // zoom in closer
-                speed: 1.2, // smooth animation
+                center: event.coordinates,
+                zoom: 15,
+                speed: 1.2,
                 curve: 1,
                 essential: true,
               });
             });
           }
         });
+
+        if (!bounds.isEmpty()) {
+          mapRef.current.fitBounds(bounds, {
+            padding: 60,
+            duration: 1000,
+          });
+        }
       } catch (error) {
         console.error("Failed to fetch events", error);
       }
@@ -64,52 +89,79 @@ const Map = () => {
 
     fetchEvents();
   }, []);
+  console.log("All events:", events);
+
+  const filteredEvents = events.filter(
+    (event) =>
+      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.location.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleEventClick = (event) => {
+    setSelectedEvent(event);
+    mapRef.current.flyTo({
+      center: event.coordinates,
+      zoom: 15,
+      speed: 1.2,
+      curve: 1,
+      essential: true,
+    });
+  };
 
   return (
     <>
       <Navbar />
-      <div className="cpemap-wrapper">
-        <div ref={mapContainerRef} className="cpemap-map" />
-
-        {selectedEvent && (
-          <div className="cpemap-event-card">
+      <body className="no-scroll">
+        <div className="cpemap-wrapper">
+          <div
+            className={`cpemap-sidebar ${isSidebarOpen ? "open" : "closed"}`}
+          >
             <button
-              className="cpemap-close-btn"
-              onClick={() => {
-                setSelectedEvent(null); // hide card
-                mapRef.current.flyTo({
-                  center: [121.0437, 14.676], // default center
-                  zoom: 12, // zoom out
-                  speed: 1.2,
-                  curve: 1,
-                  essential: true,
-                });
-              }}
+              className="cpemap-sidebar-toggle"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             >
-              ❌
+              {isSidebarOpen ? "◀" : "▶"}
             </button>
-
-            <div className="cpemap-event-graphic">
-                <img
-                    src={selectedEvent.imageUrl || "/placeholder.jpg"}
-                    alt={selectedEvent.title}
-                    className="cpemap-event-image"
+            <div className="cpemap-sidebar-content">
+              <div className="cpemap-search">
+                <input
+                  type="text"
+                  placeholder="Search events..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="cpemap-search-input"
                 />
-            </div>
-
-            <div className="cpemap-event-info">
-              <p className="cpemap-event-time">
-                {new Date(selectedEvent.date).toDateString()} •{" "}
-                {selectedEvent.time}
-              </p>
-              <p className="cpemap-event-title">{selectedEvent.title}</p>
-              <p className="cpemap-event-location">
-                📍 {selectedEvent.location}
-              </p>
+              </div>
+              <div className="cpemap-events-list">
+                {filteredEvents.map((event) => (
+                  <div
+                    key={event._id}
+                    className={`cpemap-event-item ${
+                      selectedEvent?._id === event._id ? "selected" : ""
+                    }`}
+                    onClick={() => handleEventClick(event)}
+                  >
+                    <img
+                      src={event.image || "/placeholder.jpg"}
+                      alt={event.title}
+                      className="cpemap-event-thumbnail"
+                    />
+                    <div className="cpemap-event-item-info">
+                      <h3>{event.title}</h3>
+                      <p>{event.location}</p>
+                      <p>
+                        {new Date(event.date).toDateString()} • {event.time}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        )}
-      </div>
+
+          <div ref={mapContainerRef} className="cpemap-map" />
+        </div>
+      </body>
     </>
   );
 };

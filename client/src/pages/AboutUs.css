@@ -67,16 +67,17 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Hero Section */
 .hero {
-    background-image: url('/storage/images/bg.jpg');
+    background-image: url('https://www.icpepncr.org/storage/images/bg.jpg');
     background-size: cover;
     background-position: center;
     height: 100vh;
     display: flex;
+   font-weight: bold;
     align-items: center;
     justify-content: center; /* Center content horizontally */
     color: white;
     position: relative;
-    text-shadow: 0px 0px 8px rgba(0, 0, 0, 0.6);
+    text-shadow: 0px 0px 10px rgba(0, 0, 0, 0.6);
     text-align: center; /* Center text */
 }
 
@@ -87,13 +88,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .hero h1 {
-    font-size: 3.5rem;
+    font-size: 4.5rem;
     font-weight: bold;
     margin-bottom: 1.5rem;
 }
 
 .hero .lead {
-    font-size: 1.5rem;
+    font-size: 2.5rem;
     font-weight: 600;
 }
 
@@ -134,10 +135,10 @@ h1, h2, h3, h4, h5, h6 {
 .section-heading::after {
     content: '';
     position: absolute;
-    bottom: -10px;
+    bottom: 0px;
     left: 50%;
     transform: translateX(-50%);
     width: 50px;
-    height: 3px;
+    height: 2px;
     background-color: var(--secondary-color);
 }
