@@ -99,6 +99,8 @@ const App = () => {
           path="/superadmin/events/reschedule/:id"
           element={<SuperAdminReschedule />}
         />
+        <Route path="*" element={<div>Page Not Found or Catch-All</div>} />
+
       </Routes>
     </AppContextProvider>
   );
