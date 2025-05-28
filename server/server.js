@@ -43,16 +43,16 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.get("/", (req, res) => {
   res.send("API is running");
 });
-app.use("/api/feedback", feedbackRoutes);
-app.use("/api/auth", authRouter); // auth routes
-app.use("/api/user", userRouter); // user routes
-app.use("/api/mobile-user", mobileUserRouter); 
-app.use("/api/events", eventRouter);
-app.use("/api/mobile-events", mobileEventRouter); 
-app.use("/api/admin", adminRouter);
-app.use("/api/certificate", certificateRoutes);
-app.use("/api/mobile-feedback", mobileFeedbackRoutes);
-app.use("/api/superadmin", superAdminRouter);
+// app.use("/api/feedback", feedbackRoutes);
+// app.use("/api/auth", authRouter); // auth routes
+// app.use("/api/user", userRouter); // user routes
+// app.use("/api/mobile-user", mobileUserRouter); 
+// app.use("/api/events", eventRouter);
+// app.use("/api/mobile-events", mobileEventRouter); 
+// app.use("/api/admin", adminRouter);
+// app.use("/api/certificate", certificateRoutes);
+// app.use("/api/mobile-feedback", mobileFeedbackRoutes);
+ app.use("/api/superadmin", superAdminRouter);
 
 app.use((req, res, next) => {
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
