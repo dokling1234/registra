@@ -11,7 +11,6 @@ const {feedbackRoutes, mobileFeedbackRoutes} = require("./routes/feedbackRoutes.
 const certificateRoutes = require("./routes/certificateRoutes.js");
 const superAdminRouter = require("./routes/superAdminRoutes.js");
 const path = require("path");
-const { pathToRegexp } = require('path-to-regexp');
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -71,13 +70,3 @@ if (process.env.NODE_ENV === "production") {
 app.listen(port, "0.0.0.0", () =>
   console.log(`Server is running on port ${port}`)
 );
-
-const originalPathToRegexp = pathToRegexp;
-require('path-to-regexp').pathToRegexp = function (str, ...args) {
-  try {
-    return originalPathToRegexp(str, ...args);
-  } catch (err) {
-    console.error('[path-to-regexp ERROR] Offending path:', str);
-    throw err;
-  }
-};
