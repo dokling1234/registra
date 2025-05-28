@@ -44,7 +44,7 @@ const upload = multer({
 certificateRoutes.post('/save', userAuth, saveCertificate);
 
 // Get certificate for a specific event
-certificateRoutes.get('/event/:eventId', userAuth, getCertificate);
+certificateRoutes.get('/event/:id', userAuth, getCertificate);//eventId
 
 // Upload signature image
 certificateRoutes.post('/upload-signature', userAuth, upload.single('file'), uploadFile);
@@ -56,6 +56,6 @@ certificateRoutes.post('/upload-template', userAuth, upload.single('file'), uplo
 certificateRoutes.post('/save-template', userAuth, saveTemplate);
 
 // Get certificate template
-certificateRoutes.get('/template/:eventId', getTemplate);
+certificateRoutes.get('/template/:id', getTemplate);//eventId
 
 module.exports = certificateRoutes;
