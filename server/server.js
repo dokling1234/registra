@@ -52,7 +52,7 @@ app.get("/", (req, res) => {
 // app.use("/api/admin", adminRouter);
 // app.use("/api/certificate", certificateRoutes);
 // app.use("/api/mobile-feedback", mobileFeedbackRoutes);
-app.use("/api/superadmin", superAdminRouter);
+//app.use("/api/superadmin", superAdminRouter);
 
 app.use((req, res, next) => {
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
