@@ -32,7 +32,7 @@ const EditEvent = () => {
         const address = event.location || "Manila, Philippines";
         const coordinates = event.coordinates;
 
-        const geoRes = await axios.post("/api/location/geocode", { address });
+        const geoRes = await axios.post("/api/event/location/geocode", { address });
         const { lat, lon, display_name } = geoRes.data;
 
         setEventData({
@@ -84,7 +84,7 @@ const EditEvent = () => {
         coordinates: [lng, lat],
       }));
 
-      axios.post("/api/location/reverse-geocode", { lat, lon: lng })
+      axios.post("/api/event/location/reverse-geocode", { lat, lon: lng })
         .then(res => {
           const { display_name } = res.data;
           setEventData(prev => ({
@@ -123,7 +123,7 @@ const EditEvent = () => {
       if (!isEditing || !eventData.location) return;
 
       try {
-        const res = await axios.post("/api/location/geocode", { address: eventData.location });
+        const res = await axios.post("/api/event/location/geocode", { address: eventData.location });
         const { lat, lon } = res.data;
         setEventData(prev => ({
           ...prev,

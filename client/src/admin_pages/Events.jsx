@@ -167,7 +167,7 @@ const Events = () => {
         markerRef.current = newMarker;
   
         try {
-          const res = await axios.post(`${backendUrl}/api/location/reverse-geocode`, {
+          const res = await axios.post(`${backendUrl}/api/event/location/reverse-geocode`, {
             lat,
             lon: lng,
           });
