@@ -40,9 +40,9 @@ app.use(cors({
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API ENDPOINTS
-// app.get("/", (req, res) => {
-//   res.send("API is running");
-// });
+app.get("/", (req, res) => {
+  res.send("API is running");
+});
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/auth", authRouter); // auth routes
 app.use("/api/user", userRouter); // user routes
