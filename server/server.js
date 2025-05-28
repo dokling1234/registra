@@ -50,7 +50,6 @@ app.use("/api/mobile-user", mobileUserRouter);
 app.use("/api/events", eventRouter);
 app.use("/api/mobile-events", mobileEventRouter); 
 app.use("/api/admin", adminRouter);
-app.use("/api/location", eventRouter);
 app.use("/api/certificate", certificateRoutes);
 app.use("/api/mobile-feedback", mobileFeedbackRoutes);
 app.use("/api/superadmin", superAdminRouter);
