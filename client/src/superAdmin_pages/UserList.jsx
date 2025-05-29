@@ -15,25 +15,42 @@ const UserList = () => {
   const [editingUserId, setEditingUserId] = useState(null);
   const [editedUser, setEditedUser] = useState({});
   const [totalUsers, setTotalUsers] = useState(0);
+  const [showSuperadminModal, setShowSuperadminModal] = useState(false);
+  const [newFullName, setNewFullName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createMessage, setCreateMessage] = useState("");
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminFullName, setAdminFullName] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminCreateLoading, setAdminCreateLoading] = useState(false);
+  const [adminCreateMessage, setAdminCreateMessage] = useState("");
 
   const usersPerPage = 10;
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get(
+        const userResponse = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/api/user/alldata`,
           { withCredentials: true }
         );
+        const adminResponse = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/admin/alldata`,
+          { withCredentials: true }
+        );
+        if (userResponse.data.success) {
+          setUsers([...adminResponse.data.admins, ...userResponse.data.users]);
+          setTotalUsers(
+            adminResponse.data.admins.length + userResponse.data.users.length
+          );
+          console.log("Admin response:", adminResponse.data);
 
-        if (response.data.success) {
-          setUsers(response.data.users);
-          setTotalUsers(response.data.count);
-          console.log("Total users:", response.data.count); // Debugging
+          console.log("Total users:", userResponse.data.count); // Debugging
           console.log("Fetched users:"); // Debugging
-          console.log(response.data);
+          console.log(userResponse.data);
         } else {
-          console.error("Failed to fetch users:", response.data.message);
+          console.error("Failed to fetch users:", userResponse.data.message);
         }
       } catch (error) {
         console.error("Error fetching users:", error.message);
@@ -47,17 +64,17 @@ const UserList = () => {
 
   const handleSave = async (userId) => {
     try {
-      const response = await axios.put(
+      const userResponse = await axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/api/superadmin/update/${userId}`,
         editedUser,
         { withCredentials: true }
       );
 
-      if (response.data.success) {
+      if (userResponse.data.success) {
         alert("User updated successfully.");
         setUsers((prevUsers) =>
           prevUsers.map((user) =>
-            user._id === userId ? response.data.user : user
+            user._id === userId ? userResponse.data.user : user
           )
         );
         setEditingUserId(null);
@@ -67,12 +84,41 @@ const UserList = () => {
     }
   };
 
+  const handleCreateSuperadmin = async (e) => {
+    e.preventDefault();
+    setCreateLoading(true);
+    setCreateMessage(null);
+
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/superadmin/create`,
+        { fullName: newFullName, email: newEmail },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setCreateMessage("Superadmin created! Password sent to their email.");
+        setNewFullName("");
+        setNewEmail("");
+        // Optional: refresh user list here if you want
+      } else {
+        setCreateMessage(`Failed: ${response.data.message}`);
+      }
+    } catch (error) {
+      setCreateMessage(
+        `Error: ${error.response?.data?.message || error.message}`
+      );
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   // Pagination logic
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
   const totalPages = Math.ceil(users.length / usersPerPage);
-
+  const name = userData.fullName;
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
@@ -80,28 +126,209 @@ const UserList = () => {
       <main className="flex-1 p-6 ml-64">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">User List</h1>
-          {userData ? (
-            <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-lg shadow-sm">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <span className="text-blue-600 font-semibold text-lg">
-                  {userData.fullName.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div className="flex flex-col">
-                <p className="text-sm text-gray-500">Welcome back,</p>
-                <p className="text-lg font-semibold text-gray-800">
-                  {userData.fullName}
-                </p>
+          {showAdminModal && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+                <h2 className="text-lg font-bold mb-4">Create Admin</h2>
+                {adminCreateMessage && (
+                  <p
+                    className={`text-sm mb-2 ${
+                      adminCreateMessage.startsWith("Error") ||
+                      adminCreateMessage.startsWith("Failed")
+                        ? "text-red-500"
+                        : "text-green-500"
+                    }`}
+                  >
+                    {adminCreateMessage}
+                  </p>
+                )}
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setAdminCreateLoading(true);
+                    setAdminCreateMessage("");
+                    try {
+                      const response = await axios.post(
+                        `${import.meta.env.VITE_BACKEND_URL}/api/admin/create`,
+                        { fullName: adminFullName, email: adminEmail },
+                        { withCredentials: true }
+                      );
+                      if (response.data.success) {
+                        setAdminCreateMessage("Admin created successfully!");
+                        setAdminFullName("");
+                        setAdminEmail("");
+                        setUsers((prev) => [...prev, response.data.user]);
+                      } else {
+                        setAdminCreateMessage(
+                          `Failed: ${response.data.message}`
+                        );
+                      }
+                    } catch (error) {
+                      setAdminCreateMessage(
+                        `Error: ${
+                          error.response?.data?.message || error.message
+                        }`
+                      );
+                    } finally {
+                      setAdminCreateLoading(false);
+                    }
+                  }}
+                  className="space-y-3"
+                >
+                  <input
+                    type="text"
+                    placeholder="Full Name"
+                    value={adminFullName}
+                    onChange={(e) => setAdminFullName(e.target.value)}
+                    required
+                    className="w-full border px-3 py-2 rounded"
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={adminEmail}
+                    onChange={(e) => setAdminEmail(e.target.value)}
+                    required
+                    className="w-full border px-3 py-2 rounded"
+                  />
+                  <div className="flex justify-between gap-4 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminModal(false)}
+                      className="w-full py-2 border rounded text-gray-600 hover:bg-gray-100"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={adminCreateLoading}
+                      className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {adminCreateLoading ? "Creating..." : "Create"}
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
-          ) : (
-            <button
-              onClick={() => navigate("/")}
-              className="flex items-center gap-2 border border-gray-500 rounded-full px-6 py-2 text-gray-800 hover:bg-gray-100"
-            >
-              Login <img src={assets.arrow_icon} alt="Arrow Icon" />
-            </button>
           )}
+
+          {showSuperadminModal && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+                <h2 className="text-lg font-bold mb-4">Create Super Admin</h2>
+                {createMessage && (
+                  <p
+                    className={`text-sm mb-2 ${
+                      createMessage.startsWith("Error") ||
+                      createMessage.startsWith("Failed")
+                        ? "text-red-500"
+                        : "text-green-500"
+                    }`}
+                  >
+                    {createMessage}
+                  </p>
+                )}
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setCreateLoading(true);
+                    setCreateMessage("");
+                    try {
+                      const response = await axios.post(
+                        `${
+                          import.meta.env.VITE_BACKEND_URL
+                        }/api/superadmin/create`,
+                        { fullName: newFullName, email: newEmail },
+                        { withCredentials: true }
+                      );
+                      if (response.data.success) {
+                        setCreateMessage("Super Admin created successfully!");
+                        setNewFullName("");
+                        setNewEmail("");
+                        setUsers((prev) => [...prev, response.data.user]);
+                      } else {
+                        setCreateMessage(`Failed: ${response.data.message}`);
+                      }
+                    } catch (error) {
+                      setCreateMessage(
+                        `Error: ${
+                          error.response?.data?.message || error.message
+                        }`
+                      );
+                    } finally {
+                      setCreateLoading(false);
+                    }
+                  }}
+                  className="space-y-3"
+                >
+                  <input
+                    type="text"
+                    placeholder="Full Name"
+                    value={newFullName}
+                    onChange={(e) => setNewFullName(e.target.value)}
+                    required
+                    className="w-full border px-3 py-2 rounded"
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    required
+                    className="w-full border px-3 py-2 rounded"
+                  />
+                  <div className="flex justify-between gap-4 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowSuperadminModal(false)}
+                      className="w-full py-2 border rounded text-gray-600 hover:bg-gray-100"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={createLoading}
+                      className="w-full py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      {createLoading ? "Creating..." : "Create"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-lg shadow-sm">
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <span className="text-blue-600 font-semibold text-lg">
+                {userData && userData.fullName
+                  ? userData.fullName.charAt(0).toUpperCase()
+                  : ""}
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <p className="text-sm text-gray-500">Welcome back,</p>
+              <p className="text-lg font-semibold text-gray-800">
+                {userData.fullName}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex gap-4 text-sm">
+            <button
+              onClick={() => setShowAdminModal(true)}
+              className="text-blue-600 hover:underline"
+            >
+              Create Admin
+            </button>
+            <button
+              onClick={() => setShowSuperadminModal(true)}
+              className="text-purple-600 hover:underline"
+            >
+              Create Super Admin
+            </button>
+          </div>
         </div>
 
         <div className="bg-white p-4 rounded-lg shadow overflow-auto">
@@ -219,43 +446,49 @@ const UserList = () => {
                           )}
                         </td>
                         <td className="p-3 flex items-center gap-4">
-                          <button
-                            onClick={async () => {
-                              const newStatus = !user.disabled;
-                              try {
-                                const response = await axios.put(
-                                  `${
-                                    import.meta.env.VITE_BACKEND_URL
-                                  }/api/superadmin/update/${user._id}`,
-                                  { disabled: newStatus },
-                                  { withCredentials: true }
-                                );
-                                if (response.status === 200) {
-                                  setUsers((prevUsers) =>
-                                    prevUsers.map((u) =>
-                                      u._id === user._id
-                                        ? { ...u, disabled: newStatus }
-                                        : u
-                                    )
+                          {user.userType !== "superadmin" && (
+                            <button
+                              onClick={async () => {
+                                const newStatus = !user.disabled;
+                                try {
+                                  const userResponse = await axios.put(
+                                    `${
+                                      import.meta.env.VITE_BACKEND_URL
+                                    }/api/superadmin/update/${user._id}`,
+                                    { disabled: newStatus },
+                                    { withCredentials: true }
+                                  );
+                                  if (userResponse.status === 200) {
+                                    setUsers((prevUsers) =>
+                                      prevUsers.map((u) =>
+                                        u._id === user._id
+                                          ? { ...u, disabled: newStatus }
+                                          : u
+                                      )
+                                    );
+                                  }
+                                } catch (error) {
+                                  console.error(
+                                    "Error updating user status:",
+                                    error.message
                                   );
                                 }
-                              } catch (error) {
-                                console.error(
-                                  "Error updating user status:",
-                                  error.message
-                                );
-                              }
-                            }}
-                            className={`${
-                              user.disabled
-                                ? "text-green-600 hover:underline"
-                                : "text-red-600 hover:underline"
-                            }`}
-                          >
-                            {user.disabled ? "Enable" : "Disable"}
-                          </button>
+                              }}
+                              className={`${
+                                user.disabled
+                                  ? "text-green-600 hover:underline"
+                                  : "text-red-600 hover:underline"
+                              }`}
+                            >
+                              {user.disabled ? "Enable" : "Disable"}
+                            </button>
+                          )}
 
-                          {editingUserId === user._id ? (
+                          {user.userType === "superadmin" ? (
+                            <span className="text-gray-500 italic">
+                              Super Admin – Cannot Edit
+                            </span>
+                          ) : editingUserId === user._id ? (
                             <>
                               <button
                                 onClick={() => handleSave(user._id)}

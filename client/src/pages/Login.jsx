@@ -110,8 +110,7 @@ const Login = () => {
                 <input
                   onChange={(e) => setName(e.target.value)}
                   value={fullName}
-                  className="bg-transparent outline-none"
-                  type="text"
+                  className="bg-transparent outline-none w-full text-white"
                   placeholder="Full Name"
                   required
                 />
@@ -122,7 +121,7 @@ const Login = () => {
                 <input
                   onChange={(e) => setAge(e.target.value)}
                   value={age}
-                  className="bg-transparent outline-none"
+                  className="bg-transparent outline-none w-full text-white"
                   type="tel"
                   placeholder="Age"
                   required
@@ -131,11 +130,11 @@ const Login = () => {
               </div>
 
               <div className="mb-4 flex items-center gap-3 w-full px-5 py-2.5 rounded-full bg-[#333A5C]">
-                <img src={assets.phone_icon} alt="" />
+                <img src={assets.phone_icon} width="16" height="18" alt="" />
                 <input
                   onChange={(e) => setContactNumber(e.target.value)}
                   value={contactNumber}
-                  className="bg-transparent outline-none"
+                  className="bg-transparent outline-none w-full text-white"
                   type="tel"
                   placeholder="Contact Number"
                   required
@@ -144,50 +143,72 @@ const Login = () => {
 
               {/* Animated ICPEP Field */}
               <div
-                className={`transition-all duration-300 ease-in-out ${
-                  membership === "member" ? "opacity-100 max-h-40 mb-4" : "opacity-0 max-h-0 mb-0 overflow-hidden"
+                className={`transition-all duration-300 ease-in-outbg-transparent ${
+                  membership === "member"
+                    ? "opacity-100 max-h-40 mb-4"
+                    : "opacity-0 max-h-0 mb-0 overflow-hidden"
                 }`}
               >
                 <div className="flex items-center gap-3 w-full px-5 py-2.5 rounded-full bg-[#333A5C]">
-                  <img src={assets.id_icon} alt="" />
+                  <img src={assets.id_icon} width="16" height="18" alt="" />
                   <input
                     onChange={(e) => setIcpepId(e.target.value)}
                     value={icpepId}
-                    className="bg-transparent outline-none focus:outline-none border-transparent"
-                    type="text"
+                    className="bg-transparent outline-none focus:outline-none border-transparent w-full text-white"
                     placeholder="ICPEP ID"
                     required={membership === "member"}
                   />
                 </div>
               </div>
 
-              <div className="mb-4 w-full px-5 py-2.5 rounded-full bg-gray-200 text-gray-800">
+              <div className="mb-4 w-full px-5 py-2.5 rounded-full bg-[#333A5C] w-full text-white">
                 <select
                   value={membership}
                   onChange={(e) => handleMembershipChange(e.target.value)}
                   className="bg-transparent outline-none w-full"
                   required
                 >
-                  <option value="member">Member</option>
-                  <option value="non-member">Non-Member</option>
+                  <option
+                    style={{ backgroundColor: "#333A5C", color: "white" }}
+                    value="member"
+                  >
+                    Member
+                  </option>
+                  <option
+                    style={{ backgroundColor: "#333A5C", color: "white" }}
+                    value="non-member"
+                  >
+                    Non-Member
+                  </option>
                 </select>
               </div>
 
-              <div className="mb-4 w-full px-5 py-2.5 rounded-full bg-gray-200 text-gray-800">
+              <div className="mb-4 w-full px-5 py-2.5 rounded-full bg-[#333A5C] w-full text-white">
                 <select
                   value={userType}
                   onChange={(e) => setuserType(e.target.value)}
                   className="bg-transparent outline-none w-full"
+                  s
                   required
                 >
-                  <option value="student">Student</option>
-                  <option value="professional">Professional</option>
+                  <option
+                    style={{ backgroundColor: "#333A5C", color: "white" }}
+                    value="student"
+                  >
+                    Student
+                  </option>
+                  <option
+                    style={{ backgroundColor: "#333A5C", color: "white" }}
+                    value="professional"
+                  >
+                    Professional
+                  </option>
                 </select>
               </div>
             </>
           )}
 
-          <div className="mb-4 flex items-center gap-3 w-full px-5 py-2.5 rounded-full bg-[#333A5C]">
+          <div className="mb-4 flex items-center gap-3 w-full px-5 py-2.5 rounded-full bg-[#333A5C] w-full text-white">
             <img src={assets.mail_icon} alt="" />
             <input
               onChange={(e) => setEmail(e.target.value)}
@@ -199,13 +220,13 @@ const Login = () => {
             />
           </div>
 
-          <div className="mb-4 flex items-center gap-3 w-full px-5 py-2.5 rounded-full bg-[#333A5C] relative">
+          <div className="mb-4 flex items-center gap-3 w-full px-5 py-2.5 rounded-full bg-[#333A5C] relative w-full text-white">
             <img src={assets.lock_icon} alt="Lock Icon" />
             <input
               onChange={(e) => setPassword(e.target.value)}
               value={password}
-              className="bg-transparent outline-none flex-grow"
-              type={showPassword ? "text" : "password"}
+              className="bg-transparent outline-none w-full text-white pr-10"
+              type={showPassword ? "" : "password"}
               placeholder="Password"
               required
             />

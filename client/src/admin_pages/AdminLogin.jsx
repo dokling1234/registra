@@ -1,4 +1,3 @@
-// 👇 Changes are marked with // 🔥 or // ✅
 import React, { useContext, useState } from "react";
 import { assets } from "../assets/assets";
 import { useNavigate } from "react-router-dom";
@@ -13,21 +12,29 @@ const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [showPasswordChangePopup, setShowPasswordChangePopup] = useState(false);
+  const [adminId, setAdminId] = useState(null);
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     axios.defaults.withCredentials = true;
 
     try {
-      const { data } = await axios.post(`${backendUrl}/api/auth/login`, {
+      const { data } = await axios.post(`${backendUrl}/api/auth/admin-login`, {
         email,
         password,
         isAdmin: true, // ✅ allows both admin and superadmin
       });
-
+      if (data.passwordChangeRequired) {
+        setAdminId(data.adminId);
+        setShowPasswordChangePopup(true);
+      } else
+      
       if (data.success) {
+
         const userType = data.user?.userType;
-console.log(data.user);
+        console.log(data.user);
         if (!userType) {
           toast.error("userType not found. Something went wrong.");
           return;
@@ -39,8 +46,8 @@ console.log(data.user);
 
         // 🔥 Redirect based on role
         if (userType === "admin") {
-                    console.log("admin login successful");
-console.log(userType);
+          console.log("admin login successful");
+          console.log(userType);
           navigate("/admin/dashboard");
         } else if (userType === "superadmin") {
           console.log("Superadmin login successful" + userType);
@@ -49,12 +56,33 @@ console.log(userType);
         } else {
           toast.error("Invalid user type.");
         }
-
       } else {
         toast.error(data.message);
       }
     } catch (error) {
       toast.error(error.response?.data?.message || error.message);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/change-password`,
+        {
+          adminId,
+          newPassword,
+        }
+      );
+      if (res.data.success) {
+        alert("Password updated. Please log in again.");
+        setShowPasswordChangePopup(false);
+        setNewPassword("");
+        // Optional: redirect to login or auto login
+      } else {
+        alert(res.data.message);
+      }
+    } catch (error) {
+      console.error("Password change failed:", error.message);
     }
   };
 
@@ -106,6 +134,26 @@ console.log(userType);
             Sign In
           </button>
         </form>
+        {showPasswordChangePopup && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+            <div className="bg-white p-6 rounded shadow-lg w-96">
+              <h2 className="text-xl font-bold mb-4">Change Your Password</h2>
+              <input
+                type="password"
+                placeholder="New Password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="border w-full mb-3 px-3 py-2 rounded"
+              />
+              <button
+                onClick={handlePasswordChange}
+                className="bg-blue-600 text-white px-4 py-2 rounded w-full"
+              >
+                Update Password
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -18,7 +18,6 @@ const transporter = nodemailer.createTransport({
 }
 
  async function sendOTP(email, otp) {
-  console.log("1111111111111111111111111111111111111111",otp)
   if (!canResendOTP(email)) {
     throw new Error('You can only request a new OTP every 5 minutes.');
   }

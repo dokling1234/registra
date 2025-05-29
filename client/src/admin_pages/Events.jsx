@@ -118,30 +118,30 @@ const Events = () => {
     }
   };
 
-  useEffect(() => {
-    const checkAccess = async () => {
-      try {
-        if (!userData) {
-          const fetched = await getUserData();
-          if (fetched?.userType !== "admin") {
-            toast.error("Access denied");
-            navigate("/admin");
-            return;
-          }
-        } else if (userData.userType !== "admin") {
-          toast.error("Access denied");
-          navigate("/admin");
-          return;
-        }
-      } catch (error) {
-        console.error("Error checking access:", error);
-        toast.error("Error checking access");
-        navigate("/admin");
-      }
-    };
+  // useEffect(() => {
+  //   const checkAccess = async () => {
+  //     try {
+  //       if (!userData) {
+  //         const fetched = await getUserData();
+  //         if (fetched?.userType !== "admin") {
+  //           toast.error("Access denied");
+  //           navigate("/admin");
+  //           return;
+  //         }
+  //       } else if (userData.userType !== "admin") {
+  //         toast.error("Access denied");
+  //         navigate("/admin");
+  //         return;
+  //       }
+  //     } catch (error) {
+  //       console.error("Error checking access:", error);
+  //       toast.error("Error checking access");
+  //       navigate("/admin");
+  //     }
+  //   };
 
-    checkAccess();
-  }, [userData, navigate, getUserData]);
+  //   checkAccess();
+  // }, [userData, navigate, getUserData]);
 
   useEffect(() => {
     if (mapContainer.current && showAddForm) {

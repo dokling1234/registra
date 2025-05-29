@@ -10,28 +10,30 @@ const Receipt = () => {
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showReceiptPopup, setShowReceiptPopup] = useState(false);
+  const [currentReceipt, setCurrentReceipt] = useState(null);
 
-  useEffect(() => {
-    const checkAccess = async () => {
-      try {
-        if (!userData) {
-          const fetched = await getUserData();
-          if (fetched?.userType !== "admin") {
-            navigate("/admin");
-            return;
-          }
-        } else if (userData.userType !== "admin") {
-          navigate("/admin");
-          return;
-        }
-      } catch (error) {
-        console.error("Error checking access:", error);
-        navigate("/admin");
-      }
-    };
+  // useEffect(() => {
+  //   const checkAccess = async () => {
+  //     try {
+  //       if (!userData) {
+  //         const fetched = await getUserData();
+  //         if (fetched?.userType !== "admin") {
+  //           navigate("/admin");
+  //           return;
+  //         }
+  //       } else if (userData.userType !== "admin") {
+  //         navigate("/admin");
+  //         return;
+  //       }
+  //     } catch (error) {
+  //       console.error("Error checking access:", error);
+  //       navigate("/admin");
+  //     }
+  //   };
 
-    checkAccess();
-  }, [userData, navigate, getUserData]);
+  //   checkAccess();
+  // }, [userData, navigate, getUserData]);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -78,6 +80,8 @@ const Receipt = () => {
           )
         }));
       }
+
+      setShowReceiptPopup(false);
     } catch (err) {
       console.error("Failed to update payment status:", err.response?.data || err.message);
     }
@@ -180,14 +184,27 @@ const Receipt = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
-                            {registrant.paymentStatus === "pending" && (
-                              <button
-                                onClick={() => handlePaymentStatus(selectedEvent._id, registrant._id, "paid")}
-                                className="bg-gradient-to-r from-green-500 to-green-400 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-green-500 transition text-sm shadow"
-                              >
-                                Confirm Payment
-                              </button>
-                            )}
+                            <div className="flex flex-col items-center gap-2">
+                              {registrant.receipt ? (
+                                <button
+                                  onClick={() => {
+                                    setCurrentReceipt({ 
+                                      receipt: registrant.receipt,
+                                      eventId: selectedEvent._id,
+                                      registrantId: registrant._id
+                                    });
+                                    setShowReceiptPopup(true);
+                                  }}
+                                  className="text-blue-500 hover:underline text-sm focus:outline-none"
+                                >
+                                  View Receipt
+                                </button>
+                              ) : (
+                                <span className="text-gray-400 text-sm italic">
+                                  No receipt
+                                </span>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -203,6 +220,40 @@ const Receipt = () => {
           </div>
         </div>
       </main>
+
+      {/* Receipt Popup */}
+      {showReceiptPopup && currentReceipt && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-lg w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold">Receipt Details</h3>
+              <button
+                onClick={() => setShowReceiptPopup(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="mb-4 flex justify-center">
+              <img src={currentReceipt.receipt} alt="Receipt" className="max-w-full h-auto rounded max-h-96" />
+            </div>
+            <div className="flex justify-center gap-4 w-full">
+            <button
+                onClick={() => handlePaymentStatus(currentReceipt.eventId, currentReceipt.registrantId, "paid")}
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition flex-1 mx-2"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => handlePaymentStatus(currentReceipt.eventId, currentReceipt.registrantId, "rejected")}
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition flex-1 mx-2"
+              >
+                Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

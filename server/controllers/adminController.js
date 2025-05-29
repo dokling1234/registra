@@ -1,26 +1,30 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/adminModel.js");
-const dotenv = require("dotenv");
 const Event = require("../models/eventModel.js");
+const transporter = require("../config/nodemailer"); // Adjust path if needed
+const crypto = require("crypto");
 
 // Admin Login
 const adminLogin = async (req, res) => {
-  console.log("Admin/Superadmin login request"); // Debugging
 
   const { email, password, userType } = req.body;
 
   if (!email || !password || !userType) {
-    return res.json({ success: false, message: "Please fill all fields including userType" });
+    return res.json({
+      success: false,
+      message: "Please fill all fields including userType",
+    });
   }
 
-  // Only allow admin or superadmin to login here
   if (userType !== "admin" && userType !== "superadmin") {
-    return res.json({ success: false, message: "Invalid userType for this login" });
+    return res.json({
+      success: false,
+      message: "Invalid userType for this login",
+    });
   }
 
   try {
-    // Find admin or superadmin by email and userType
     const admin = await Admin.findOne({ email, userType });
 
     if (!admin) {
@@ -40,9 +44,7 @@ const adminLogin = async (req, res) => {
     const token = jwt.sign(
       { id: admin._id, userType: admin.userType, fullName: admin.fullName },
       process.env.JWT_SECRET,
-      {
-        expiresIn: "24h",
-      }
+      { expiresIn: "24h" }
     );
 
     res.cookie("token", token, {
@@ -55,6 +57,8 @@ const adminLogin = async (req, res) => {
     return res.json({
       success: true,
       message: `${userType} login successful`,
+      passwordChangeRequired: admin.passwordChangeRequired || false,
+      adminId: admin._id,
       user: {
         id: admin._id,
         fullName: admin.fullName,
@@ -70,7 +74,7 @@ const adminLogin = async (req, res) => {
 
 // Get Admin Data
 const getAdminData = async (req, res) => {
-  console
+  console;
   try {
     const { userId } = req.user || req.body;
     const admin = await Admin.findById(userId);
@@ -92,38 +96,75 @@ const getAdminData = async (req, res) => {
   }
 };
 
+const createAdmin = async (req, res) => {
+  const { fullName, email } = req.body;
 
- const createAdmin = async (req, res) => {
-  const { fullName, email, password } = req.body;
-
-  if (!fullName || !email || !password)
-    return res.json({ success: false, message: "All fields are required" });
+  if (!fullName || !email) {
+    return res.json({
+      success: false,
+      message: "Full name and email are required.",
+    });
+  }
 
   try {
     const existingAdmin = await Admin.findOne({ email });
-    if (existingAdmin)
-      return res.json({ success: false, message: "Admin already exists" });
+    if (existingAdmin) {
+      return res.json({ success: false, message: "Admin already exists." });
+    }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newAdmin = new Admin({ fullName, email, password: hashedPassword });
+    // Generate random password
+    const plainPassword = crypto
+      .randomBytes(6)
+      .toString("base64")
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .slice(0, 10);
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+
+    // Create new admin with passwordChangeRequired flag
+    const newAdmin = new Admin({
+      fullName,
+      email,
+      password: hashedPassword,
+      userType: "admin",
+      passwordChangeRequired: true, // Add this flag in your model
+    });
+
     await newAdmin.save();
 
-    res.json({ success: true, message: "Admin created successfully" });
+    // Send email with credentials
+    const mailOptions = {
+      from: `"Registra System" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: "Your Admin Account Credentials",
+      text: `Hello ${fullName},\n\nAn admin account has been created for you on the Registra platform.\n\nYour login credentials are:\nEmail: ${email}\nPassword: ${plainPassword}\n\nPlease log in and change your password immediately.\n\nRegards,\nRegistra Team`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.json({
+      success: true,
+      message: "Admin created and credentials sent via email.",
+    });
   } catch (error) {
-    res.json({ success: false, message: error.message });
+    console.error("Create admin error:", error);
+    res.json({ success: false, message: "Server error: " + error.message });
   }
 };
 
- const getAllUsers = async (req, res) => {
+const getAllUsers = async (req, res) => {
   try {
-    console.log("get all users admin..."); // Debugging
-    const admins = await Admin.find({});  // Fetch all users from the database
+    console.log("getallusers");
+    const admins = await Admin.find({}); // Fetch all users from the database
 
     if (admins.length === 0) {
-      return res.status(404).json({ success: false, message: "No users found." });
+      return res
+        .status(404)
+        .json({ success: false, message: "No users found." });
     }
+    console.log("sadsada");
+    console.log(admins.length);
 
-    res.json({ success: true, users, count: users.length }); 
+    res.json({ success: true, admins, count: admins.length });
   } catch (error) {
     console.error("Error fetching users:", error); // Log the error for debugging
     res.status(500).json({ success: false, message: "Internal server error." });
@@ -132,7 +173,8 @@ const getAdminData = async (req, res) => {
 
 const getEvents = async (req, res) => {
   try {
-    const { type, location, month, longitude, latitude, maxDistance } = req.query;
+    const { type, location, month, longitude, latitude, maxDistance } =
+      req.query;
     const match = {};
 
     if (type) match.eventType = type;
@@ -145,22 +187,22 @@ const getEvents = async (req, res) => {
         $geoNear: {
           near: {
             type: "Point",
-            coordinates: [parseFloat(longitude), parseFloat(latitude)]
+            coordinates: [parseFloat(longitude), parseFloat(latitude)],
           },
           distanceField: "distance",
           spherical: true,
-          maxDistance: maxDistance ? parseInt(maxDistance) : 10000 // Default 10km
-        }
+          maxDistance: maxDistance ? parseInt(maxDistance) : 10000, // Default 10km
+        },
       });
     }
 
-    if (month && month !== 'All') {
+    if (month && month !== "All") {
       pipeline.push({
         $addFields: {
           monthName: {
-            $dateToString: { format: "%B", date: "$date" }
-          }
-        }
+            $dateToString: { format: "%B", date: "$date" },
+          },
+        },
       });
 
       match.monthName = month;
@@ -179,12 +221,12 @@ const registerForEvent = async (req, res) => {
   console.log("Register for event endpoint hit");
   const { id } = req.params;
   const { eventId, userId, email, paymentStatus, ticketQR, receipt } = req.body;
-console.log(req.body);
+  console.log(req.body);
   try {
-    console.log("eventId:", id); 
+    console.log("eventId:", id);
     const event = await Event.findById(id);
     if (!event) {
-      console.log("noott eeeeevvvvvvvvventttttttttttttttttt")
+      console.log("noott eeeeevvvvvvvvventttttttttttttttttt");
 
       return res.status(404).json({ message: "Event not found" });
     }
@@ -218,26 +260,29 @@ const QRchecker = async (req, res) => {
 
     const event = await Event.findOne({ "registrations._id": objectId });
     if (!event) {
-      return res.status(404).json({ message: 'Registration not found in any event' });
+      return res
+        .status(404)
+        .json({ message: "Registration not found in any event" });
     }
 
-    const registration = event.registrations.find(reg => reg._id.toString() === objectId.toString());
+    const registration = event.registrations.find(
+      (reg) => reg._id.toString() === objectId.toString()
+    );
     if (!registration) {
-      return res.status(404).json({ message: 'Registration not found' });
+      return res.status(404).json({ message: "Registration not found" });
     }
 
     if (registration.attended) {
-      return res.status(400).json({ message: 'QR code has already been used' });
+      return res.status(400).json({ message: "QR code has already been used" });
     }
 
     registration.attended = true;
     await event.save();
 
-    return res.json({ message: 'Attendance updated successfully' });
-
+    return res.json({ message: "Attendance updated successfully" });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -262,13 +307,43 @@ const pdfCertificate = async (req, res) => {
 
     // Save modified PDF
     const modifiedPdfBytes = await pdfDoc.save();
-    const outputPath = path.join("uploads", `modified_${req.file.originalname}`);
+    const outputPath = path.join(
+      "uploads",
+      `modified_${req.file.originalname}`
+    );
     fs.writeFileSync(outputPath, modifiedPdfBytes);
 
-    res.json({ success: true, message: "PDF modified successfully", file: outputPath });
+    res.json({
+      success: true,
+      message: "PDF modified successfully",
+      file: outputPath,
+    });
   } catch (error) {
     console.error("PDF error:", error);
     res.status(500).json({ success: false, error: "Failed to process PDF" });
+  }
+};
+
+const changeAdminPassword = async (req, res) => {
+  const { adminId, newPassword } = req.body;
+
+  if (!adminId || !newPassword) {
+    return res.json({ success: false, message: "All fields are required." });
+  }
+
+  try {
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await Admin.findByIdAndUpdate(adminId, {
+      password: hashed,
+      passwordChangeRequired: false,
+    });
+
+    res.json({
+      success: true,
+      message: "Password updated. You can now log in.",
+    });
+  } catch (error) {
+    res.json({ success: false, message: "Server error: " + error.message });
   }
 };
 
@@ -281,4 +356,5 @@ module.exports = {
   registerForEvent,
   QRchecker,
   pdfCertificate,
+  changeAdminPassword,
 };

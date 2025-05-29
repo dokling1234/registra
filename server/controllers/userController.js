@@ -9,13 +9,28 @@ const MAX_OTP_AGE = 1 * 60 * 1000;
 
 const getUserData = async (req, res) => {
   try {
-    const { userId, name } = req.user; // get userId from request body
+    const { userId, userType } = req.user;
 
-    const user = await userModel.findById(userId); // find user by userId
+    console.log("Incoming user info from token middleware:");
+    console.log("req.user:", req.user);
+
+    let user;
+
+    if (userType === "admin" || userType === "superadmin") {
+      console.log("Fetching admin:", userId);
+      console.log(userType)
+      user = await adminModel.findById(userId);
+    } else {
+      console.log("Fetching regular user:", userId);
+      user = await userModel.findById(userId);
+            console.log(userType)
+
+    }
+console.log(user)
     if (!user) {
       return res.json({
         success: false,
-        message: "User not found getuserdata usercont",
+        message: "User not found in getUserData",
       });
     }
 
@@ -24,16 +39,15 @@ const getUserData = async (req, res) => {
       userData: {
         id: user._id,
         fullName: user.fullName,
-        isVerified: user.isVerified,
-        userType: user.userType,
         email: user.email,
-        contactNumber: user.contactNumber,
-        icpepId: user.icpepId,
-        aboutMe: user.aboutMe,
-        membership: user.membership,
-        profileImage: user.profileImage,
+        userType: user.userType,
+        ...(user.contactNumber && { contactNumber: user.contactNumber }),
+        ...(user.icpepId && { icpepId: user.icpepId }),
+        ...(user.aboutMe && { aboutMe: user.aboutMe }),
+        ...(user.membership && { membership: user.membership }),
+        ...(user.profileImage && { profileImage: user.profileImage }),
       },
-    }); // send user data in response
+    });
   } catch (error) {
     res.json({ success: false, message: error.message });
   }
