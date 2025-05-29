@@ -36,7 +36,7 @@ const Sidebar = () => {
             'You have been successfully logged out.',
             'success'
           );
-          navigate("/");
+          navigate("/admin");
         }
       }
     } catch (error) {

@@ -123,30 +123,30 @@ const Events = () => {
     }
   };
 
-  useEffect(() => {
-    const checkAccess = async () => {
-      try {
-        if (!userData) {
-          const fetched = await getUserData();
-          if (fetched?.userType !== "admin") {
-            toast.error("Access denied");
-            navigate("/admin");
-            return;
-          }
-        } else if (userData.userType !== "admin") {
-          toast.error("Access denied");
-          navigate("/admin");
-          return;
-        }
-      } catch (error) {
-        console.error("Error checking access:", error);
-        toast.error("Error checking access");
-        navigate("/admin");
-      }
-    };
+  // useEffect(() => {
+  //   const checkAccess = async () => {
+  //     try {
+  //       if (!userData) {
+  //         const fetched = await getUserData();
+  //         if (fetched?.userType !== "admin") {
+  //           toast.error("Access denied");
+  //           navigate("/admin");
+  //           return;
+  //         }
+  //       } else if (userData.userType !== "admin") {
+  //         toast.error("Access denied");
+  //         navigate("/admin");
+  //         return;
+  //       }
+  //     } catch (error) {
+  //       console.error("Error checking access:", error);
+  //       toast.error("Error checking access");
+  //       navigate("/admin");
+  //     }
+  //   };
 
-    checkAccess();
-  }, [userData, navigate, getUserData]);
+  //   checkAccess();
+  // }, [userData, navigate, getUserData]);
 
   useEffect(() => {
     if (mapContainer.current && showAddForm) {
@@ -247,7 +247,7 @@ const Events = () => {
             <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-lg shadow-sm">
               <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
                 <span className="text-blue-600 font-semibold text-lg">
-                  {userData.fullName.charAt(0).toUpperCase()}
+                    {userData.fullName.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div className="flex flex-col">

@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const userModel = require("../models/userModel.js");
 const transporter = require("../config/nodemailer.js");
 const adminModel = require("../models/adminModel.js");
+const crypto = require("crypto");
 const {
   EMAIL_VERIFY_TEMPLATE,
   PASSWORD_RESET_TEMPLATE,
@@ -71,16 +72,13 @@ const register = async (req, res) => {
 };
 // login controller
 const login = async (req, res) => {
-  res.clearCookie("token");
   const { email, password, isAdmin } = req.body;
   if (!email || !password) {
     return res.json({ success: false, message: "Please fill all the fields" });
   }
 
   try {
-    const account = isAdmin
-      ? await adminModel.findOne({ email })
-      : await userModel.findOne({ email });
+      await userModel.findOne({ email });
 
     if (!account) {
       return res.json({ success: false, message: "Invalid email" });
@@ -122,6 +120,76 @@ const login = async (req, res) => {
     return res.json({ success: false, message: error.message });
   }
 };
+
+const adminLogin = async (req, res) => {
+
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.json({
+      success: false,
+      message: "Please fill all fields",
+    });
+  }
+
+  try {
+    const admin = await adminModel.findOne({ email });
+
+    if (!admin) {
+      console.log("not admin")
+      return res.json({ success: false, message: `Account not found` });
+    }
+
+    if (admin.userType !== "admin" && admin.userType !== "superadmin") {
+      console.log("not an account")
+      return res.json({ success: false, message: "Unauthorized user type" });
+    }
+
+    const isMatch = await bcrypt.compare(password, admin.password);
+    if (!isMatch) {
+      return res.json({ success: false, message: "Invalid password" });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      console.error("JWT_SECRET is not defined");
+      return res.json({ success: false, message: "JWT_SECRET is not defined" });
+    }
+
+    const token = jwt.sign(
+      { id: admin._id, userType: admin.userType, fullName: admin.fullName },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+    console.log(admin._id);
+    console.log(admin.fullName);
+    console.log(admin.userType);
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    return res.json({
+      success: true,
+      message: `${admin.userType} login successful`,
+      passwordChangeRequired: admin.passwordChangeRequired || false,
+      adminId: admin._id,
+      user: {
+        id: admin._id,
+        fullName: admin.fullName,
+        email: admin.email,
+        userType: admin.userType,
+      },
+      token,
+    });
+  } catch (error) {
+    return res.json({ success: false, message: error.message });
+  }
+};
+
+
+
 // logout controller
 const logout = async (req, res) => {
   try {
@@ -301,4 +369,5 @@ module.exports = {
   isAuthenticated,
   sendResetOtp,
   resetPassword,
+  adminLogin,
 };

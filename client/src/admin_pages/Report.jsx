@@ -93,45 +93,52 @@ const Report = () => {
           )}
         </div>
 
-        {/* Filter Dropdown */}
-        <div className="mb-4">
-          <label htmlFor="eventType" className="block text-sm font-medium text-gray-700 mb-1">
-            Filter by Event Type:
-          </label>
-          <select
-            id="eventType"
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
-            className="p-3 border border-gray-400 rounded-lg text-base w-64 shadow focus:outline-none focus:ring-2 focus:ring-blue-400"
-          >
-            <option value="All">All Event Types</option>
-            {eventTypes.filter(type => type !== "All").map((type, idx) => (
-              <option key={idx} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Date Range Filter */}
-        <div className="flex gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Start Date</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={e => setStartDate(e.target.value)}
-              className="border border-gray-300 rounded-md px-2 py-1"
-            />
+        {/* Filters and Date Range */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6 w-full">
+          {/* Filter Dropdown */}
+          <div className="flex-1">
+            <label htmlFor="eventType" className="block text-sm font-medium text-gray-700 mb-1">
+              Filter by Event Type:
+            </label>
+            <select
+              id="eventType"
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className="p-2 border border-gray-300 rounded-md w-full shadow focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              <option value="All">All Event Types</option>
+              {/* Manually add Seminar and Webinar options */}
+              <option value="Seminar">Seminar</option>
+              <option value="Webinar">Webinar</option>
+              {/* Filter out All if it exists in fetched types, map others */}
+              {eventTypes.filter(type => type !== "All" && type !== "Seminar" && type !== "Webinar").map((type, idx) => (
+                <option key={idx} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">End Date</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={e => setEndDate(e.target.value)}
-              className="border border-gray-300 rounded-md px-2 py-1"
-            />
+
+          {/* Date Range Filter */}
+          <div className="flex-1 flex gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                className="border border-gray-300 rounded-md px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+                className="border border-gray-300 rounded-md px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
           </div>
         </div>
 

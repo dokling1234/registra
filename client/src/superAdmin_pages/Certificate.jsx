@@ -71,6 +71,7 @@ const Certificate = () => {
   const [template, setTemplate] = useState(null);
 
   useEffect(() => {
+    console.log(userData)
     const fetchRegisteredEvents = async () => {
       if (!userData?._id && !userData?.id) return;
       try {

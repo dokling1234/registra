@@ -17,8 +17,11 @@ import receipt_icon from "./receipt_icon.png";
 import certificate_icon from "./certificate_icon.png";
 import userlist_icon from "./userlist_icon.png";
 import logout_icon from "./logout_icon.png";
-
+import phone_icon from "./phone_icon.svg"
+import id_icon from "./id_icon.svg"
 export const assets = {
+    id_icon,
+    phone_icon,
     arrow_icon,
     lock_icon,
     logo,

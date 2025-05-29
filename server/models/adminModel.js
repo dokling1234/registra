@@ -4,6 +4,10 @@ const adminSchema = new mongoose.Schema({
   fullName: String,
   email: { type: String, unique: true },
   password: String,
+  passwordChangeRequired: {
+  type: Boolean,
+  default: false
+},
   userType: String,
 });
 
