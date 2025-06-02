@@ -72,13 +72,13 @@ const register = async (req, res) => {
 };
 // login controller
 const login = async (req, res) => {
-  const { email, password, isAdmin } = req.body;
+  const { email, password } = req.body;
   if (!email || !password) {
     return res.json({ success: false, message: "Please fill all the fields" });
   }
 
   try {
-      await userModel.findOne({ email });
+    const account = await userModel.findOne({ email });
 
     if (!account) {
       return res.json({ success: false, message: "Invalid email" });
@@ -90,7 +90,7 @@ const login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: account._id, fullName: account.fullName, isAdmin },
+      { id: account._id, fullName: account.fullName },
       process.env.JWT_SECRET,
       {
         expiresIn: "24h",
@@ -122,7 +122,6 @@ const login = async (req, res) => {
 };
 
 const adminLogin = async (req, res) => {
-
   const { email, password, isAdmin } = req.body;
 
   if (!email || !password) {
@@ -136,12 +135,12 @@ const adminLogin = async (req, res) => {
     const admin = await adminModel.findOne({ email });
 
     if (!admin) {
-      console.log("not admin")
+      console.log("not admin");
       return res.json({ success: false, message: `Account not found` });
     }
 
     if (admin.userType !== "admin" && admin.userType !== "superadmin") {
-      console.log("not an account")
+      console.log("not an account");
       return res.json({ success: false, message: "Unauthorized user type" });
     }
 
@@ -156,7 +155,12 @@ const adminLogin = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: admin._id, userType: admin.userType, fullName: admin.fullName, isAdmin },
+      {
+        id: admin._id,
+        userType: admin.userType,
+        fullName: admin.fullName,
+        isAdmin,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
     );
@@ -184,11 +188,10 @@ const adminLogin = async (req, res) => {
       token,
     });
   } catch (error) {
+    console.error(error);
     return res.json({ success: false, message: error.message });
   }
 };
-
-
 
 // logout controller
 const logout = async (req, res) => {
