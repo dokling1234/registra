@@ -123,7 +123,7 @@ const login = async (req, res) => {
 
 const adminLogin = async (req, res) => {
 
-  const { email, password } = req.body;
+  const { email, password, isAdmin } = req.body;
 
   if (!email || !password) {
     return res.json({
@@ -156,7 +156,7 @@ const adminLogin = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: admin._id, userType: admin.userType, fullName: admin.fullName },
+      { id: admin._id, userType: admin.userType, fullName: admin.fullName, isAdmin },
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
     );

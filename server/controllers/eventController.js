@@ -387,12 +387,13 @@ const updatePaymentStatus = async (req, res) => {
 
 const getRegisteredEvents = async (req, res) => {
   const { userId } = req.user;
+  console.log("==============================")
+  console.log(userId)
   try {
     const registeredEvents = await eventModel.find({
       "registrations.userId": userId,
     });
 
-    console.log(registeredEvents, "__________asdsada________");
     res.status(200).json({ success: true, events: registeredEvents });
   } catch (error) {
     res

@@ -14,7 +14,6 @@ export const AppContextProvider = (props) => {
 
     const getAuthState = async () => {
     try {
-        console.log("---------------------------------------------------")
         const { data } = await axios.get(backendUrl + "/api/auth/is-auth");
 
         console.log("Auth check response:", data);  // LOG SUCCESS RESPONSE

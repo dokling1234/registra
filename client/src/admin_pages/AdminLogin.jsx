@@ -46,12 +46,8 @@ const AdminLogin = () => {
 
         // 🔥 Redirect based on role
         if (userType === "admin") {
-          console.log("admin login successful");
-          console.log(userType);
           navigate("/admin/dashboard");
         } else if (userType === "superadmin") {
-          console.log("Superadmin login successful" + userType);
-          console.log(userType);
           navigate("/superadmin/dashboard"); // ✅ Route for superadmin
         } else {
           toast.error("Invalid user type.");

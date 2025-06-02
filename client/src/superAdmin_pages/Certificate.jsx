@@ -70,8 +70,6 @@ const Certificate = () => {
   const [saving, setSaving] = useState(false);
   const [template, setTemplate] = useState(null);
 
-  useEffect(() => {
-    console.log(userData)
     const fetchRegisteredEvents = async () => {
       if (!userData?._id && !userData?.id) return;
       try {
@@ -82,7 +80,7 @@ const Certificate = () => {
       }
     };
     fetchRegisteredEvents();
-  }, [userData, backendUrl]);
+
 
   useEffect(() => {
     const fetchAllEvents = async () => {
