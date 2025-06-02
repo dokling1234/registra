@@ -44,11 +44,6 @@ const UserList = () => {
           setTotalUsers(
             adminResponse.data.admins.length + userResponse.data.users.length
           );
-          console.log("Admin response:", adminResponse.data);
-
-          console.log("Total users:", userResponse.data.count); // Debugging
-          console.log("Fetched users:"); // Debugging
-          console.log(userResponse.data);
         } else {
           console.error("Failed to fetch users:", userResponse.data.message);
         }
@@ -81,35 +76,6 @@ const UserList = () => {
       }
     } catch (error) {
       console.error("Error updating user:", error.message);
-    }
-  };
-
-  const handleCreateSuperadmin = async (e) => {
-    e.preventDefault();
-    setCreateLoading(true);
-    setCreateMessage(null);
-
-    try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/superadmin/create`,
-        { fullName: newFullName, email: newEmail },
-        { withCredentials: true }
-      );
-
-      if (response.data.success) {
-        setCreateMessage("Superadmin created! Password sent to their email.");
-        setNewFullName("");
-        setNewEmail("");
-        // Optional: refresh user list here if you want
-      } else {
-        setCreateMessage(`Failed: ${response.data.message}`);
-      }
-    } catch (error) {
-      setCreateMessage(
-        `Error: ${error.response?.data?.message || error.message}`
-      );
-    } finally {
-      setCreateLoading(false);
     }
   };
 

@@ -5,45 +5,62 @@ const adminModel = require("../models/adminModel.js");
 const userModel = require("../models/userModel.js");
 const eventModel = require("../models/eventModel.js");
 const jwt = require("jsonwebtoken");
+const transporter = require("../config/nodemailer"); // Adjust path if needed
 
-const registerSuperadmin = async (req, res) => {
+const crypto = require ("crypto")
+
+const createSuperAdmin = async (req, res) => {
+  const { fullName, email } = req.body;
+
+  if (!fullName || !email) {
+    return res.json({
+      success: false,
+      message: "Full name and email are required.",
+    });
+  }
+
   try {
-    const { fullName, email, password } = req.body;
-
-    // Check if email already exists
-    const existing = await adminModel.findOne({ email });
-    if (existing) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email already in use." });
+    const existingAdmin = await adminModel.findOne({ email });
+    if (existingAdmin) {
+      return res.json({ success: false, message: "Admin already exists." });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Generate random password
+    const plainPassword = crypto
+      .randomBytes(6)
+      .toString("base64")
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .slice(0, 10);
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-    // Create superadmin account
-    const newSuperadmin = new adminModel({
+    // Create new admin with passwordChangeRequired flag
+    const newAdmin = new adminModel({
       fullName,
       email,
       password: hashedPassword,
-      userType: "superadmin", // ✅ Important
+      userType: "superadmin",
+      passwordChangeRequired: true, // Add this flag in your model
     });
 
-    await newSuperadmin.save();
+    await newAdmin.save();
 
-    res.status(201).json({
+    // Send email with credentials
+    const mailOptions = {
+      from: `"Registra System" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: "Your Admin Account Credentials",
+      text: `Hello ${fullName},\n\nAn admin account has been created for you on the Registra platform.\n\nYour login credentials are:\nEmail: ${email}\nPassword: ${plainPassword}\n\nPlease log in and change your password immediately.\n\nRegards,\nRegistra Team`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.json({
       success: true,
-      message: "Superadmin registered successfully.",
-      user: {
-        id: newSuperadmin._id,
-        email: newSuperadmin.email,
-        userType: newSuperadmin.userType,
-      },
+      message: "Admin created and credentials sent via email.",
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ success: false, message: "Server error", error: error.message });
+    console.error("Create admin error:", error);
+    res.json({ success: false, message: "Server error: " + error.message });
   }
 };
 
@@ -125,4 +142,4 @@ const cancelEvent = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-module.exports = { registerSuperadmin, enableUser, disableUser, updateUser, cancelEvent };
+module.exports = { createSuperAdmin, enableUser, disableUser, updateUser, cancelEvent };

@@ -387,28 +387,27 @@ const updatePaymentStatus = async (req, res) => {
 
 const getRegisteredEvents = async (req, res) => {
   const { userId } = req.user;
-  console.log("==============================")
-  console.log(userId)
+  console.log("==============================");
+
   try {
     const registeredEvents = await eventModel.find({
       "registrations.userId": userId,
     });
 
-    res.status(200).json({ success: true, events: registeredEvents });
+    const currentDate = new Date();
+
+    const annotatedEvents = registeredEvents.map((event) => {
+      const eventObj = event.toObject();
+      eventObj.isPastEvent = new Date(event.date) < currentDate;
+      return eventObj;
+    });
+
+    res.status(200).json({ success: true, events: annotatedEvents });
   } catch (error) {
     res
       .status(500)
       .json({ success: false, message: "Failed to fetch registered events." });
   }
-  const currentDate = new Date();
-
-  const annotatedEvents = registeredEvents.map((event) => {
-    const eventObj = event.toObject();
-    eventObj.isPastEvent = new Date(event.date) < currentDate;
-    return eventObj;
-  });
-
-  res.status(200).json({ success: true, events: annotatedEvents });
 };
 
 const getRegisteredEventDetail = async (req, res) => {
@@ -558,9 +557,8 @@ const getTicketQR = async (req, res) => {
 };
 
 const getRegisteredPastEvents = async (req, res) => {
-  console.log("__________________________");
-  const { userId } = req.query;
-
+const userId = req.query.userId;
+console.log(userId)
   try {
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required' });
