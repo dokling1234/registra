@@ -398,7 +398,7 @@ const mobileAdminLogin = async (req, res) => {
       {
         id: account._id,
         userType: account.userType || modelType,
-        fullName: account.fullname,
+        fullName: account.fullName,
       },
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
@@ -418,7 +418,7 @@ const mobileAdminLogin = async (req, res) => {
       message: `${modelType} login successful`,
       user: {
         id: account._id,
-        fullName: account.fullname,
+        fullName: account.fullName,
         email: account.email,
         userType: account.userType ,
       },

@@ -200,7 +200,7 @@ const verifyOTP = async (req, res, next) => {
     }
 
     if (storedOTP !== otp) {
-      console.log(code, otp);
+      console.log(code, otp); 
       return res.status(400).json({ status: false, message: "Invalid OTP" });
     }
 
@@ -266,7 +266,7 @@ const mobileLogin = async (req, res, next) => {
         status: true,
         token,
         isVerified: true,
-        fullname: user.fullname,
+        fullName: user.fullName,
         email: user.email,
         userType: user.userType || "admin",
         message: "Admin login successful",
@@ -280,7 +280,7 @@ const mobileLogin = async (req, res, next) => {
         status: true,
         token,
         isVerified: true,
-        fullname: user.fullname,
+        fullName: user.fullName,
         email: user.email,
         userType: user.userType,
         contactNumber: user.contactNumber,
@@ -472,7 +472,7 @@ const mobileRegister = async (req, res, next) => {
   console.log("ssssssssssssssssssssssssssss");
   try {
     const {
-      fullname,
+      fullName,
       contactNumber,
       email,
       password,
@@ -485,7 +485,7 @@ const mobileRegister = async (req, res, next) => {
     } = req.body;
     console.log("mobileRegister", req.body);
     if (
-      !fullname ||
+      !fullName ||
       !contactNumber ||
       !email ||
       !password ||
@@ -522,7 +522,7 @@ const mobileRegister = async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await UserService.registerUser(
-      fullname,
+      fullName,
       contactNumber,
       email,
       hashedPassword,

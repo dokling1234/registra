@@ -16,7 +16,6 @@ const formatTimeToAMPM = (time24) => {
 };
 const createEvent = async (req, res) => {
   try {
-
     const {
       title,
       date,
@@ -106,20 +105,29 @@ const getAllEvents = async (req, res) => {
 };
 // ========== GET EVENTS WITH FILTERS (Mobile) ==========
 const getEvents = async (req, res) => {
-  console.log("__________________________________________")
+  console.log("getevents");
   try {
-    const { type, location, month, longitude, latitude, maxDistance, userType, membership } = req.query;
+    const {
+      type,
+      location,
+      month,
+      longitude,
+      latitude,
+      maxDistance,
+      userType,
+      membership,
+    } = req.query;
     const match = {};
 
-    if (type) match.eventType = type;
-    if (location) match.location = location;
+    if (type && type !== "All") match.eventType = type;
+    if (location && location !== "All") match.location = location;
 
     // Role-based filtering
-    if (userType === "Student" || membership === "non-member") {
+    if (userType === "student" || membership === "non-member") {
       match.eventTarget = { $nin: ["Admin"] };
-    } else if (userType === "Professional") {
-      match.eventTarget = { $in: ["Professional", "Both"] };
-    } else if (userType === "Admin") {
+    } else if (userType === "professional") {
+      match.eventTarget = { $in: ["professional", "Both"] };
+    } else if (userType === "admin") {
       match.eventTarget = { $in: ["Admin", "Both"] };
     }
 
@@ -129,20 +137,20 @@ const getEvents = async (req, res) => {
       pipeline.push({
         $geoNear: {
           near: {
-            type: 'Point',
+            type: "Point",
             coordinates: [parseFloat(longitude), parseFloat(latitude)],
           },
-          distanceField: 'distance',
+          distanceField: "distance",
           spherical: true,
           maxDistance: maxDistance ? parseInt(maxDistance) : 10000,
         },
       });
     }
 
-    if (month && month !== 'All') {
+    if (month && month !== "All") {
       pipeline.push({
         $addFields: {
-          monthName: { $dateToString: { format: '%B', date: '$date' } }
+          monthName: { $dateToString: { format: "%B", date: "$date" } },
         },
       });
       match.monthName = month;
@@ -152,6 +160,7 @@ const getEvents = async (req, res) => {
 
     const events = await eventModel.aggregate(pipeline);
     res.status(200).json(events);
+    console.log(events);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -174,7 +183,15 @@ const getEventById = async (req, res) => {
 
 const registerForEvent = async (req, res) => {
   const { eventId } = req.params;
-  const { fullName, userType, email, paymentStatus, ticketQR, receipt, membership } = req.body;
+  const {
+    fullName,
+    userType,
+    email,
+    paymentStatus,
+    ticketQR,
+    receipt,
+    membership,
+  } = req.body;
   const { userId } = req.user;
 
   try {
@@ -197,7 +214,7 @@ const registerForEvent = async (req, res) => {
 
     // Calculate price based on membership
     let finalPrice = event.price;
-    if (membership && membership.toLowerCase() === 'non-member') {
+    if (membership && membership.toLowerCase() === "non-member") {
       finalPrice = Math.round(event.price * 1.05);
     }
 
@@ -210,7 +227,7 @@ const registerForEvent = async (req, res) => {
       ticketQR,
       attended: false,
       price: finalPrice,
-      membership: membership || 'Member',
+      membership: membership || "Member",
       receipt,
     });
     console.log("Registrations before save:", event.registrations);
@@ -469,22 +486,21 @@ const getEventByTitle = async (req, res) => {
     res.status(200).json({ success: true, events });
   } catch (err) {
     console.error("Error searching events:", err);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Internal Server Error",
-        error: err.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message,
+    });
   }
 };
 
 const mobileRegisterForEvent = async (req, res) => {
-  const { eventId, userId, email, paymentStatus, ticketQR, fullName, receipt } = req.body;
+  const { eventId, userId, email, paymentStatus, ticketQR, fullName, receipt } =
+    req.body;
 
   try {
     const event = await eventModel.findById(eventId);
-    if (!event) return res.status(404).json({ message: 'Event not found' });
+    if (!event) return res.status(404).json({ message: "Event not found" });
 
     const registrations = {
       fullName,
@@ -500,24 +516,24 @@ const mobileRegisterForEvent = async (req, res) => {
     event.registrations.push(registrations);
     await event.save();
 
-    res.status(200).json({ message: 'Registration successful!' });
+    res.status(200).json({ message: "Registration successful!" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
 const mobileGetRegisteredEvents = async (req, res) => {
   console.log("1");
   const { userId } = req.query;
-console.log("User ID:", userId);
+  console.log("User ID:", userId);
   try {
     if (!userId) {
-      return res.status(400).json({ message: 'User ID is required' });
+      return res.status(400).json({ message: "User ID is required" });
     }
 
     const events = await eventModel.find({
-      'registrations.userId': userId,
+      "registrations.userId": userId,
     });
 
     res.status(200).json(events);
@@ -531,15 +547,15 @@ const getTicketQR = async (req, res) => {
 
   try {
     if (!registrationsId) {
-      return res.status(400).json({ message: 'Registration ID is required' });
+      return res.status(400).json({ message: "Registration ID is required" });
     }
 
     const event = await eventModel.findOne({
-      'registrations._id': registrationsId,
+      "registrations._id": registrationsId,
     });
 
     if (!event) {
-      return res.status(404).json({ message: 'No event found for user.' });
+      return res.status(404).json({ message: "No event found for user." });
     }
 
     const registration = event.registrations.find(
@@ -547,7 +563,7 @@ const getTicketQR = async (req, res) => {
     );
 
     if (!registration) {
-      return res.status(404).json({ message: 'Registration not found.' });
+      return res.status(404).json({ message: "Registration not found." });
     }
 
     return res.status(200).json({ ticketQR: registration.ticketQR });
@@ -557,17 +573,17 @@ const getTicketQR = async (req, res) => {
 };
 
 const getRegisteredPastEvents = async (req, res) => {
-const userId = req.query.userId;
-console.log(userId)
+  const userId = req.query.userId;
+  console.log(userId);
   try {
     if (!userId) {
-      return res.status(400).json({ message: 'User ID is required' });
+      return res.status(400).json({ message: "User ID is required" });
     }
 
     const now = new Date();
 
     const events = await eventModel.find({
-      'registrations.userId': userId,
+      "registrations.userId": userId,
       date: { $lt: now },
     });
 
@@ -576,7 +592,6 @@ console.log(userId)
     res.status(500).json({ error: err.message });
   }
 };
-
 
 module.exports = {
   createEvent,
