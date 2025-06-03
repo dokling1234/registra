@@ -259,11 +259,11 @@ const mobileLogin = async (req, res, next) => {
         status: true,
         token,
         isVerified: true,
-        fullName: user.fullName,
+        fullname: user.fullname,
         email: user.email,
         userType: user.userType || "admin",
         message: "Admin login successful",
-      });
+      })
     }
 
     // Handle normal user login logic
@@ -273,7 +273,7 @@ const mobileLogin = async (req, res, next) => {
         status: true,
         token,
         isVerified: true,
-        fullName: user.fullName,
+        fullname: user.fullname,
         email: user.email,
         userType: user.userType,
         contactNumber: user.contactNumber,
