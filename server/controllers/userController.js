@@ -174,6 +174,8 @@ const sendOTPHandler = async (req, res, next) => {
 const verifyOTP = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
+        console.log(email, "", otp);
+
     if (!email || !otp) {
       return res
         .status(400)
@@ -181,6 +183,8 @@ const verifyOTP = async (req, res, next) => {
     }
 
     const storedOTP = otpStorage[email];
+    console.log(storedOTP);
+    console.log("storedOTP");
     if (!storedOTP) {
       return res
         .status(400)
@@ -188,12 +192,15 @@ const verifyOTP = async (req, res, next) => {
     }
 
     const { code, timestamp } = storedOTP;
+    console.log(storedOTP.code);
     if (Date.now() - timestamp > MAX_OTP_AGE) {
+      console.log("otp exipred");
       delete otpStorage[email];
       return res.status(400).json({ status: false, message: "OTP expired" });
     }
 
-    if (code !== otp) {
+    if (storedOTP !== otp) {
+      console.log(code, otp);
       return res.status(400).json({ status: false, message: "Invalid OTP" });
     }
 
@@ -465,13 +472,12 @@ const mobileRegister = async (req, res, next) => {
   console.log("ssssssssssssssssssssssssssss");
   try {
     const {
-      fullName,
+      fullname,
       contactNumber,
       email,
       password,
       confirmPassword,
       icpepId,
-      age,
       userType,
       membership,
       aboutMe = "",
@@ -479,16 +485,14 @@ const mobileRegister = async (req, res, next) => {
     } = req.body;
     console.log("mobileRegister", req.body);
     if (
-      !fullName ||
+      !fullname ||
       !contactNumber ||
       !email ||
       !password ||
       !confirmPassword ||
-      !age ||
       !userType ||
       !membership
     ) {
-      console.log("_____________________all fields");
       return res
         .status(400)
         .json({ status: false, message: "All fields are required" });
@@ -504,14 +508,8 @@ const mobileRegister = async (req, res, next) => {
         .status(400)
         .json({ status: false, message: "Passwords do not match" });
     }
-    if (isNaN(age) || age < 10 || age > 99) {
-      return res.status(400).json({
-        status: false,
-        message: "Age must be a number between 10 and 99",
-      });
-    }
+
     if (!["student", "professional"].includes(userType)) {
-      console.log("_____________________userType");
       return res
         .status(400)
         .json({ status: false, message: "Invalid user type" });
@@ -524,13 +522,12 @@ const mobileRegister = async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await UserService.registerUser(
-      fullName,
+      fullname,
       contactNumber,
       email,
       hashedPassword,
       hashedPassword,
       icpepId,
-      age,
       userType,
       membership,
       aboutMe,

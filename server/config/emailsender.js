@@ -1,31 +1,37 @@
 const nodemailer = require("nodemailer");
 
-let otpStorage = {}; // Store OTPs for email verification
-let otpTimestamps = {}; // Store timestamps for OTP requests
+let otpStorage = {};
+let otpTimestamps = {};
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
+  host: "smtp.gmail.com",
   port: 465,
   auth: {
-    user: 'pernida12345@gmail.com', // Replace with your email
-    pass: 'ivhgdymrsuzzkqrh', // Replace with your app password
+    user: "pernida12345@gmail.com", 
+    pass: "ivhgdymrsuzzkqrh", 
+  },
+  tls: {
+    rejectUnauthorized: false,
   },
 });
 
 // Function to generate a random 4-digit OTP
- function generateOTP() {
+function generateOTP() {
   return Math.floor(1000 + Math.random() * 9000).toString();
+
 }
 
- async function sendOTP(email, otp) {
+async function sendOTP(email, otp) {
+  console.log(email+"emailsender"+otp);
   if (!canResendOTP(email)) {
-    throw new Error('You can only request a new OTP every 5 minutes.');
+    console.log(email);
+    throw new Error("You can only request a new OTP every 5 minutes.");
   }
-otpStorage[email] = otp; 
+  otpStorage[email] = otp;
   const mailOptions = {
-    from: 'pernida12345@gmail.com',
+    from: "pernida12345@gmail.com",
     to: email,
-    subject: 'Password Reset OTP',
+    subject: "Password Reset OTP",
     text: `Your OTP for password reset is: ${otp}`,
   };
 
@@ -33,14 +39,15 @@ otpStorage[email] = otp;
     await transporter.sendMail(mailOptions);
     console.log(`OTP sent to ${email}`);
   } catch (error) {
-    console.error('Error sending email:', error);
-    throw new Error('Failed to send OTP');
+    console.error("Error sending email:", error.message, error.stack);
+    throw new Error("Failed to send OTP");
   }
 }
 
 function canResendOTP(email) {
   const now = Date.now();
-  if (!otpTimestamps[email] || now - otpTimestamps[email] > 40 * 1000) { // 40 seconds
+  if (!otpTimestamps[email] || now - otpTimestamps[email] > 40 * 1000) {
+    // 40 seconds
     otpTimestamps[email] = now;
     return true;
   }
