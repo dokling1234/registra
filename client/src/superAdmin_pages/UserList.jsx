@@ -16,12 +16,12 @@ const UserList = () => {
   const [editedUser, setEditedUser] = useState({});
   const [totalUsers, setTotalUsers] = useState(0);
   const [showSuperadminModal, setShowSuperadminModal] = useState(false);
-  const [newFullName, setNewFullName] = useState("");
+  const [newfullName, setNewfullName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [createLoading, setCreateLoading] = useState(false);
   const [createMessage, setCreateMessage] = useState("");
   const [showAdminModal, setShowAdminModal] = useState(false);
-  const [adminFullName, setAdminFullName] = useState("");
+  const [adminfullName, setAdminfullName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   const [adminCreateLoading, setAdminCreateLoading] = useState(false);
   const [adminCreateMessage, setAdminCreateMessage] = useState("");
@@ -116,12 +116,12 @@ const UserList = () => {
                     try {
                       const response = await axios.post(
                         `${import.meta.env.VITE_BACKEND_URL}/api/admin/create`,
-                        { fullName: adminFullName, email: adminEmail },
+                        { fullName: adminfullName, email: adminEmail },
                         { withCredentials: true }
                       );
                       if (response.data.success) {
                         setAdminCreateMessage("Admin created successfully!");
-                        setAdminFullName("");
+                        setAdminfullName("");
                         setAdminEmail("");
                         setUsers((prev) => [...prev, response.data.user]);
                       } else {
@@ -144,8 +144,8 @@ const UserList = () => {
                   <input
                     type="text"
                     placeholder="Full Name"
-                    value={adminFullName}
-                    onChange={(e) => setAdminFullName(e.target.value)}
+                    value={adminfullName}
+                    onChange={(e) => setAdminfullName(e.target.value)}
                     required
                     className="w-full border px-3 py-2 rounded"
                   />
@@ -204,12 +204,12 @@ const UserList = () => {
                         `${
                           import.meta.env.VITE_BACKEND_URL
                         }/api/superadmin/create`,
-                        { fullName: newFullName, email: newEmail },
+                        { fullName: newfullName, email: newEmail },
                         { withCredentials: true }
                       );
                       if (response.data.success) {
                         setCreateMessage("Super Admin created successfully!");
-                        setNewFullName("");
+                        setNewfullName("");
                         setNewEmail("");
                         setUsers((prev) => [...prev, response.data.user]);
                       } else {
@@ -230,8 +230,8 @@ const UserList = () => {
                   <input
                     type="text"
                     placeholder="Full Name"
-                    value={newFullName}
-                    onChange={(e) => setNewFullName(e.target.value)}
+                    value={newfullName}
+                    onChange={(e) => setNewfullName(e.target.value)}
                     required
                     className="w-full border px-3 py-2 rounded"
                   />

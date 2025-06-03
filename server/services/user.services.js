@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 
 class UserService {
   static async registerUser(
-    fullname,
+    fullName,
     contactNumber,
     email,
     hashedPassword,
@@ -17,7 +17,7 @@ class UserService {
   ) {
     try {
       const createUser = new userModel({
-        fullname,
+        fullName,
         contactNumber,
         email,
         password: hashedPassword,
