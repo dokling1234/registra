@@ -214,27 +214,59 @@ const verifyOTP = async (req, res, next) => {
 
 const mobileLogin = async (req, res, next) => {
   try {
-    console.log("mobileLogin request body"); // Debugging
     const { email, password } = req.body;
+
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ status: false, message: "Email and password are required" });
+      return res.status(400).json({
+        status: false,
+        message: "Email and password are required",
+      });
     }
-    const user = await UserService.checkuser(email);
+
+    // Try user first
+    let user = await UserService.checkuser(email);
+    let userType = "user";
+
     if (!user) {
-      return res
-        .status(404)
-        .json({ status: false, message: "User does not exist" });
+      // If not found, try admin
+      user = await adminModel.findOne({ email });
+      if (!user) {
+        return res.status(404).json({
+          status: false,
+          message: "Account does not exist",
+        });
+      }
+      userType = "admin";
     }
+
+    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res
-        .status(401)
-        .json({ status: false, message: "Incorrect password" });
+      return res.status(401).json({
+        status: false,
+        message: "Incorrect password",
+      });
     }
-    let tokenData = { _id: user._id, email: user.email };
+
+    // Create token
+    const tokenData = { _id: user._id, email: user.email };
     const token = await UserService.generateToken(tokenData, "secretKey", "1h");
+
+    // Handle admin login logic
+    if (userType === "admin") {
+      return res.status(200).json({
+        _id: user._id,
+        status: true,
+        token,
+        isVerified: true,
+        fullName: user.fullName,
+        email: user.email,
+        userType: user.userType || "admin",
+        message: "Admin login successful",
+      });
+    }
+
+    // Handle normal user login logic
     if (user.isVerified) {
       return res.status(200).json({
         _id: user._id,
@@ -274,9 +306,10 @@ const mobileLogin = async (req, res, next) => {
     }
   } catch (error) {
     console.error("Login Error:", error);
-    res
-      .status(500)
-      .json({ status: false, message: "An error occurred during login" });
+    return res.status(500).json({
+      status: false,
+      message: "An error occurred during login",
+    });
   }
 };
 

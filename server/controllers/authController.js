@@ -363,6 +363,73 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const mobileAdminLogin = async (req, res) => {
+  console.log("mobileAdminLogin")
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.json({ success: false, message: "Please fill all fields" });
+  }
+
+  try {
+    // Step 1: Try normal user login
+    let account = await userModel.findOne({ email });
+    let modelType = "user";
+
+    // Step 2: If not found in userModel, try adminModel
+    if (!account) {
+      account = await adminModel.findOne({ email });
+      modelType = "admin";
+    }
+
+    // Step 3: If not found in either, return error
+    if (!account) {
+      return res.json({ success: false, message: "Account not found" });
+    }
+
+    // Step 4: Compare password
+    const isMatch = await bcrypt.compare(password, account.password);
+    if (!isMatch) {
+      return res.json({ success: false, message: "Invalid password" });
+    }
+
+    // Step 5: JWT Token
+    const token = jwt.sign(
+      {
+        id: account._id,
+        userType: account.userType || modelType,
+        fullName: account.fullname,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+
+    // Step 6: Set cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // Step 7: Return success response
+    return res.json({
+      success: true,
+      message: `${modelType} login successful`,
+      user: {
+        id: account._id,
+        fullName: account.fullname,
+        email: account.email,
+        userType: account.userType ,
+      },
+      token,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    return res.json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -373,4 +440,5 @@ module.exports = {
   sendResetOtp,
   resetPassword,
   adminLogin,
+  mobileAdminLogin,
 };
