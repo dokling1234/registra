@@ -22,6 +22,6 @@ mobileUserRouter.post('/resendOTP', resendOTP);
 mobileUserRouter.post('/resetverifyOTP', resetverifyOTP);
 mobileUserRouter.post('/updateProfile', updateProfile);
 mobileUserRouter.post('/resetPassword', mobileResetPassword);
-mobileUserRouter.post('/check_email', checkEmail);
+mobileUserRouter.post('/check-email', checkEmail);
 
 module.exports = {userRouter, mobileUserRouter};
