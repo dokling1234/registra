@@ -6,37 +6,24 @@ const certificateTemplateSchema = new mongoose.Schema({
     ref: 'Event',
     required: true
   },
-  templateUrl: {
-    type: String,
-    required: true
-  },
-  organizers: [{
-    name: {
-      type: String,
-      required: true
-    },
-    label: {
-      type: String,
-      required: true
-    },
-    signature: {
-      type: String
+  templateUrls: [
+    {
+      name: { type: String, required: true },  // <-- required
+      url: { type: String, required: true }    // <-- required
     }
+  ],
+  organizers: [{
+    name: { type: String  },
+    label: { type: String },
+    signature: { type: String }
   }],
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 });
 
-// Update the updatedAt timestamp before saving
 certificateTemplateSchema.pre('save', function(next) {
   this.updatedAt = new Date();
   next();
 });
 
-module.exports = mongoose.model('CertificateTemplate', certificateTemplateSchema); 
+module.exports = mongoose.model('CertificateTemplate', certificateTemplateSchema);

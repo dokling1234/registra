@@ -1,8 +1,9 @@
-const Certificate = require('../models/certificateModel.js');
-const Event = require('../models/eventModel.js');
-const CertificateTemplate = require('../models/certificateTemplateModel.js');
+const Certificate = require("../models/certificateModel.js");
+const Event = require("../models/eventModel.js");
+const CertificateTemplate = require("../models/certificateTemplateModel.js");
 
 const saveCertificate = async (req, res) => {
+  console.log("savecert");
   try {
     const { eventId, certificateUrl } = req.body;
     const userId = req.user.userId; // From auth middleware
@@ -14,10 +15,10 @@ const saveCertificate = async (req, res) => {
       existingCertificate.certificateUrl = certificateUrl;
       existingCertificate.issuedAt = new Date();
       await existingCertificate.save();
-      return res.json({ 
-        success: true, 
-        message: 'Certificate updated successfully',
-        certificate: existingCertificate 
+      return res.json({
+        success: true,
+        message: "Certificate updated successfully",
+        certificate: existingCertificate,
       });
     }
 
@@ -25,120 +26,135 @@ const saveCertificate = async (req, res) => {
     const newCertificate = new Certificate({
       eventId,
       userId,
-      certificateUrl
+      certificateUrl,
     });
 
     await newCertificate.save();
-    res.status(201).json({ 
-      success: true, 
-      message: 'Certificate saved successfully',
-      certificate: newCertificate 
+    res.status(201).json({
+      success: true,
+      message: "Certificate saved successfully",
+      certificate: newCertificate,
     });
   } catch (err) {
-    console.error('Error saving certificate:', err);
-    res.status(500).json({ 
-      success: false, 
-      error: err.message 
+    console.error("Error saving certificate:", err);
+    res.status(500).json({
+      success: false,
+      error: err.message,
     });
   }
 };
 
 const getCertificate = async (req, res) => {
+  console.log("getcertificate");
   try {
     const { eventId } = req.params;
     const userId = req.user.userId; // From auth middleware
-console.log("getCertificate", eventId, userId)
+    console.log("getCertificate", eventId, userId);
     const certificate = await Certificate.findOne({ eventId, userId });
     if (!certificate) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Certificate not found' 
+      return res.status(404).json({
+        success: false,
+        message: "Certificate not found",
       });
     }
 
-    res.json({ 
-      success: true, 
-      certificate 
+    res.json({
+      success: true,
+      certificate,
     });
-    console.log("Certificate fetched successfully")
+    console.log("Certificate fetched successfully");
   } catch (err) {
-    console.log("Error fetching certificate:")
+    console.log("Error fetching certificate:");
 
-    console.error('Error fetching certificate:', err);
-    res.status(500).json({ 
-      success: false, 
-      error: err.message 
+    console.error("Error fetching certificate:", err);
+    res.status(500).json({
+      success: false,
+      error: err.message,
     });
   }
 };
 
 const saveTemplate = async (req, res) => {
+  console.log("savetemplate_____");
   try {
-    console.log("saveTemplate", req.body)
-    const { eventId, templateUrl, organizers } = req.body;
-console.log("saveTemplate", req.body)
-    // Check if event exists
+    const { eventId, templateUrl, organizers, templateName } = req.body;
+
+    if (!eventId || !templateUrl || !templateName) {
+      return res.status(400).json({
+        success: false,
+        message: "eventId, templateUrl, and templateName are required.",
+      });
+    }
+
     const event = await Event.findById(eventId);
     if (!event) {
       return res.status(404).json({
         success: false,
-        message: 'Event not found'
+        message: "Event not found",
       });
     }
 
-    // Find existing template or create new one
     let template = await CertificateTemplate.findOne({ eventId });
+
     if (template) {
-      // Update existing template
-      template.templateUrl = templateUrl;
+      // Remove any existing entry with the same name
+      template.templateUrls = template.templateUrls.filter(t => t.name !== templateName);
+      // Add the new {name, url} pair
+      template.templateUrls.push({ name: templateName, url: templateUrl });
       template.organizers = organizers;
     } else {
-      // Create new template
       template = new CertificateTemplate({
         eventId,
-        templateUrl,
-        organizers
+        templateUrls: [{ name: templateName, url: templateUrl }],
+        organizers,
       });
     }
 
     await template.save();
-
     res.json({
       success: true,
-      message: 'Certificate template saved successfully',
-      template
+      message: "Certificate template saved successfully",
+      template,
     });
   } catch (err) {
-    console.error('Error saving certificate template:', err);
+    console.log(err);
     res.status(500).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
   }
 };
 
 const getTemplate = async (req, res) => {
   try {
-console.log("gettemplate+++++++")
-    const { eventId } = req.params;
-    
+    const { eventId, templateName } = req.params;
     const template = await CertificateTemplate.findOne({ eventId });
     if (!template) {
       return res.status(404).json({
         success: false,
-        message: 'Certificate template not found'
+        message: "Certificate template not found",
       });
     }
-    console.log("Certificate template fetched successfully")
+    // Find the correct templateUrl by name
+    const templateObj = template.templateUrls.find(t => t.name === templateName);
+    if (!templateObj) {
+      return res.status(404).json({
+        success: false,
+        message: "Template with that name not found",
+      });
+    }
     res.json({
       success: true,
-      template
+      template: {
+        ...template.toObject(),
+        templateUrl: templateObj.url,
+        templateName: templateObj.name,
+      },
     });
   } catch (err) {
-    console.error('Error fetching certificate template:', err);
     res.status(500).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
   }
 };
@@ -147,5 +163,5 @@ module.exports = {
   saveCertificate,
   getCertificate,
   saveTemplate,
-  getTemplate
+  getTemplate,
 };

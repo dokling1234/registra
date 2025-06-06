@@ -38,7 +38,6 @@ app.use(cors({
 }));
 
 // Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API ENDPOINTS
 // app.get("/", (req, res) => {
