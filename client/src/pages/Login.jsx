@@ -140,25 +140,27 @@ const Login = () => {
                   required
                 />
               </div>
-
-              {/* Animated ICPEP Field */}
-              <div
-                className={`transition-all duration-300 ease-in-outbg-transparent ${
-                  membership === "member"
-                    ? "opacity-100 max-h-40 mb-4"
-                    : "opacity-0 max-h-0 mb-0 overflow-hidden"
-                }`}
-              >
-                <div className="flex items-center gap-3 w-full px-5 py-2.5 rounded-full bg-[#333A5C]">
-                  <img src={assets.id_icon} width="16" height="18" alt="" />
-                  <input
-                    onChange={(e) => setIcpepId(e.target.value)}
-                    value={icpepId}
-                    className="bg-transparent outline-none focus:outline-none border-transparent w-full text-white"
-                    placeholder="ICPEP ID"
-                    required={membership === "member"}
-                  />
-                </div>
+              <div className="mb-4 w-full px-5 py-2.5 rounded-full bg-[#333A5C] w-full text-white">
+                <select
+                  value={userType}
+                  onChange={(e) => setuserType(e.target.value)}
+                  className="bg-transparent outline-none w-full"
+                  s
+                  required
+                >
+                  <option
+                    style={{ backgroundColor: "#333A5C", color: "white" }}
+                    value="student"
+                  >
+                    Student
+                  </option>
+                  <option
+                    style={{ backgroundColor: "#333A5C", color: "white" }}
+                    value="professional"
+                  >
+                    Professional
+                  </option>
+                </select>
               </div>
 
               <div className="mb-4 w-full px-5 py-2.5 rounded-full bg-[#333A5C] w-full text-white">
@@ -182,28 +184,24 @@ const Login = () => {
                   </option>
                 </select>
               </div>
-
-              <div className="mb-4 w-full px-5 py-2.5 rounded-full bg-[#333A5C] w-full text-white">
-                <select
-                  value={userType}
-                  onChange={(e) => setuserType(e.target.value)}
-                  className="bg-transparent outline-none w-full"
-                  s
-                  required
-                >
-                  <option
-                    style={{ backgroundColor: "#333A5C", color: "white" }}
-                    value="student"
-                  >
-                    Student
-                  </option>
-                  <option
-                    style={{ backgroundColor: "#333A5C", color: "white" }}
-                    value="professional"
-                  >
-                    Professional
-                  </option>
-                </select>
+              {/* Animated ICPEP Field */}
+              <div
+                className={`transition-all duration-300 ease-in-outbg-transparent ${
+                  membership === "member"
+                    ? "opacity-100 max-h-40 mb-4"
+                    : "opacity-0 max-h-0 mb-0 overflow-hidden"
+                }`}
+              >
+                <div className="flex items-center gap-3 w-full px-5 py-2.5 rounded-full bg-[#333A5C]">
+                  <img src={assets.id_icon} width="16" height="18" alt="" />
+                  <input
+                    onChange={(e) => setIcpepId(e.target.value)}
+                    value={icpepId}
+                    className="bg-transparent outline-none focus:outline-none border-transparent w-full text-white"
+                    placeholder="ICPEP ID"
+                    required={membership === "member"}
+                  />
+                </div>
               </div>
             </>
           )}
