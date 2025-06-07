@@ -16,7 +16,6 @@ const Login = () => {
   const [contactNumber, setContactNumber] = useState("");
   const [icpepId, setIcpepId] = useState("");
   const [userType, setuserType] = useState("student");
-  const [age, setAge] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [membership, setMembership] = useState("member");
@@ -44,14 +43,30 @@ const Login = () => {
 
     try {
       if (state === "Sign Up") {
+        // Clean and format contact number
+        let formattedContact = contactNumber.trim().replace(/[\s-()]/g, "");
+
+        // Convert 0929... → +63929...
+        if (formattedContact.startsWith("0")) {
+          formattedContact = "+63" + formattedContact.slice(1);
+        } else if (!formattedContact.startsWith("+63")) {
+          formattedContact = "+63" + formattedContact;
+        }
+        const formattedStringContact = formattedContact.toString();
+        // Validate Philippine mobile number
+        if (!/^\+639\d{9}$/.test(formattedContact)) {
+          toast.error(
+            "Invalid mobile number. Please enter a valid PH number (e.g., 09291234567)"
+          );
+          return;
+        }
         const { data } = await axios.post(`${backendUrl}/api/auth/register`, {
           fullName,
           email,
           password,
-          contactNumber: Number(contactNumber),
+          contactNumber: formattedStringContact, 
           icpepId,
           userType,
-          age: Number(age),
         });
 
         if (data.success) {
@@ -117,29 +132,25 @@ const Login = () => {
               </div>
 
               <div className="mb-4 flex items-center gap-3 w-full px-5 py-2.5 rounded-full bg-[#333A5C]">
-                <img src={assets.person_icon} alt="" />
-                <input
-                  onChange={(e) => setAge(e.target.value)}
-                  value={age}
-                  className="bg-transparent outline-none w-full text-white"
-                  type="tel"
-                  placeholder="Age"
-                  required
-                  min="0"
-                />
-              </div>
-
-              <div className="mb-4 flex items-center gap-3 w-full px-5 py-2.5 rounded-full bg-[#333A5C]">
                 <img src={assets.phone_icon} width="16" height="18" alt="" />
                 <input
-                  onChange={(e) => setContactNumber(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, ""); // remove non-digits
+                    if (value.length <= 11) {
+                      // Force first digit to be 0
+                      if (value === "" || value.startsWith("0")) {
+                        setContactNumber(value);
+                      }
+                    }
+                  }}
                   value={contactNumber}
                   className="bg-transparent outline-none w-full text-white"
                   type="tel"
-                  placeholder="Contact Number"
+                  placeholder="Contact Number (e.g. 09XXXXXXXXX)"
                   required
                 />
               </div>
+              
               <div className="mb-4 w-full px-5 py-2.5 rounded-full bg-[#333A5C] w-full text-white">
                 <select
                   value={userType}

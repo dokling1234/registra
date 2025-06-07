@@ -21,7 +21,7 @@ const Feedback = () => {
 
         <main className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">Dashboard</h1> {/* Dashboard title */}
+            <h1 className="text-3xl font-bold">Feedback</h1> {/* Dashboard title */}
 
             {userData ? (
                <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-lg shadow-sm">
