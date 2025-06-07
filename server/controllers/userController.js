@@ -431,6 +431,7 @@ const mobileResetPassword = async (req, res, next) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    // Check if the new password is the same as the old one
     const isSamePassword = await bcrypt.compare(password, user.password);
     if (isSamePassword) {
       return res
@@ -438,7 +439,11 @@ const mobileResetPassword = async (req, res, next) => {
         .json({ error: "New password cannot be the same as the old password" });
     }
 
-    user.password = password;
+    // Hash the new password before saving
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Update the user's password with the hashed password
+    user.password = hashedPassword;
     await user.save();
 
     res
@@ -447,7 +452,7 @@ const mobileResetPassword = async (req, res, next) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-};
+}; 
 
 const checkEmail = async (req, res) => {
   try {

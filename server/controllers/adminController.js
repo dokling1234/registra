@@ -254,7 +254,8 @@ const registerForEvent = async (req, res) => {
 
 const QRchecker = async (req, res) => {
   const { userId } = req.body;
-
+  console.log("QRchecker========================================");
+  console.log(userId);
   try {
     const objectId = new mongoose.Types.ObjectId(userId);
 
