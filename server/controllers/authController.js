@@ -208,6 +208,7 @@ const logout = async (req, res) => {
 };
 // Send Verification OTP to the User Email
 const sendVerifyOtp = async (req, res) => {
+  console.log("asdsda");
   try {
     const { userId } = req.user;
 
@@ -233,7 +234,11 @@ const sendVerifyOtp = async (req, res) => {
         user.email
       ),
     };
+    console.log("mailoptions");
     await transporter.sendMail(mailOptions);
+    console.log(user.email);
+    console.log(otp);
+    console.log("otp sent");
     return res.json({ success: true, message: "OTP sent successfully" });
   } catch (error) {
     return res.json({ success: false, message: error.message });
