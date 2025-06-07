@@ -77,12 +77,12 @@ const getCertificate = async (req, res) => {
 const saveTemplate = async (req, res) => {
   console.log("savetemplate_____");
   try {
-    const { eventId, templateUrl, organizers, templateName } = req.body;
+    const { eventId, organizers, templateId } = req.body;
 
-    if (!eventId || !templateUrl || !templateName) {
+    if (!eventId || !organizers) {
       return res.status(400).json({
         success: false,
-        message: "eventId, templateUrl, and templateName are required.",
+        message: "eventId and organizers are required.",
       });
     }
 
@@ -94,23 +94,18 @@ const saveTemplate = async (req, res) => {
       });
     }
 
-    let template = await CertificateTemplate.findOne({ eventId });
+    // Upsert: update if exists, insert if not
+    const template = await CertificateTemplate.findOneAndUpdate(
+      { eventId },
+      {
+        $set: {
+          organizers: organizers,
+          templateId: templateId,
+        }
+      },
+      { new: true, upsert: true }
+    );
 
-    if (template) {
-      // Remove any existing entry with the same name
-      template.templateUrls = template.templateUrls.filter(t => t.name !== templateName);
-      // Add the new {name, url} pair
-      template.templateUrls.push({ name: templateName, url: templateUrl });
-      template.organizers = organizers;
-    } else {
-      template = new CertificateTemplate({
-        eventId,
-        templateUrls: [{ name: templateName, url: templateUrl }],
-        organizers,
-      });
-    }
-
-    await template.save();
     res.json({
       success: true,
       message: "Certificate template saved successfully",
@@ -126,8 +121,9 @@ const saveTemplate = async (req, res) => {
 };
 
 const getTemplate = async (req, res) => {
+  console.log("gettemplate");
   try {
-    const { eventId, templateName } = req.params;
+    const { eventId } = req.params;
     const template = await CertificateTemplate.findOne({ eventId });
     if (!template) {
       return res.status(404).json({
@@ -135,20 +131,12 @@ const getTemplate = async (req, res) => {
         message: "Certificate template not found",
       });
     }
-    // Find the correct templateUrl by name
-    const templateObj = template.templateUrls.find(t => t.name === templateName);
-    if (!templateObj) {
-      return res.status(404).json({
-        success: false,
-        message: "Template with that name not found",
-      });
-    }
     res.json({
       success: true,
       template: {
-        ...template.toObject(),
-        templateUrl: templateObj.url,
-        templateName: templateObj.name,
+        organizers: template.organizers,
+        templateId: template.templateId,
+        eventId: template.eventId,
       },
     });
   } catch (err) {
@@ -159,9 +147,21 @@ const getTemplate = async (req, res) => {
   }
 };
 
+const deleteCertificate = async (req, res) => {
+  const { publicId } = req.body;
+  console.log("delete");
+  try {
+    await cloudinary.uploader.destroy(`certificate/${publicId}`, { resource_type: "raw" });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 module.exports = {
   saveCertificate,
   getCertificate,
   saveTemplate,
   getTemplate,
+  deleteCertificate
 };

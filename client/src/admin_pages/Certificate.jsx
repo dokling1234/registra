@@ -4,9 +4,7 @@ import Sidebar from "../admin_components/Sidebar";
 import { useNavigate } from "react-router-dom";
 import { AppContent } from "../context/AppContext";
 import axios from "axios";
-import html2pdf from "html2pdf.js";
 import { certificateTemplates } from "../admin_components/CertificateTemplates";
-import ReactDOM from "react-dom/client";
 
 const Certificate = () => {
   const navigate = useNavigate();
@@ -44,23 +42,20 @@ const Certificate = () => {
     }
   }, [selectedEventId, allEvents]);
 
-  // useEffect(() => {
-  //   if (selectedEvent) {
-  //     setOrganizers(
-  //       selectedEvent.organizers && selectedEvent.organizers.length > 0
-  //         ? selectedEvent.organizers.map((o) => ({ ...o }))
-  //         : [{ name: "Organizer Name", label: "Organizer", signature: null }]
-  //     );
-  //   }
-  // }, [selectedEvent]);
+  useEffect(() => {
+    if (selectedEvent) {
+      setOrganizers(
+        selectedEvent.organizers && selectedEvent.organizers.length > 0
+          ? selectedEvent.organizers.map((o) => ({ ...o }))
+          : [{ name: "Organizer Name", label: "Organizer", signature: null }]
+      );
+    }
+  }, [selectedEvent]);
 
   useEffect(() => {
     const fetchTemplate = async () => {
       if (!selectedEventId) {
         setTemplate(null);
-        setOrganizers([
-          { name: "Organizer Name", label: "Organizer", signature: null },
-        ]);
         return;
       }
       try {
@@ -70,21 +65,10 @@ const Certificate = () => {
         if (res.data.success && res.data.template) {
           setTemplate(res.data.template);
           setOrganizers(
-            res.data.template.organizers &&
-              res.data.template.organizers.length > 0
-              ? res.data.template.organizers.map((o) => ({ ...o }))
-              : [
-                  {
-                    name: "Organizer Name",
-                    label: "Organizer",
-                    signature: null,
-                  },
-                ]
+            res.data.template.organizers || [
+              { name: "Organizer Name", label: "Organizer", signature: null },
+            ]
           );
-        } else {
-          setOrganizers([
-            { name: "Organizer Name", label: "Organizer", signature: null },
-          ]);
         }
       } catch (err) {
         setOrganizers([
@@ -109,11 +93,18 @@ const Certificate = () => {
 
   const handleOrganizerSignature = async (idx, file) => {
     if (file) {
-      const previewUrl = URL.createObjectURL(file);
+      const toBase64 = (file) =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      const base64 = await toBase64(file);
       setOrganizers((orgs) =>
         orgs.map((org, i) =>
           i === idx
-            ? { ...org, signature: previewUrl, signatureFile: file }
+            ? { ...org, signature: base64, signatureFile: file }
             : org
         )
       );
@@ -138,7 +129,6 @@ const Certificate = () => {
       const updatedOrganizers = await Promise.all(
         organizers.map(async (org) => {
           if (org.signatureFile) {
-            // Convert file to base64
             const toBase64 = (file) =>
               new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -157,77 +147,19 @@ const Certificate = () => {
         })
       );
 
-      // Save template info to backend
-      const tempContainer = document.createElement("div");
-      tempContainer.style.position = "absolute";
-      tempContainer.style.left = "-9999px";
-      document.body.appendChild(tempContainer);
-
-      const SelectedTemplate = template
-        ? certificateTemplates.find((t) => t.id === template.templateId)
-            ?.component
-        : certificateTemplates[0].component;
-
-      const root = ReactDOM.createRoot(tempContainer);
-      root.render(
-        <SelectedTemplate
-          event={selectedEvent}
-          organizers={updatedOrganizers}
-          editing={false}
-        />
-      );
-
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      const opt = {
-        margin: 0,
-        filename: `${selectedEvent.title}-certificate.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: "in", format: "letter", orientation: "landscape" },
-      };
-
-      const pdfBlob = await html2pdf()
-        .set(opt)
-        .from(tempContainer.querySelector(".certificate-template"))
-        .outputPdf("blob");
-
-      root.unmount();
-      document.body.removeChild(tempContainer);
-
-      // 2. Upload PDF to Cloudinary
-      const formData = new FormData();
-      formData.append(
-        "file",
-        new File([pdfBlob], `${selectedEvent.title}-certificate.pdf`, {
-          type: "application/pdf",
-        })
-      );
-      formData.append("upload_preset", "certificate_preset");
-      formData.append("folder", "certificate");
-
-      const uploadRes = await axios.post(
-        `https://api.cloudinary.com/v1_1/${
-          import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
-        }/auto/upload`,
-        formData,
-        {
-          withCredentials: false,
-        }
-      );
-
-      const pdfUrl = uploadRes.data.secure_url;
-
-      // 3. Save template info to backend
+      // Save organizers to backend (no PDF, no Cloudinary)
       await axios.post(
         `${backendUrl}/api/certificate/save-template`,
         {
           eventId: selectedEvent._id,
-          templateUrl: pdfUrl,
           organizers: updatedOrganizers,
-          templateName: template?.templateId || certificateTemplates[0].id, // <-- use templateName
+          templateId: template?.templateId || certificateTemplates[0].id,
         },
-        { headers: { "Content-Type": "application/json" } }
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       setOrganizers(updatedOrganizers);
@@ -280,10 +212,7 @@ const Certificate = () => {
             <select
               className="border px-3 py-2 rounded min-w-[220px]"
               value={selectedEventId}
-              onChange={(e) => {
-                setSelectedEventId(e.target.value);
-                setTemplate(null); // <-- Reset template immediately
-              }}
+              onChange={(e) => setSelectedEventId(e.target.value)}
             >
               <option value="">-- Select an Event --</option>
               {allEvents.map((ev) => (
@@ -292,15 +221,12 @@ const Certificate = () => {
                 </option>
               ))}
             </select>
-            {/* Only show Edit button if an event is selected */}
-            {selectedEvent && (
-              <button
-                className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
-                onClick={() => setEditing((e) => !e)}
-              >
-                {editing ? "Done Editing" : "Edit Certificate Details"}
-              </button>
-            )}
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
+              onClick={() => setEditing((e) => !e)}
+            >
+              {editing ? "Done Editing" : "Edit Certificate Details"}
+            </button>
           </div>
 
           {/* Template selection dropdown */}
@@ -344,30 +270,16 @@ const Certificate = () => {
                   overflow: "hidden",
                 }}
               >
-                {/* Show PDF preview if not editing and templateUrl exists */}
-                {!editing && template?.templateUrl ? (
-                  <img
-                    src={template.templateUrl.replace(/\.pdf$/, ".png")}
-                    title="Certificate PDF"
-                    style={{
-                      width: "100%",
-                      height: "700px",
-                      border: "none",
-                      minWidth: 700,
-                      minHeight: 500,
-                    }}
-                  />
-                ) : (
-                  <SelectedTemplate
-                    event={selectedEvent}
-                    organizers={organizers}
-                    editing={editing}
-                    handleOrganizerChange={handleOrganizerChange}
-                    handleOrganizerSignature={handleOrganizerSignature}
-                    addOrganizer={addOrganizer}
-                    removeOrganizer={removeOrganizer}
-                  />
-                )}
+                {/* Render the selected template */}
+                <SelectedTemplate
+                  event={selectedEvent}
+                  organizers={organizers}
+                  editing={editing}
+                  handleOrganizerChange={handleOrganizerChange}
+                  handleOrganizerSignature={handleOrganizerSignature}
+                  addOrganizer={addOrganizer}
+                  removeOrganizer={removeOrganizer}
+                />
               </div>
             </div>
           )}
