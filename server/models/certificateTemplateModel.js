@@ -6,14 +6,9 @@ const certificateTemplateSchema = new mongoose.Schema({
     ref: 'Event',
     required: true
   },
-  templateUrls: [
-    {
-      name: { type: String, required: true },  // <-- required
-      url: { type: String, required: true }    // <-- required
-    }
-  ],
+  templateId: { type: String }, // Add this if you want to track template style
   organizers: [{
-    name: { type: String  },
+    name: { type: String },
     label: { type: String },
     signature: { type: String }
   }],

@@ -1,5 +1,5 @@
 const express = require('express');
-const { saveCertificate, getCertificate, saveTemplate, getTemplate } = require('../controllers/certificateController.js');
+const { saveCertificate, getCertificate, saveTemplate, getTemplate, deleteCertificate } = require('../controllers/certificateController.js');
 const { uploadFile, uploadCertificateTemplate } = require('../controllers/uploadController.js');
 const userAuth = require('../middleware/userAuth.js');
 const multer = require('multer');
@@ -20,5 +20,7 @@ certificateRoutes.post('/save-template', userAuth, saveTemplate);
 
 // Get certificate template
 certificateRoutes.get('/api/certificate/template/:eventId/:templateName?', getTemplate);
+
+certificateRoutes.post('/delete-certificate', deleteCertificate);
 
 module.exports = certificateRoutes;
