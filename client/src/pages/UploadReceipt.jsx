@@ -23,6 +23,7 @@ const UploadReceipt = () => {
   // Set userData to form fields when component mounts
   useEffect(() => {
     if (userData) {
+      console.log(userData);
       setAccountName(userData.fullName || "");
       setMobileNumber(userData.contactNumber || "");
     }
@@ -122,7 +123,7 @@ const handleRegister = async (e) => {
             <input
               type="text"
               className="account-name"
-              value={accountName}
+              value="Mr. Yoso"
               readOnly
             />
 
@@ -130,7 +131,7 @@ const handleRegister = async (e) => {
             <input
               type="text"
               className="mobile-number"
-              value={mobileNumber}
+              value="09123456789"
               readOnly
             />
 

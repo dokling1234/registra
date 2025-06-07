@@ -182,6 +182,7 @@ const getEventById = async (req, res) => {
 };
 
 const registerForEvent = async (req, res) => {
+  console.log("registerforevent");
   const { eventId } = req.params;
   const {
     fullName,
@@ -192,6 +193,7 @@ const registerForEvent = async (req, res) => {
     receipt,
     membership,
   } = req.body;
+  console.log(fullName);
   const { userId } = req.user;
 
   try {

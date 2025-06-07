@@ -81,11 +81,31 @@ const Profile = () => {
   };
 
   const handleImageClick = () => {
-    if (isEditing) {
-      fileInputRef.current.click();
+     if (isEditing) {
+      Swal.fire({
+        title: 'Change Profile Picture',
+        text: 'Would you like to change your profile picture?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, change it!',
+        cancelButtonText: 'No, cancel'
+      }).then((result) => {
+        if (result.isConfirmed) {
+           Swal.fire({
+            title: 'Success!',
+            text: 'Please select your new profile picture',
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false
+          });
+          fileInputRef.current.click();
+          
+        }
+      });
     }
   };
-
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
     console.log(file);

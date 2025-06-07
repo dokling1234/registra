@@ -84,6 +84,7 @@ const Events = () => {
         time: timeIn24Hour,
         image: imageUrl,
         cost: eventData.cost,
+          coordinates: lngLat,
       };
   
       const { data } = await axios.post(

@@ -219,7 +219,7 @@ const getEvents = async (req, res) => {
 const registerForEvent = async (req, res) => {
   console.log("Register for event endpoint hit");
   const { id } = req.params;
-  const { eventId, userId, email, paymentStatus, ticketQR, receipt } = req.body;
+  const { eventId, userId, email, paymentStatus, ticketQR, receipt, fullName } = req.body;
   console.log(req.body);
   try {
     console.log("eventId:", id);
@@ -235,10 +235,11 @@ const registerForEvent = async (req, res) => {
       registeredAt: new Date(),
       paymentStatus,
       ticketQR,
+      fullName,
       receipt,
     };
 
-    console.log("🚀 Register endpoint hit");
+    console.log("endpoint🚀 Register  hit");
     console.log("Body:", req.body);
 
     event.registrations.push(registrations);

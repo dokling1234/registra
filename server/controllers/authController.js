@@ -11,6 +11,7 @@ const {
 
 // register controller
 const register = async (req, res) => {
+  console.log("register");
   const {
     fullName,
     email,
@@ -18,7 +19,6 @@ const register = async (req, res) => {
     contactNumber,
     icpepId,
     userType,
-    age,
     membership,
     disabled = false, // default to false if not provided
   } = req.body;
@@ -42,7 +42,6 @@ const register = async (req, res) => {
       contactNumber,
       icpepId,
       userType,
-      age: Number(age), // make sure it's a number if your schema expects that
       membership,
       disabled,
     });
