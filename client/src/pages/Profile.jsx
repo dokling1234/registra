@@ -88,6 +88,9 @@ const Profile = () => {
 
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
+    console.log(file);
+    console.log(cloudName);
+
     if (!file) return;
 
     setSelectedImage(URL.createObjectURL(file)); // For immediate preview
@@ -106,8 +109,9 @@ const Profile = () => {
       );
       setFormData((prev) => ({ ...prev, profileImage: res.data.secure_url }));
       setIsUploading(false);
+      console.log("uploaded");
     } catch (error) {
-      console.error("Error uploading image:", error);
+      console.error("Error response:", error.response?.data || error.message);
       await Swal.fire({
         icon: "error",
         title: "Upload Failed",
