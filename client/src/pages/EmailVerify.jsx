@@ -8,7 +8,7 @@ import { data, useNavigate } from "react-router-dom";
 const EmailVerify = () => {
   
   axios.defaults.withCredentials = true;
-  const { backendUrl, isLoggedin, userData, getUserData } =
+  const { backendUrl, isLoggedin, userData, getUserData, setIsLoggedin } =
     useContext(AppContent);
 
   const navigate = useNavigate();
@@ -51,8 +51,9 @@ const EmailVerify = () => {
 
       if (data.success) {
         toast.success(data.message);
-        getUserData();
-        navigate("/");
+        setIsLoggedin(true);
+        await getUserData();
+        navigate("/home");
       } else {
         toast.error(data.message);
       }

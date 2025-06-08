@@ -5,6 +5,7 @@ import { AppContent } from "../context/AppContext";
 import Navbar from "../components/Navbar"; // Import Navbar
 import "./RegisteredEventDetail.css"; // Import CSS for styling
 import html2pdf from 'html2pdf.js';
+import Swal from "sweetalert2";
 
 // Certificate Component
 const Certificate = ({ event, userData, organizers }) => {
@@ -241,16 +242,32 @@ const RegisteredEventDetail = () => {
             }
           } catch (err) {
             console.error('Error generating certificate:', err);
-            alert('There was an error generating your certificate. Please try again.');
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "There was an error generating your certificate. Please try again.",
+              confirmButtonText: "OK"
+            });
           }
         }
 
         setHasSubmittedFeedback(true);
-        alert("Feedback submitted successfully! You can now download your certificate.");
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: "Feedback submitted successfully! You can now download your certificate.",
+          timer: 2000,
+          showConfirmButton: false
+        });
       }
     } catch (err) {
       console.error("Failed to submit feedback:", err);
-      alert("There was an issue submitting your feedback. Please try again.");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "There was an issue submitting your feedback. Please try again.",
+        confirmButtonText: "OK"
+      });
     }
   };
 

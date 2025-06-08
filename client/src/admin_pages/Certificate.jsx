@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { AppContent } from "../context/AppContext";
 import axios from "axios";
 import { certificateTemplates } from "../admin_components/CertificateTemplates";
+import Swal from "sweetalert2";
 
 const Certificate = () => {
   const navigate = useNavigate();
@@ -164,9 +165,22 @@ const Certificate = () => {
 
       setOrganizers(updatedOrganizers);
       setEditing(false);
-      alert("Certificate template saved successfully!");
+      Swal.fire({
+        icon: "success",
+        title: "Success!",
+        text: "Certificate template saved successfully!",
+        timer: 1500,
+        showConfirmButton: false
+      });
     } catch (err) {
-      alert("Failed to save certificate template. Please try again.");
+      console.error("Failed to save certificate template:", err);
+      console.error("Error details:", err.response?.data || err.message);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to save certificate template. Please try again.",
+        confirmButtonText: "OK"
+      });
     }
     setSaving(false);
   };

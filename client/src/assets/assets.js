@@ -19,6 +19,15 @@ import userlist_icon from "./userlist_icon.png";
 import logout_icon from "./logout_icon.png";
 import phone_icon from "./phone_icon.svg"
 import id_icon from "./id_icon.svg"
+import location_icon from "./location_icon.png"
+import phone_icon1 from "./phone_icon1.png"
+import email_icon from "./email_icon.png"
+import facebook_icon from "./facebook_icon.png"
+import twitter_icon from "./twitter_icon.png"
+import instagram_icon from "./instagram_icon.png"
+import linkedin_icon from "./linkedin_icon.png"
+
+
 export const assets = {
     id_icon,
     phone_icon,
@@ -41,4 +50,11 @@ export const assets = {
     certificate_icon,
     userlist_icon,
     logout_icon,
+    location_icon,
+    phone_icon1,
+    email_icon,
+    facebook_icon,
+    linkedin_icon,
+    instagram_icon,
+    twitter_icon
 }
