@@ -22,7 +22,7 @@ const Footer = () => {
         </div>
 
         <div className="footer-section about-company">
-          <h3>About the company</h3>
+          <h3>About the organization</h3>
           <p>
           ICpEP (Institute of Computer Engineers of the Philippines) is a non-profit professional organization for computer engineers in the Philippines. It is registered with the Securities and Exchange Commission (SEC). ICpEP plays a key role in the field of computer engineering, managing board exams for certification, representing the profession, and collaborating with higher education institutions.
           </p>
