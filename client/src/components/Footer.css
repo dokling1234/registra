@@ -1,77 +1,111 @@
 /* Footer.css */
 .footer {
-    background-color: #0a0a84; /* Dark blue background */
-    color: white;
-    padding: 2rem 1rem;
-    text-align: center;
-    font-family: 'Poppins', sans-serif;
+    background-color: #0a0a84; /* Dark background from the image */
+    color: #adb5bd; /* Light grey text color */
+    padding: 3rem 2rem;
+    font-family: 'Arial', sans-serif; /* A more common sans-serif font */
     width: 100%;
+    box-sizing: border-box;
   }
   
-  .footer-top {
+  .footer-content {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-  }
-  
-  .footer-logo {
-    font-size: 2rem;
-    font-weight: 700;
-  }
-  
-  .footer-logo span {
-    color: #007bff; /* Light blue color for "stra" */
-  }
-  
-  .footer-nav {
-    display: flex;
-    gap: 2rem;
     flex-wrap: wrap;
-    justify-content: center;
-    font-size: 1rem;
+    justify-content: space-around; /* Distribute sections with space */
+    max-width: 1200px; /* Limit width for larger screens */
+    margin: 0 auto;
   }
   
-  .footer-nav a {
-    color: white;
-    text-decoration: none;
-    transition: color 0.3s;
+  .footer-section {
+    flex: 1;
+    min-width: 280px; /* Minimum width for each section */
+    margin: 1rem;
   }
   
-  .footer-nav a:hover {
-    color: #007bff;
-  }
-  
-  .footer-divider {
-    margin: 2rem 0;
-    border: none;
-    border-top: 1px solid #ccc;
-  }
-  
-  .footer-bottom {
+  .contact-info {
     display: flex;
     flex-direction: column;
+    gap: 1.5rem;
+    color: white;
+  }
+  
+  .contact-item {
+    display: flex;
     align-items: center;
     gap: 1rem;
   }
   
-  .footer-socials {
-    display: flex;
-    gap: 1.5rem;
-    font-size: 1.5rem;
+  .contact-item i {
+    font-size: 1.2rem;
+    color: #495057; /* Icon color, slightly darker grey */
   }
   
-  .footer-socials a {
-    color: white;
-    transition: color 0.3s;
+  .contact-item .footer-icon {
+    width: 1.2rem; 
+    height: 1.2rem;
+    object-fit: contain; 
+    /* filter: invert(35%) sepia(8%) saturate(1210%) hue-rotate(179deg) brightness(97%) contrast(85%);  */
   }
   
-  .footer-socials a:hover {
-    color: #007bff;
+  .contact-item p {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.4;
   }
   
-  .footer-copy {
+  .about-company h3 {
+    color: white; /* White for the heading */
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    font-weight: bold;
+  }
+  
+  .about-company p {
     font-size: 0.9rem;
-    color: #ccc;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    color: white;
+  }
+  
+  .social-icons {
+    display: flex;
+    gap: 0.8rem;
+  }
+  
+  .social-icons a {
+    color: white; /* White icons */
+    font-size: 1.3rem;
+    width: 30px; /* Small square for icons */
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%; /* Make them circular */
+    background-color: #f8f8f8; /* Slightly lighter dark for icon background */
+    transition: background-color 0.3s ease;
+  }
+  
+  .social-icon-img {
+    width: 1.9rem; /* Match the size of the original icon */
+    height: 1.9rem;
+    object-fit: contain; /* Ensure the image fits without distortion */
+    /* filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(360deg) brightness(100%) contrast(100%); */
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .footer-content {
+      flex-direction: column;
+      align-items: center;
+    }
+  
+    .footer-section {
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+  
+    .contact-info, .social-icons {
+      justify-content: center;
+    }
   }
   

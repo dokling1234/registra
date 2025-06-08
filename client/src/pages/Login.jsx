@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { AppContent } from "../context/AppContext";
+import Swal from "sweetalert2";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -83,6 +84,33 @@ const Login = () => {
         });
 
         if (data.success) {
+          // Get full user data first
+          const userResponse = await axios.get(`${backendUrl}/api/user/alldata`, { withCredentials: true });
+          console.log("Full user data:", userResponse.data);
+
+          // Find the current user in the response
+          const currentUser = userResponse.data.users.find(user => user.email === email);
+          console.log("Current user data:", currentUser);
+
+          // Check if the user is disabled
+          if (currentUser?.disabled) {
+            Swal.fire({
+              icon: "error",
+              title: "Account Disabled",
+              text: "Your account has been disabled. Please contact the administrator for assistance.",
+              confirmButtonText: "OK"
+            });
+            return;
+          }
+
+          // Check if the user is verified
+          if (!data.user?.isVerified) {
+            await axios.post(`${backendUrl}/api/auth/send-verify-otp`, { email });
+            toast.error("Please verify your email first.");
+            navigate("/email-verify");
+            return;
+          }
+
           if (rememberMe) {
             localStorage.setItem("userEmail", email);
             localStorage.setItem("userPassword", password);
@@ -91,9 +119,9 @@ const Login = () => {
             localStorage.removeItem("userPassword");
           }
 
-          navigate("/home");
           setIsLoggedin(true);
           await getUserData();
+          navigate("/home");
           toast.success(data.message);
         } else {
           toast.error(data.message);

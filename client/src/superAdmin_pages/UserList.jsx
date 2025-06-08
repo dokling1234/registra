@@ -4,6 +4,7 @@ import Sidebar from "../superAdmin_components/Sidebar";
 import { AppContent } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 const UserList = () => {
   const { userData } = useContext(AppContent);
@@ -66,7 +67,13 @@ const UserList = () => {
       );
 
       if (userResponse.data.success) {
-        alert("User updated successfully.");
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: "User updated successfully.",
+          timer: 1500,
+          showConfirmButton: false
+        });
         setUsers((prevUsers) =>
           prevUsers.map((user) =>
             user._id === userId ? userResponse.data.user : user
@@ -416,28 +423,50 @@ const UserList = () => {
                             <button
                               onClick={async () => {
                                 const newStatus = !user.disabled;
-                                try {
-                                  const userResponse = await axios.put(
-                                    `${
-                                      import.meta.env.VITE_BACKEND_URL
-                                    }/api/superadmin/update/${user._id}`,
-                                    { disabled: newStatus },
-                                    { withCredentials: true }
-                                  );
-                                  if (userResponse.status === 200) {
-                                    setUsers((prevUsers) =>
-                                      prevUsers.map((u) =>
-                                        u._id === user._id
-                                          ? { ...u, disabled: newStatus }
-                                          : u
-                                      )
+                                const action = newStatus ? "disable" : "enable";
+                                
+                                const result = await Swal.fire({
+                                  title: `Are you sure?`,
+                                  text: `Do you want to ${action} this user's account?`,
+                                  icon: "warning",
+                                  showCancelButton: true,
+                                  confirmButtonColor: "#3085d6",
+                                  cancelButtonColor: "#d33",
+                                  confirmButtonText: `Yes, ${action} it!`
+                                });
+
+                                if (result.isConfirmed) {
+                                  try {
+                                    const userResponse = await axios.put(
+                                      `${import.meta.env.VITE_BACKEND_URL}/api/superadmin/update/${user._id}`,
+                                      { disabled: newStatus },
+                                      { withCredentials: true }
                                     );
+                                    if (userResponse.status === 200) {
+                                      setUsers((prevUsers) =>
+                                        prevUsers.map((u) =>
+                                          u._id === user._id
+                                            ? { ...u, disabled: newStatus }
+                                            : u
+                                        )
+                                      );
+                                      Swal.fire({
+                                        icon: "success",
+                                        title: "Success!",
+                                        text: `User account has been ${action}d.`,
+                                        timer: 1500,
+                                        showConfirmButton: false
+                                      });
+                                    }
+                                  } catch (error) {
+                                    console.error("Error updating user status:", error.message);
+                                    Swal.fire({
+                                      icon: "error",
+                                      title: "Error",
+                                      text: "Failed to update user status. Please try again.",
+                                      confirmButtonText: "OK"
+                                    });
                                   }
-                                } catch (error) {
-                                  console.error(
-                                    "Error updating user status:",
-                                    error.message
-                                  );
                                 }
                               }}
                               className={`${

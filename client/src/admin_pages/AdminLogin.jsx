@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { AppContent } from "../context/AppContext";
+import Swal from "sweetalert2";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -70,15 +71,32 @@ const AdminLogin = () => {
         }
       );
       if (res.data.success) {
-        alert("Password updated. Please log in again.");
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: "Password updated. Please log in again.",
+          timer: 1500,
+          showConfirmButton: false
+        });
         setShowPasswordChangePopup(false);
         setNewPassword("");
         // Optional: redirect to login or auto login
       } else {
-        alert(res.data.message);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: res.data.message,
+          confirmButtonText: "OK"
+        });
       }
     } catch (error) {
       console.error("Password change failed:", error.message);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to change password. Please try again.",
+        confirmButtonText: "OK"
+      });
     }
   };
 

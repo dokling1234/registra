@@ -1,34 +1,38 @@
-
 import React from "react";
 import "./Footer.css"; // CSS file we'll create
+import { assets } from "../assets/assets";
 
 const Footer = () => {
   return (
     <footer className="footer">
-      <div className="footer-top">
-        <h1 className="footer-logo">
-          Regi<span>stra</span>
-        </h1>
-        <nav className="footer-nav">
-          <a href="/">Home</a>
-          <a href="/about">About</a>
-          <a href="/services">Services</a>
-          <a href="/contact">Get in touch</a>
-          <a href="/faqs">FAQs</a>
-        </nav>
-      </div>
-
-      <hr className="footer-divider" />
-
-      <div className="footer-bottom">
-        <div className="footer-socials">
-          <a href="#"><i className="fab fa-linkedin"></i></a>
-          <a href="#"><i className="fab fa-instagram"></i></a>
-          <a href="#"><i className="fab fa-facebook"></i></a>
+      <div className="footer-content">
+        <div className="footer-section contact-info">
+          <div className="contact-item">
+          <img src={assets.location_icon} alt="Location Icon" className="footer-icon" />
+            <p>41 Jhocson St. <br />Manila, Philippines</p>
+          </div>
+          <div className="contact-item">
+          <img src={assets.phone_icon1} alt="Phone Icon" className="footer-icon" />
+            <p>+639 123 123 123</p>
+          </div>
+          <div className="contact-item">
+          <img src={assets.email_icon} alt="Email Icon" className="footer-icon" />
+            <p>support@registra.com</p>
+          </div>
         </div>
-        <p className="footer-copy">
-          Non Copyrighted © 2025 Upload by Registra
-        </p>
+
+        <div className="footer-section about-company">
+          <h3>About the company</h3>
+          <p>
+          ICpEP (Institute of Computer Engineers of the Philippines) is a non-profit professional organization for computer engineers in the Philippines. It is registered with the Securities and Exchange Commission (SEC). ICpEP plays a key role in the field of computer engineering, managing board exams for certification, representing the profession, and collaborating with higher education institutions.
+          </p>
+          <div className="social-icons">
+            <a href="https://www.facebook.com/ICpEPNCROfficial/"><img src={assets.facebook_icon} alt="Facebook Icon" className="social-icon-img" /></a>
+            <a href="https://www.instagram.com/nuicpepse/"><img src={assets.instagram_icon} alt="Twitter Icon" className="social-icon-img" /></a>
+            <a href="https://x.com/ICpEPse_NCR"><img src={assets.twitter_icon} alt="LinkedIn Icon" className="social-icon-img" /></a>
+            <a href="https://ph.linkedin.com/company/institute-of-computer-engineers-of-the-philippines-student-edition"><img src={assets.linkedin_icon} alt="GitHub Icon" className="social-icon-img" /></a>
+          </div>
+        </div>
       </div>
     </footer>
   );

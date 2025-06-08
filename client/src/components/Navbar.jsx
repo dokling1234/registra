@@ -15,22 +15,8 @@ const Navbar = () => {
 
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const sendVerificationOtp = async () => {
-    try {
-      axios.defaults.withCredentials = true;
-      const { data } = await axios.post(
-        backendUrl + "/api/auth/send-verify-otp"
-      );
-      if (data.success) {
-        navigate("/email-verify");
-        toast.success(data.message);
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.message);
-    }
-  };
+  // Default profile picture
+  const defaultProfilePic = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
 
   const logout = async () => {
     try {
@@ -118,24 +104,27 @@ const Navbar = () => {
       <div className="navbar-user-area">
         {userData ? (
           <div className="navbar-user">
-            {userData.fullName[0].toUpperCase()}
+            <img 
+              src={userData.profileImage || defaultProfilePic} 
+              alt="Profile" 
+              className="w-12 h-12 rounded-full object-cover border-2 border-black"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = defaultProfilePic;
+              }}
+            />
             <div className="navbar-user-dropdown">
               <ul>
-                {!userData.isVerified && (
-                  <li
-                    onClick={() => {
-                      sendVerificationOtp();
-                      setMenuOpen(false);
-                    }}
-                  >
-                    Verify Email
-                  </li>
-                )}
                 <li
                   onClick={() => {
                     handleNav("/profile");
                   }}
+                  className="flex items-center gap-2"
                 >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
                   Profile
                 </li>
                 <li
@@ -143,7 +132,13 @@ const Navbar = () => {
                     logout();
                     setMenuOpen(false);
                   }}
+                  className="flex items-center gap-2"
                 >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
                   Logout
                 </li>
               </ul>

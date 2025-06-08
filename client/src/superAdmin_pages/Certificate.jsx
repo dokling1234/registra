@@ -6,6 +6,7 @@ import { AppContent } from "../context/AppContext";
 import axios from "axios";
 import html2pdf from "html2pdf.js";
 import ReactDOM from "react-dom/client";
+import Swal from "sweetalert2";
 
 // Separate component for PDF template
 const CertificateTemplate = ({ event, organizers }) => (
@@ -280,11 +281,22 @@ const Certificate = () => {
       setOrganizers(updatedOrganizers);
       setEditing(false);
       
-      alert("Certificate template saved successfully!");
+      Swal.fire({
+        icon: "success",
+        title: "Success!",
+        text: "Certificate template saved successfully!",
+        timer: 1500,
+        showConfirmButton: false
+      });
     } catch (err) {
       console.error("Failed to save certificate template:", err);
       console.error("Error details:", err.response?.data || err.message);
-      alert("Failed to save certificate template. Please try again.");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to save certificate template. Please try again.",
+        confirmButtonText: "OK"
+      });
     }
     setSaving(false);
   };

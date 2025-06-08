@@ -93,13 +93,6 @@ const Profile = () => {
         cancelButtonText: 'No, cancel'
       }).then((result) => {
         if (result.isConfirmed) {
-           Swal.fire({
-            title: 'Success!',
-            text: 'Please select your new profile picture',
-            icon: 'success',
-            timer: 1500,
-            showConfirmButton: false
-          });
           fileInputRef.current.click();
           
         }
@@ -130,6 +123,14 @@ const Profile = () => {
       setFormData((prev) => ({ ...prev, profileImage: res.data.secure_url }));
       setIsUploading(false);
       console.log("uploaded");
+      Swal.fire({
+        title: 'Success!',
+        text: 'Profile picture uploaded successfully!',
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false
+      });
+
     } catch (error) {
       console.error("Error response:", error.response?.data || error.message);
       await Swal.fire({
