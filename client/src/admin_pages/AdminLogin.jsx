@@ -133,7 +133,7 @@ const AdminLogin = () => {
               onChange={(e) => setPassword(e.target.value)}
               value={password}
               className="bg-transparent outline-none flex-1"
-              type={showPassword ? "text" : "password"}
+              type={showPassword ? "" : "password"}
               placeholder="Password"
               required
             />
