@@ -27,12 +27,12 @@ const getUserData = async (req, res) => {
 
     }
 console.log(user)
-    if (!user) {
-      return res.json({
-        success: false,
-        message: "User not found in getUserData",
-      });
-    }
+    // if (!user) {
+    //   return res.json({
+    //     success: false,
+    //     message: "User not found in getUserData",
+    //   });
+    // }
 
     res.json({
       success: true,
