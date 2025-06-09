@@ -459,7 +459,6 @@ const getRegisteredEventDetail = async (req, res) => {
       ...event._doc,
       ticketUrl: registration.ticketQR, // base64 string
     };
-    console.log("API Response:", res.data); // Log the entire response
 
     res.status(200).json({ success: true, event: eventWithTicket });
   } catch (err) {
@@ -586,9 +585,15 @@ const getRegisteredPastEvents = async (req, res) => {
     const events = await eventModel.find({
       "registrations.userId": userId,
       date: { $lt: now },
-    });
+    }).lean(); // Add .lean() for better performance
 
-    res.status(200).json(events);
+    // Add hasCertificate field to each event
+    const eventsWithCertificate = events.map(event => ({
+      ...event,
+      hasCertificate: false // or determine this based on your logic
+    }));
+
+    res.status(200).json(eventsWithCertificate);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

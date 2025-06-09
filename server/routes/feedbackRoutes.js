@@ -7,12 +7,12 @@ const feedbackRoutes = express.Router();
 feedbackRoutes.get('/getFeedback/:eventId', getFeedbackForm); //eventId
 feedbackRoutes.put('/createFeedback', createFeedbackForm);
 feedbackRoutes.post('/submitFeedback/:formId',userAuth, submitFeedback); // formId
-feedbackRoutes.get('/checkSubmission/:id', userAuth, checkSubmission);//eventId
+feedbackRoutes.get('/checkSubmission/:eventId', userAuth, checkSubmission);//eventId
 
 
 const mobileFeedbackRoutes = express.Router();
 
-mobileFeedbackRoutes.post('/submitFeedback/:id', mobileSubmitFeedback); //formId
+mobileFeedbackRoutes.post('/submitFeedback/:formId', mobileSubmitFeedback); //formId
 mobileFeedbackRoutes.get('/checkSubmission', mobileCheckSubmission);
 
 
