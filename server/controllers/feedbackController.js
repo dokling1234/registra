@@ -6,19 +6,28 @@ const FeedbackAnswer = require("../models/feedbackAnswerModel.js");
 const createFeedbackForm = async (req, res) => {
   try {
     const { eventId, title, questions, date } = req.body; // <-- Accept date
-    console.log("Creating/updating feedback form for event:", eventId, title, questions, date);
+    console.log(
+      "Creating/updating feedback form for event:",
+      eventId,
+      title,
+      questions,
+      date
+    );
 
-    const processedQuestions = questions.map(q => {
+    const processedQuestions = questions.map((q) => {
       if (q.type === "Likert") {
         return {
           ...q,
-          options: q.likertOptions && Array.isArray(q.likertOptions) ? q.likertOptions : [
-            "Very Unsatisfied",
-            "Unsatisfied",
-            "Neutral",
-            "Satisfied",
-            "Very Satisfied"
-          ]
+          options:
+            q.likertOptions && Array.isArray(q.likertOptions)
+              ? q.likertOptions
+              : [
+                  "Very Unsatisfied",
+                  "Unsatisfied",
+                  "Neutral",
+                  "Satisfied",
+                  "Very Satisfied",
+                ],
         };
       }
       return q;
@@ -36,8 +45,8 @@ const createFeedbackForm = async (req, res) => {
   }
 };
 
- const getFeedbackForm = async (req, res) => {
-    const { eventId } = req.params;
+const getFeedbackForm = async (req, res) => {
+  const { eventId } = req.params;
   try {
     const form = await FeedbackForm.findOne({ eventId });
 
@@ -51,7 +60,7 @@ const createFeedbackForm = async (req, res) => {
   }
 };
 
- const submitFeedback = async (req, res) => {
+const submitFeedback = async (req, res) => {
   try {
     const { formId } = req.params;
     const { answers } = req.body;
@@ -61,27 +70,27 @@ const createFeedbackForm = async (req, res) => {
       feedbackFormId: formId,
       respondentId: userId, // Use userId from auth middleware
       answers,
-      submittedAt: new Date()
+      submittedAt: new Date(),
     });
 
     console.log("Submitting feedback:", {
       feedbackFormId: formId,
       respondentId: userId,
-      answersCount: answers.length
+      answersCount: answers.length,
     });
 
     await newAnswer.save();
 
-    res.status(201).json({ 
+    res.status(201).json({
       success: true,
       message: "Feedback submitted successfully",
-      answer: newAnswer 
+      answer: newAnswer,
     });
   } catch (err) {
     console.error("Error submitting feedback:", err);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: err.message 
+      error: err.message,
     });
   }
 };
@@ -100,23 +109,25 @@ const checkSubmission = async (req, res) => {
     // Check if there's a submission in the FeedbackAnswer collection
     const submission = await FeedbackAnswer.findOne({
       feedbackFormId: feedbackForm._id,
-      respondentId: userId
+      respondentId: userId,
     });
 
-    console.log('Checking submission:', {
+    console.log("Checking submission:", {
       feedbackFormId: feedbackForm._id,
       respondentId: userId,
       found: !!submission,
-      submission: submission ? {
-        _id: submission._id,
-        submittedAt: submission.submittedAt,
-        answersCount: submission.answers.length
-      } : null
+      submission: submission
+        ? {
+            _id: submission._id,
+            submittedAt: submission.submittedAt,
+            answersCount: submission.answers.length,
+          }
+        : null,
     });
 
-    res.json({ 
+    res.json({
       hasSubmitted: !!submission,
-      submissionId: submission?._id
+      submissionId: submission?._id,
     });
   } catch (err) {
     console.error("Error checking feedback submission:", err);
@@ -132,7 +143,7 @@ const mobileSubmitFeedback = async (req, res) => {
     console.log("Mobile feedback submission data:", {
       formId,
       userId,
-      answersCount: answers.length
+      answersCount: answers.length,
     });
 
     // Create new feedback answer with the correct structure
@@ -140,27 +151,27 @@ const mobileSubmitFeedback = async (req, res) => {
       feedbackFormId: formId,
       respondentId: userId,
       answers,
-      submittedAt: new Date()
+      submittedAt: new Date(),
     });
 
     console.log("Submitting mobile feedback:", {
       feedbackFormId: formId,
       respondentId: userId,
-      answersCount: answers.length
+      answersCount: answers.length,
     });
 
     await newAnswer.save();
 
-    res.status(201).json({ 
+    res.status(201).json({
       success: true,
       message: "Mobile feedback submitted successfully",
-      answer: newAnswer 
+      answer: newAnswer,
     });
   } catch (err) {
     console.error("Error submitting mobile feedback:", err);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: err.message 
+      error: err.message,
     });
   }
 };
@@ -169,7 +180,12 @@ const mobileCheckSubmission = async (req, res) => {
   try {
     console.log("Mobile submission check request received");
     const { eventId, userId } = req.query;
-console.log("Checking mobile submission for event:", eventId, "by user:", userId);
+    console.log(
+      "Checking mobile submission for event:",
+      eventId,
+      "by user:",
+      userId
+    );
     // First find the feedback form for this event
     const feedbackForm = await FeedbackForm.findOne({ eventId });
     if (!feedbackForm) {
@@ -179,23 +195,25 @@ console.log("Checking mobile submission for event:", eventId, "by user:", userId
     // Check if there's a submission in the FeedbackAnswer collection
     const submission = await FeedbackAnswer.findOne({
       feedbackFormId: feedbackForm._id,
-      respondentId: userId
+      respondentId: userId,
     });
 
-    console.log('Checking submission:', {
+    console.log("Checking submission:", {
       feedbackFormId: feedbackForm._id,
       respondentId: userId,
       found: !!submission,
-      submission: submission ? {
-        _id: submission._id,
-        submittedAt: submission.submittedAt,
-        answersCount: submission.answers.length
-      } : null
+      submission: submission
+        ? {
+            _id: submission._id,
+            submittedAt: submission.submittedAt,
+            answersCount: submission.answers.length,
+          }
+        : null,
     });
 
-    res.json({ 
+    res.json({
       hasSubmitted: !!submission,
-      submissionId: submission?._id
+      submissionId: submission?._id,
     });
   } catch (err) {
     console.error("Error checking feedback submission:", err);
@@ -203,12 +221,11 @@ console.log("Checking mobile submission for event:", eventId, "by user:", userId
   }
 };
 
-
 module.exports = {
   createFeedbackForm,
   getFeedbackForm,
   submitFeedback,
   checkSubmission,
   mobileSubmitFeedback,
-  mobileCheckSubmission
+  mobileCheckSubmission,
 };

@@ -500,7 +500,7 @@ const mobileRegisterForEvent = async (req, res) => {
     req.body;
 
   try {
-    const event = await eventModel.findById(eventId);
+    const event = await eventModel.findById(eventIxd);
     if (!event) return res.status(404).json({ message: "Event not found" });
 
     const registrations = {
