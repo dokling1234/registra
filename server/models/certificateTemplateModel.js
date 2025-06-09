@@ -6,12 +6,19 @@ const certificateTemplateSchema = new mongoose.Schema({
     ref: 'Event',
     required: true
   },
-  templateId: { type: String }, // Add this if you want to track template style
   organizers: [{
     name: { type: String },
     label: { type: String },
     signature: { type: String }
   }],
+
+    templates: [
+    {
+      templateId: { type: String }, 
+      url: { type: String },       
+    }
+  ],
+
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

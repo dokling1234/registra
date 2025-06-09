@@ -19,8 +19,10 @@ certificateRoutes.get('/event/:id', userAuth, getCertificate);//eventId
 certificateRoutes.post('/save-template', userAuth, saveTemplate);
 
 // Get certificate template
-certificateRoutes.get('/api/certificate/template/:eventId/:templateName?', getTemplate);
+certificateRoutes.get('/template/:eventId/:templateName?', getTemplate);
 
 certificateRoutes.post('/delete-certificate', deleteCertificate);
+
+// certificateRoutes.post('/upload-signature', uploadSignature);
 
 module.exports = certificateRoutes;
