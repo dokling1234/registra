@@ -5,7 +5,7 @@ import { AppContent } from "../context/AppContext";
 import axios from "axios"; // Import Axios for API calls
 import "./Profile.css"; // Import the CSS file for styling
 import { assets } from "../assets/assets";
-import EventCard from "../components/registeredEventCard";
+import EventCard from "../components/RegisteredEventCard";
 import Swal from "sweetalert2";
 
 const Profile = () => {
