@@ -35,7 +35,6 @@ const AdminLogin = () => {
       if (data.success) {
 
         const userType = data.user?.userType;
-        console.log(data.user);
         if (!userType) {
           toast.error("userType not found. Something went wrong.");
           return;

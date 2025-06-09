@@ -273,15 +273,7 @@ const FeedbackBuilder = () => {
             ))}
           </div>
         </div>
-        {/* Certificate Upload */}
-        <div className="w-full mb-8">
-          <label className="block font-semibold text-lg mb-2 text-gray-700">Upload Certificate</label>
-          <input
-            type="file"
-            onChange={(e) => setFile(e.target.files[0])}
-            className="block border rounded-lg px-4 py-3 w-full text-base"
-          />
-        </div>
+
         <button
           onClick={handleSubmit}
           className="w-full bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow mt-2"

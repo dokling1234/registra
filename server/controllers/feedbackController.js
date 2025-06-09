@@ -3,32 +3,43 @@ const adminModel = require("../models/adminModel.js");
 const FeedbackForm = require("../models/feedbackFormModel.js");
 const FeedbackAnswer = require("../models/feedbackAnswerModel.js");
 
- const createFeedbackForm = async (req, res) => {
+const createFeedbackForm = async (req, res) => {
   try {
-    console.log("Creating feedback form");
-    const { eventId } = req.body;
-    const { title, questions } = req.body;
-    console.log("====================== ========================");
-    console.log("Creating feedback form for event:", eventId) , "   ", title, questions;
+    const { eventId, title, questions, date } = req.body; // <-- Accept date
+    console.log("Creating/updating feedback form for event:", eventId, title, questions, date);
 
-    const newForm = new FeedbackForm({
-      eventId,
-      title,
-      questions,
+    const processedQuestions = questions.map(q => {
+      if (q.type === "Likert") {
+        return {
+          ...q,
+          options: q.likertOptions && Array.isArray(q.likertOptions) ? q.likertOptions : [
+            "Very Unsatisfied",
+            "Unsatisfied",
+            "Neutral",
+            "Satisfied",
+            "Very Satisfied"
+          ]
+        };
+      }
+      return q;
     });
 
-    await newForm.save();
+    const updatedForm = await FeedbackForm.findOneAndUpdate(
+      { eventId },
+      { eventId, title, questions: processedQuestions, date }, // <-- Save date
+      { new: true, upsert: true }
+    );
 
-    res.status(201).json({ message: "Feedback form created", form: newForm });
+    res.status(200).json({ message: "Feedback form saved", form: updatedForm });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
  const getFeedbackForm = async (req, res) => {
+    const { eventId } = req.params;
   try {
-    console.log("Fetching feedback form for event:");
-    const form = await FeedbackForm.findOne({ eventId: req.params.eventId });
+    const form = await FeedbackForm.findOne({ eventId });
 
     if (!form) {
       return res.status(404).json({ message: "Feedback form not found" });

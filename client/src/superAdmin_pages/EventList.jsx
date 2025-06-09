@@ -81,9 +81,7 @@ const EventList = () => {
                     <td className="px-6 py-4">₱{event.price}</td>
                     <td className="px-6 py-4">{event.eventType}</td>
                     <td className="px-6 py-4">
-                    <Link to={`/adminevents/${event._id}`} className="text-blue-600 hover:underline text-sm">
-  View
-</Link>
+            <span className="text-gray-400 italic">Done</span>
                     </td>
                   </tr>
                 ))

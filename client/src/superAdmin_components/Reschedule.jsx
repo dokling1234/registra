@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 const Reschedule = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const today = new Date();
+  const minDate = today.toISOString().slice(0, 10);
 
   const [eventData, setEventData] = useState({
     newDate: "",
@@ -34,7 +37,10 @@ const Reschedule = () => {
           time: timeStr,
         });
       } catch (err) {
-        console.error("Failed to fetch event:", err.response?.data || err.message);
+        console.error(
+          "Failed to fetch event:",
+          err.response?.data || err.message
+        );
       }
     };
     fetchEvent();
@@ -48,10 +54,34 @@ const Reschedule = () => {
     setIsLoading(true);
     try {
       const newDateTime = new Date(`${eventData.newDate}T${eventData.newTime}`);
+      const now = new Date();
+
+      // Prevent rescheduling to a past date/time
+      if (newDateTime < now) {
+        Swal.fire({
+          icon: "error",
+          title: "Invalid Date",
+          text: "You cannot reschedule to a past date and time.",
+          confirmButtonText: "OK",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       await axios.put(`/api/events/${id}`, { date: newDateTime });
-      navigate(`/superadmin/events`);
+      Swal.fire({
+        icon: "success",
+        title: "Event Saved",
+        text: "The event has been updated successfully!",
+        timer: 1000,
+        showConfirmButton: false,
+      });
+      navigate(`/admin/events`);
     } catch (err) {
-      console.error("Failed to update event:", err.response?.data || err.message);
+      console.error(
+        "Failed to update event:",
+        err.response?.data || err.message
+      );
     } finally {
       setIsLoading(false);
     }
@@ -62,6 +92,7 @@ const Reschedule = () => {
       newDate: originalData.date,
       newTime: originalData.time,
     });
+    navigate(`/superadmin/events`);
   };
 
   return (
@@ -87,7 +118,9 @@ const Reschedule = () => {
         {/* Date & Time Inputs */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block mb-2 font-semibold text-gray-700">New Date</label>
+            <label className="block mb-2 font-semibold text-gray-700">
+              New Date
+            </label>
             <input
               type="date"
               name="newDate"
@@ -95,10 +128,13 @@ const Reschedule = () => {
               onChange={handleChange}
               className="w-full border border-gray-300 px-4 py-3 rounded-lg text-base focus:ring-2 focus:ring-blue-300 focus:outline-none"
               required
+              min={minDate}
             />
           </div>
           <div>
-            <label className="block mb-2 font-semibold text-gray-700">New Time</label>
+            <label className="block mb-2 font-semibold text-gray-700">
+              New Time
+            </label>
             <input
               type="time"
               name="newTime"

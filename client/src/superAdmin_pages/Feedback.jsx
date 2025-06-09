@@ -3,7 +3,7 @@ import { assets } from "../assets/assets";
 import Sidebar from '../superAdmin_components/Sidebar';
 import { useNavigate } from "react-router-dom";
 import { AppContent } from "../context/AppContext";
-import FeedbackBuilder from "../admin_components/FeedbackBuilder";
+import FeedbackBuilder from "../superAdmin_components/FeedbackBuilder";
 
 
 const Feedback = () => {
