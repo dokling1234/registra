@@ -6,6 +6,8 @@ const saveCertificate = async (req, res) => {
   console.log("savecert");
   try {
     const { eventId, certificateUrl } = req.body;
+    console.log("sdad");
+    console.log(eventId, certificateUrl);
     const userId = req.user.userId; // From auth middleware
 
     // Check if certificate already exists
@@ -77,8 +79,8 @@ const getCertificate = async (req, res) => {
 const saveTemplate = async (req, res) => {
   console.log("savetemplate_____");
   try {
-    const { eventId, organizers, templateId } = req.body;
-
+    const { eventId, organizers, templateId, templates } = req.body; // <-- add templates
+    console.log(eventId, organizers, templateId, templates);
     if (!eventId || !organizers) {
       return res.status(400).json({
         success: false,
@@ -101,7 +103,8 @@ const saveTemplate = async (req, res) => {
         $set: {
           organizers: organizers,
           templateId: templateId,
-        }
+          templates: templates, // <-- add this line
+        },
       },
       { new: true, upsert: true }
     );
@@ -137,6 +140,7 @@ const getTemplate = async (req, res) => {
         organizers: template.organizers,
         templateId: template.templateId,
         eventId: template.eventId,
+        templates: template.templates, // <-- add this line
       },
     });
   } catch (err) {
@@ -151,7 +155,9 @@ const deleteCertificate = async (req, res) => {
   const { publicId } = req.body;
   console.log("delete");
   try {
-    await cloudinary.uploader.destroy(`certificate/${publicId}`, { resource_type: "raw" });
+    await cloudinary.uploader.destroy(`certificate/${publicId}`, {
+      resource_type: "raw",
+    });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -163,5 +169,5 @@ module.exports = {
   getCertificate,
   saveTemplate,
   getTemplate,
-  deleteCertificate
+  deleteCertificate,
 };

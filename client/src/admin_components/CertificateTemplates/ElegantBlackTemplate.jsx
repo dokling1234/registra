@@ -1,6 +1,6 @@
 import React from "react";
 
-const ModernGoldTemplate = ({
+const ElegantBlackTemplate = ({
   event,
   organizers,
   editing,
@@ -10,10 +10,10 @@ const ModernGoldTemplate = ({
   removeOrganizer,
 }) => (
   <div
-    className="certificate-template relative bg-white rounded-2xl shadow-xl flex flex-col items-center border-0"
+    className="certificate-template relative bg-black text-white rounded-2xl shadow-2xl flex flex-col items-center border-0"
     style={{
-      minWidth: 1056,
-      minHeight: 816,
+      width: 1056,
+      height: 816,
       padding: 0,
       overflow: "hidden",
     }}
@@ -22,30 +22,31 @@ const ModernGoldTemplate = ({
       style={{
         position: "absolute",
         inset: 0,
-        background: "linear-gradient(135deg, #002147 0%, #FFD700 100%)",
+        background: "linear-gradient(135deg, #000000, #333333)",
         borderRadius: "1.25rem",
-        padding: "8px",
+        padding: "10px",
         zIndex: 0,
       }}
     />
     <div
       style={{
         position: "absolute",
-        inset: 12,
-        background: "white",
+        inset: 10,
+        background: "#111111",
+        border: "2px solid #FFD700",
         borderRadius: "1rem",
         zIndex: 1,
       }}
     />
     <div className="relative z-10 flex flex-col items-center w-full px-16 py-14">
-      <h2 className="text-6xl font-serif font-bold text-blue-900 tracking-wider mb-2">
+      <h2 className="text-6xl font-serif font-bold text-white tracking-widest mb-2">
         CERTIFICATE
       </h2>
-      <div className="text-3xl font-serif text-blue-900 tracking-widest mb-6">
-        OF ACHIEVEMENT
+      <div className="text-3xl font-serif text-yellow-400 tracking-widest mb-6">
+        OF EXCELLENCE
       </div>
-      <div className="text-2xl font-medium text-gray-700 mb-4 mt-4">
-        THIS CERTIFICATE IS PROUDLY PRESENTED TO
+      <div className="text-2xl text-gray-300 mb-4 mt-4">
+        THIS IS PROUDLY PRESENTED TO
       </div>
       <div
         className="text-5xl text-blue-900 mb-4"
@@ -55,11 +56,10 @@ const ModernGoldTemplate = ({
           height: "2.5em",
         }}
       ></div>
-      <div className="text-2xl text-gray-700 mb-8 text-center max-w-3xl">
-        For outstanding participation in{" "}
-        <span className="font-semibold text-blue-800">{event.title}</span> held
-        on{" "}
-        <span className="font-semibold text-blue-800">
+      <div className="text-2xl text-gray-300 mb-8 text-center max-w-3xl">
+        For remarkable achievement in{" "}
+        <span className="font-semibold text-yellow-300">{event.title}</span> on{" "}
+        <span className="font-semibold text-yellow-300">
           {new Date(event.date).toLocaleDateString()}
         </span>
         .
@@ -86,7 +86,7 @@ const ModernGoldTemplate = ({
                     handleOrganizerChange(idx, "name", e.target.value)
                   }
                   placeholder="Organizer Name"
-                  className="border px-4 py-2 rounded mb-2 text-center text-lg"
+                  className="border px-4 py-2 rounded mb-2 text-center text-lg bg-gray-800 text-white"
                 />
                 <input
                   type="text"
@@ -95,7 +95,7 @@ const ModernGoldTemplate = ({
                     handleOrganizerChange(idx, "label", e.target.value)
                   }
                   placeholder="Label"
-                  className="border px-4 py-2 rounded mb-2 text-center text-lg"
+                  className="border px-4 py-2 rounded mb-2 text-center text-lg bg-gray-800 text-white"
                 />
                 <input
                   type="file"
@@ -135,11 +135,11 @@ const ModernGoldTemplate = ({
               )}
               <span
                 style={{ fontFamily: "cursive, Pacifico, Arial" }}
-                className="text-2xl text-blue-900 mb-2"
+                className="text-2xl text-yellow-300 mb-2"
               >
                 {org.name}
               </span>
-              <span className="text-lg text-gray-500 uppercase tracking-widest">
+              <span className="text-lg text-gray-400 uppercase tracking-widest">
                 {org.label}
               </span>
             </div>
@@ -150,4 +150,4 @@ const ModernGoldTemplate = ({
   </div>
 );
 
-export default ModernGoldTemplate;
+export default ElegantBlackTemplate;

@@ -1,6 +1,6 @@
 import React from "react";
 
-const ModernGoldTemplate = ({
+const RoyalBlueTemplate = ({
   event,
   organizers,
   editing,
@@ -22,30 +22,31 @@ const ModernGoldTemplate = ({
       style={{
         position: "absolute",
         inset: 0,
-        background: "linear-gradient(135deg, #002147 0%, #FFD700 100%)",
+        background: "linear-gradient(135deg, #1e3a8a, #93c5fd)",
         borderRadius: "1.25rem",
-        padding: "8px",
+        padding: "10px",
         zIndex: 0,
       }}
     />
     <div
       style={{
         position: "absolute",
-        inset: 12,
-        background: "white",
+        inset: 14,
+        background: "#f9fafb",
         borderRadius: "1rem",
         zIndex: 1,
+        border: "2px solid #1e3a8a",
       }}
     />
     <div className="relative z-10 flex flex-col items-center w-full px-16 py-14">
-      <h2 className="text-6xl font-serif font-bold text-blue-900 tracking-wider mb-2">
+      <h2 className="text-6xl font-serif font-bold text-blue-800 tracking-wider mb-2">
         CERTIFICATE
       </h2>
-      <div className="text-3xl font-serif text-blue-900 tracking-widest mb-6">
-        OF ACHIEVEMENT
+      <div className="text-3xl font-serif text-blue-700 tracking-widest mb-8">
+        OF RECOGNITION
       </div>
-      <div className="text-2xl font-medium text-gray-700 mb-4 mt-4">
-        THIS CERTIFICATE IS PROUDLY PRESENTED TO
+      <div className="text-2xl font-medium text-gray-800 mb-4 mt-4">
+        IS HEREBY AWARDED TO
       </div>
       <div
         className="text-5xl text-blue-900 mb-4"
@@ -55,10 +56,9 @@ const ModernGoldTemplate = ({
           height: "2.5em",
         }}
       ></div>
-      <div className="text-2xl text-gray-700 mb-8 text-center max-w-3xl">
-        For outstanding participation in{" "}
-        <span className="font-semibold text-blue-800">{event.title}</span> held
-        on{" "}
+      <div className="text-2xl text-gray-800 mb-8 text-center max-w-3xl">
+        In acknowledgment of remarkable involvement in{" "}
+        <span className="font-semibold text-blue-800">{event.title}</span> on{" "}
         <span className="font-semibold text-blue-800">
           {new Date(event.date).toLocaleDateString()}
         </span>
@@ -117,7 +117,7 @@ const ModernGoldTemplate = ({
             ))}
             <button
               type="button"
-              className="bg-green-600 text-white px-5 py-2 rounded mt-4 text-lg"
+              className="bg-blue-700 text-white px-5 py-2 rounded mt-4 text-lg"
               onClick={addOrganizer}
             >
               + Add Organizer
@@ -150,4 +150,4 @@ const ModernGoldTemplate = ({
   </div>
 );
 
-export default ModernGoldTemplate;
+export default RoyalBlueTemplate;
