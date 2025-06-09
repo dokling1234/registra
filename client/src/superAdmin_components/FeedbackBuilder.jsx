@@ -107,6 +107,15 @@ const FeedbackBuilder = () => {
       )
     );
   };
+  const removeOption = (id, index) => {
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === id
+          ? { ...q, options: q.options.filter((_, i) => i !== index) }
+          : q
+      )
+    );
+  };
 
   const addStatement = (id) => {
     setQuestions((prev) =>
@@ -175,8 +184,7 @@ const FeedbackBuilder = () => {
                       placeholder={`Option ${i + 1}`}
                     />
                   ))
-                : // fallback to default options if not set
-                  [
+                : [
                     "Very Unsatisfied",
                     "Unsatisfied",
                     "Neutral",
@@ -256,6 +264,38 @@ const FeedbackBuilder = () => {
             placeholder="Answer"
             disabled
           />
+        )}
+
+        {q.type === "Choice" && (
+          <div className="mb-2">
+            {q.options.map((opt, i) => (
+              <div key={i} className="flex items-center gap-2 mb-1">
+                <input
+                  type="text"
+                  value={opt}
+                  onChange={(e) => updateOption(q.id, i, e.target.value)}
+                  className="border px-2 py-1 rounded w-full"
+                  placeholder={`Option ${i + 1}`}
+                />
+                <button
+                  type="button"
+                  className="text-red-500 text-lg px-2"
+                  onClick={() => removeOption(q.id, i)}
+                  disabled={q.options.length <= 1}
+                  title="Remove option"
+                >
+                  &times;
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="text-sm text-blue-600 hover:underline mt-1"
+              onClick={() => addOption(q.id)}
+            >
+              + Add Option
+            </button>
+          </div>
         )}
       </div>
     );
