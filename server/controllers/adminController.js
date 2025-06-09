@@ -153,7 +153,6 @@ const createAdmin = async (req, res) => {
 
 const getAllUsers = async (req, res) => {
   try {
-    console.log("getallusers");
     const admins = await Admin.find({}); 
 
     if (admins.length === 0) {
@@ -161,8 +160,6 @@ const getAllUsers = async (req, res) => {
         .status(404)
         .json({ success: false, message: "No users found." });
     }
-    console.log("sadsada");
-    console.log(admins.length);
 
     res.json({ success: true, admins, count: admins.length });
   } catch (error) {
@@ -217,15 +214,11 @@ const getEvents = async (req, res) => {
 };
 
 const registerForEvent = async (req, res) => {
-  console.log("Register for event endpoint hit");
   const { id } = req.params;
   const { eventId, userId, email, paymentStatus, ticketQR, receipt, fullName } = req.body;
-  console.log(req.body);
   try {
-    console.log("eventId:", id);
     const event = await Event.findById(id);
     if (!event) {
-      console.log("noott eeeeevvvvvvvvventttttttttttttttttt");
 
       return res.status(404).json({ message: "Event not found" });
     }
@@ -239,8 +232,6 @@ const registerForEvent = async (req, res) => {
       receipt,
     };
 
-    console.log("endpoint🚀 Register  hit");
-    console.log("Body:", req.body);
 
     event.registrations.push(registrations);
     await event.save();
@@ -254,8 +245,7 @@ const registerForEvent = async (req, res) => {
 
 const QRchecker = async (req, res) => {
   const { userId } = req.body;
-  console.log("QRchecker========================================");
-  console.log(userId);
+
   try {
     const objectId = new mongoose.Types.ObjectId(userId);
 
@@ -288,7 +278,6 @@ const QRchecker = async (req, res) => {
 };
 
 const pdfCertificate = async (req, res) => {
-  console.log("PDF certificate endpoint hit");
   try {
     const filePath = req.file.path;
 
