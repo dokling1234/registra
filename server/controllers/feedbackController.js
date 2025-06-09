@@ -100,6 +100,8 @@ const checkSubmission = async (req, res) => {
   try {
     const { eventId } = req.params;
     const { userId } = req.user;
+    console.log(eventId);
+    console.log(userId);
 
     // First find the feedback form for this event
     const feedbackForm = await FeedbackForm.findOne({ eventId });
