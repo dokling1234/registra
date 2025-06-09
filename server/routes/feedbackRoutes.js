@@ -6,7 +6,7 @@ const feedbackRoutes = express.Router();
 
 feedbackRoutes.get('/getFeedback/:eventId', getFeedbackForm); //eventId
 feedbackRoutes.put('/createFeedback', createFeedbackForm);
-feedbackRoutes.post('/submitFeedback/:id',userAuth, submitFeedback); // formId
+feedbackRoutes.post('/submitFeedback/:formId',userAuth, submitFeedback); // formId
 feedbackRoutes.get('/checkSubmission/:id', userAuth, checkSubmission);//eventId
 
 

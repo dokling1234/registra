@@ -61,6 +61,7 @@ const getFeedbackForm = async (req, res) => {
 };
 
 const submitFeedback = async (req, res) => {
+  console.log("submmitFeedback");
   try {
     const { formId } = req.params;
     const { answers } = req.body;
