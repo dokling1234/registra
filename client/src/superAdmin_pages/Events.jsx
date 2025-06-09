@@ -480,12 +480,8 @@ const Events = () => {
                             Cancelled
                           </span>
                         ) : isPastEvent ? (
-                          <Link
-                            to={`/adminevents/${event._id}`}
-                            className="text-blue-600 hover:underline text-sm"
-                          >
-                            View
-                          </Link>
+            <span className="text-gray-400 italic">Done</span>
+
                         ) : (
                           <div className="flex gap-2">
                             <button

@@ -92,7 +92,7 @@ const Reschedule = () => {
       newDate: originalData.date,
       newTime: originalData.time,
     });
-    navigate(`/superadmin/events`);
+    navigate(`/admin/events`);
   };
 
   return (

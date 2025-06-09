@@ -58,6 +58,7 @@ const UserList = () => {
     fetchUsers();
   }, []);
 
+  // Handler for normal users (student/professional)
   const handleSave = async (userId) => {
     try {
       const userResponse = await axios.put(
@@ -72,7 +73,7 @@ const UserList = () => {
           title: "Success!",
           text: "User updated successfully.",
           timer: 1500,
-          showConfirmButton: false
+          showConfirmButton: false,
         });
         setUsers((prevUsers) =>
           prevUsers.map((user) =>
@@ -86,12 +87,56 @@ const UserList = () => {
     }
   };
 
-  // Pagination logic
+  // Handler for admin/superadmin
+  const handleAdminSave = async (userId) => {
+    try {
+      const adminResponse = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/superadmin/admin/update/${userId}`,
+        editedUser,
+        { withCredentials: true }
+      );
+
+      if (adminResponse.data.success) {
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: "Admin/Superadmin updated successfully.",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+        setUsers((prevUsers) =>
+          prevUsers.map((user) =>
+            user._id === userId ? adminResponse.data.user : user
+          )
+        );
+        setEditingUserId(null);
+      }
+    } catch (error) {
+      console.error("Error updating admin/superadmin:", error.message);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to update admin/superadmin. Please try again.",
+        confirmButtonText: "OK",
+      });
+    }
+  };
+
+  // Search and Pagination
+  const filteredUsers = users.filter((user) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      user.fullName?.toLowerCase().includes(query) ||
+      user.userType?.toLowerCase().includes(query) ||
+      user.email?.toLowerCase().includes(query)
+    );
+  });
+
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
-  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
-  const totalPages = Math.ceil(users.length / usersPerPage);
-  const name = userData.fullName;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
@@ -334,6 +379,12 @@ const UserList = () => {
                 {currentUsers.length > 0 ? (
                   currentUsers.map((user, index) => {
                     const isEditing = user._id === editingUserId;
+                    const canEditUserType =
+                      user.userType === "student" ||
+                      user.userType === "professional";
+                    const canEditAdminType =
+                      user.userType === "admin" ||
+                      user.userType === "superadmin";
 
                     return (
                       <tr key={index} className="border-b hover:bg-gray-50">
@@ -353,7 +404,39 @@ const UserList = () => {
                             user.fullName
                           )}
                         </td>
-                        <td className="p-3">{user.userType}</td>
+                        <td className="p-3">
+                          {isEditing && canEditUserType ? (
+                            <select
+                              value={editedUser.userType}
+                              onChange={(e) =>
+                                setEditedUser({
+                                  ...editedUser,
+                                  userType: e.target.value,
+                                })
+                              }
+                              className="border px-2 py-1 rounded w-full"
+                            >
+                              <option value="student">Student</option>
+                              <option value="professional">Professional</option>
+                            </select>
+                          ) : isEditing && canEditAdminType ? (
+                            <select
+                              value={editedUser.userType}
+                              onChange={(e) =>
+                                setEditedUser({
+                                  ...editedUser,
+                                  userType: e.target.value,
+                                })
+                              }
+                              className="border px-2 py-1 rounded w-full"
+                            >
+                              <option value="admin">admin</option>
+                              <option value="superadmin">superadmin</option>
+                            </select>
+                          ) : (
+                            user.userType
+                          )}
+                        </td>
                         <td className="p-3">
                           {isEditing ? (
                             <input
@@ -424,7 +507,6 @@ const UserList = () => {
                               onClick={async () => {
                                 const newStatus = !user.disabled;
                                 const action = newStatus ? "disable" : "enable";
-                                
                                 const result = await Swal.fire({
                                   title: `Are you sure?`,
                                   text: `Do you want to ${action} this user's account?`,
@@ -432,13 +514,15 @@ const UserList = () => {
                                   showCancelButton: true,
                                   confirmButtonColor: "#3085d6",
                                   cancelButtonColor: "#d33",
-                                  confirmButtonText: `Yes, ${action} it!`
+                                  confirmButtonText: `Yes, ${action} it!`,
                                 });
 
                                 if (result.isConfirmed) {
                                   try {
                                     const userResponse = await axios.put(
-                                      `${import.meta.env.VITE_BACKEND_URL}/api/superadmin/update/${user._id}`,
+                                      `${
+                                        import.meta.env.VITE_BACKEND_URL
+                                      }/api/superadmin/update/${user._id}`,
                                       { disabled: newStatus },
                                       { withCredentials: true }
                                     );
@@ -455,16 +539,19 @@ const UserList = () => {
                                         title: "Success!",
                                         text: `User account has been ${action}d.`,
                                         timer: 1500,
-                                        showConfirmButton: false
+                                        showConfirmButton: false,
                                       });
                                     }
                                   } catch (error) {
-                                    console.error("Error updating user status:", error.message);
+                                    console.error(
+                                      "Error updating user status:",
+                                      error.message
+                                    );
                                     Swal.fire({
                                       icon: "error",
                                       title: "Error",
                                       text: "Failed to update user status. Please try again.",
-                                      confirmButtonText: "OK"
+                                      confirmButtonText: "OK",
                                     });
                                   }
                                 }
@@ -485,12 +572,21 @@ const UserList = () => {
                             </span>
                           ) : editingUserId === user._id ? (
                             <>
-                              <button
-                                onClick={() => handleSave(user._id)}
-                                className="text-green-600 hover:underline"
-                              >
-                                Save
-                              </button>
+                              {(canEditAdminType) ? (
+                                <button
+                                  onClick={() => handleAdminSave(user._id)}
+                                  className="text-green-600 hover:underline"
+                                >
+                                  Save
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleSave(user._id)}
+                                  className="text-green-600 hover:underline"
+                                >
+                                  Save
+                                </button>
+                              )}
                               <button
                                 onClick={() => setEditingUserId(null)}
                                 className="text-gray-600 hover:underline"
@@ -499,15 +595,17 @@ const UserList = () => {
                               </button>
                             </>
                           ) : (
-                            <button
-                              onClick={() => {
-                                setEditingUserId(user._id);
-                                setEditedUser({ ...user });
-                              }}
-                              className="text-blue-600 hover:underline"
-                            >
-                              Edit
-                            </button>
+                            (canEditUserType || canEditAdminType) && (
+                              <button
+                                onClick={() => {
+                                  setEditingUserId(user._id);
+                                  setEditedUser({ ...user });
+                                }}
+                                className="text-blue-600 hover:underline"
+                              >
+                                Edit
+                              </button>
+                            )
                           )}
                         </td>
                       </tr>
@@ -525,7 +623,7 @@ const UserList = () => {
           )}
 
           {/* Pagination Controls */}
-          {users.length > usersPerPage && (
+          {filteredUsers.length > usersPerPage && (
             <div className="flex justify-between items-center mt-4 text-sm text-gray-600">
               <button
                 className="px-3 py-1 border rounded disabled:opacity-50"

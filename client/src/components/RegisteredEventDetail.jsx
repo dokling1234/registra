@@ -2,9 +2,9 @@ import React, { useEffect, useState, useContext, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { AppContent } from "../context/AppContext";
-import Navbar from "../components/Navbar"; // Import Navbar
-import "./RegisteredEventDetail.css"; // Import CSS for styling
-import html2pdf from 'html2pdf.js';
+import Navbar from "../components/Navbar";
+import "./RegisteredEventDetail.css";
+import html2pdf from "html2pdf.js";
 import Swal from "sweetalert2";
 
 // Certificate Component
@@ -16,9 +16,9 @@ const Certificate = ({ event, userData, organizers }) => {
     const opt = {
       margin: 1,
       filename: `${event.title}_Certificate.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
+      image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+      jsPDF: { unit: "in", format: "letter", orientation: "landscape" },
     };
 
     html2pdf().set(opt).from(element).save();
@@ -27,31 +27,61 @@ const Certificate = ({ event, userData, organizers }) => {
   return (
     <div className="certificate-container">
       <div ref={certificateRef} className="certificate">
-        <div className="relative bg-white rounded-2xl shadow-xl flex flex-col items-center border-0 print:bg-white print:shadow-none"
-          style={{ minWidth: 700, minHeight: 500, padding: 0, overflow: 'hidden' }}>
+        <div
+          className="relative bg-white rounded-2xl shadow-xl flex flex-col items-center border-0 print:bg-white print:shadow-none"
+          style={{
+            minWidth: 700,
+            minHeight: 500,
+            padding: 0,
+            overflow: "hidden",
+          }}
+        >
           {/* Gold/Navy Border */}
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 0,
-            pointerEvents: 'none',
-            background: 'linear-gradient(135deg, #002147 0%, #FFD700 100%)',
-            borderRadius: '1.25rem',
-            padding: '8px',
-          }} />
-          <div style={{
-            position: 'absolute',
-            inset: 12,
-            zIndex: 1,
-            background: 'white',
-            borderRadius: '1rem',
-          }} />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 0,
+              pointerEvents: "none",
+              background: "linear-gradient(135deg, #002147 0%, #FFD700 100%)",
+              borderRadius: "1.25rem",
+              padding: "8px",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 12,
+              zIndex: 1,
+              background: "white",
+              borderRadius: "1rem",
+            }}
+          />
           <div className="relative z-10 flex flex-col items-center w-full px-12 py-10 print:p-0">
-            <h2 className="text-4xl font-serif font-bold text-blue-900 tracking-wider mb-2">CERTIFICATE</h2>
-            <div className="text-xl font-serif text-blue-900 tracking-widest mb-4">OF ACHIEVEMENT</div>
-            <div className="text-base font-medium text-gray-700 mb-2 mt-2 tracking-wide">THIS CERTIFICATE IS PROUDLY PRESENTED TO</div>
-            <div className="text-4xl font-signature text-blue-900 mb-2 mt-2" style={{ fontFamily: 'cursive, Pacifico, Arial' }}>{userData.fullName}</div>
-            <div className="text-base text-gray-700 mb-4 text-center max-w-2xl">For outstanding participation in <span className="font-semibold text-blue-800">{event.title}</span> held on <span className="font-semibold text-blue-800">{new Date(event.date).toLocaleDateString()}</span>. We recognize your dedication and achievement.</div>
+            <h2 className="text-4xl font-serif font-bold text-blue-900 tracking-wider mb-2">
+              CERTIFICATE
+            </h2>
+            <div className="text-xl font-serif text-blue-900 tracking-widest mb-4">
+              OF ACHIEVEMENT
+            </div>
+            <div className="text-base font-medium text-gray-700 mb-2 mt-2 tracking-wide">
+              THIS CERTIFICATE IS PROUDLY PRESENTED TO
+            </div>
+            <div
+              className="text-4xl font-signature text-blue-900 mb-2 mt-2"
+              style={{ fontFamily: "cursive, Pacifico, Arial" }}
+            >
+              {userData.fullName}
+            </div>
+            <div className="text-base text-gray-700 mb-4 text-center max-w-2xl">
+              For outstanding participation in{" "}
+              <span className="font-semibold text-blue-800">{event.title}</span>{" "}
+              held on{" "}
+              <span className="font-semibold text-blue-800">
+                {new Date(event.date).toLocaleDateString()}
+              </span>
+              . We recognize your dedication and achievement.
+            </div>
             {/* Central Seal */}
             <div className="flex justify-center items-center my-6">
               <div className="rounded-full border-4 border-yellow-400 bg-gradient-to-br from-yellow-200 to-yellow-500 w-20 h-20 flex items-center justify-center shadow-lg">
@@ -63,10 +93,21 @@ const Certificate = ({ event, userData, organizers }) => {
               {organizers.map((org, idx) => (
                 <div key={idx} className="flex flex-col items-center">
                   {org.signature && (
-                    <img src={org.signature} alt="Signature" className="h-10 object-contain mb-1" />
+                    <img
+                      src={org.signature}
+                      alt="Signature"
+                      className="h-10 object-contain mb-1"
+                    />
                   )}
-                  <span className="font-signature text-xl text-blue-900 mb-1" style={{ fontFamily: 'cursive, Pacifico, Arial' }}>{org.name}</span>
-                  <span className="text-xs text-gray-500 uppercase tracking-widest">{org.label}</span>
+                  <span
+                    className="font-signature text-xl text-blue-900 mb-1"
+                    style={{ fontFamily: "cursive, Pacifico, Arial" }}
+                  >
+                    {org.name}
+                  </span>
+                  <span className="text-xs text-gray-500 uppercase tracking-widest">
+                    {org.label}
+                  </span>
                 </div>
               ))}
             </div>
@@ -100,7 +141,9 @@ const RegisteredEventDetail = () => {
   useEffect(() => {
     const fetchRegisteredEvent = async () => {
       try {
-        const res = await axios.get(`${backendUrl}/api/events/registered/${id}`);
+        const res = await axios.get(
+          `${backendUrl}/api/events/registered/${id}`
+        );
         const fetchedEvent = res.data.event;
         setEvent(fetchedEvent);
 
@@ -111,30 +154,43 @@ const RegisteredEventDetail = () => {
           setIsPastEvent(true);
 
           // Fetch feedback form and submission status
-          const feedbackRes = await axios.get(`${backendUrl}/api/feedback/getFeedback/${fetchedEvent._id}`);
+          const feedbackRes = await axios.get(
+            `${backendUrl}/api/feedback/getFeedback/${fetchedEvent._id}`
+          );
           setFeedbackForm(feedbackRes.data || null);
 
           // Check if user has submitted feedback
-          const submissionRes = await axios.get(`${backendUrl}/api/feedback/checkSubmission/${fetchedEvent._id}`);
+          const submissionRes = await axios.get(
+            `${backendUrl}/api/feedback/checkSubmission/${fetchedEvent._id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
           setHasSubmittedFeedback(submissionRes.data.hasSubmitted || false);
 
           // If feedback is submitted, fetch the certificate template
           if (submissionRes.data.hasSubmitted) {
             try {
-              const templateRes = await axios.get(`${backendUrl}/api/certificate/template/${fetchedEvent._id}`);
-              console.log('Template response:', templateRes.data); // Debug log
+              const templateRes = await axios.get(
+                `${backendUrl}/api/certificate/template/${fetchedEvent._id}`
+              );
               if (templateRes.data.success) {
                 setCertificateTemplate(templateRes.data.template);
               }
             } catch (err) {
-              console.error('Error fetching certificate template:', err);
+              console.error("Error fetching certificate template:", err);
             }
           }
         }
 
         setLoading(false);
       } catch (err) {
-        console.error("Failed to fetch registered event:", err.response?.data || err.message);
+        console.error(
+          "Failed to fetch registered event:",
+          err.response?.data || err.message
+        );
       }
     };
 
@@ -155,6 +211,13 @@ const RegisteredEventDetail = () => {
         answers.push({
           questionText: q.text,
           type: "Likert",
+          options: q.options || [
+            "Very Unsatisfied",
+            "Unsatisfied",
+            "Neutral",
+            "Satisfied",
+            "Very Satisfied",
+          ],
           answers: likertAnswers,
         });
       } else {
@@ -169,25 +232,29 @@ const RegisteredEventDetail = () => {
 
     try {
       // Submit feedback
-      const res = await axios.post(`${backendUrl}/api/feedback/submitFeedback/${feedbackForm._id}`, {
-        userId: userData._id,
-        answers
-      }, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      const res = await axios.post(
+        `${backendUrl}/api/feedback/submitFeedback/${feedbackForm._id}`,
+        {
+          userId: userData._id,
+          answers,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      });
+      );
 
       if (res.data) {
         // Fetch latest event data and template
         const [eventRes, templateRes] = await Promise.all([
           axios.get(`${backendUrl}/api/events/${event._id}`),
-          axios.get(`${backendUrl}/api/certificate/template/${event._id}`)
+          axios.get(`${backendUrl}/api/certificate/template/${event._id}`),
         ]);
-        
+
         const updatedEvent = eventRes.data.event;
         const template = templateRes.data.template;
-        
+
         setEvent(updatedEvent);
         setCertificateTemplate(template);
 
@@ -197,56 +264,72 @@ const RegisteredEventDetail = () => {
           const opt = {
             margin: 0,
             filename: `${updatedEvent.title}-certificate.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { 
+            image: { type: "jpeg", quality: 0.98 },
+            html2canvas: {
               scale: 2,
               useCORS: true,
-              logging: false
+              logging: false,
             },
-            jsPDF: { 
-              unit: 'in', 
-              format: 'letter', 
-              orientation: 'landscape'
-            }
+            jsPDF: {
+              unit: "in",
+              format: "letter",
+              orientation: "landscape",
+            },
           };
 
           try {
             // Generate PDF with updated event data
-            const pdfBlob = await html2pdf().set(opt).from(certificateContent).outputPdf('blob');
+            const pdfBlob = await html2pdf()
+              .set(opt)
+              .from(certificateContent)
+              .outputPdf("blob");
             const formData = new FormData();
-            formData.append('file', new File([pdfBlob], `${updatedEvent.title}-certificate.pdf`, { type: 'application/pdf' }));
+            formData.append(
+              "file",
+              new File([pdfBlob], `${updatedEvent.title}-certificate.pdf`, {
+                type: "application/pdf",
+              })
+            );
 
             // Upload PDF to storage
-            const uploadRes = await axios.post(`${backendUrl}/api/certificate/upload-template`, formData, {
-              headers: {
-                'Content-Type': 'multipart/form-data',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            const uploadRes = await axios.post(
+              `${backendUrl}/api/certificate/upload-template`,
+              formData,
+              {
+                headers: {
+                  "Content-Type": "multipart/form-data",
+                  Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
               }
-            });
-            
+            );
+
             if (uploadRes.data.url) {
               // Save certificate information to database
-              const certificateRes = await axios.post(`${backendUrl}/api/certificate/save`, {
-                eventId: updatedEvent._id,
-                certificateUrl: uploadRes.data.url
-              }, {
-                headers: {
-                  'Authorization': `Bearer ${localStorage.getItem('token')}`
+              const certificateRes = await axios.post(
+                `${backendUrl}/api/certificate/save`,
+                {
+                  eventId: updatedEvent._id,
+                  certificateUrl: uploadRes.data.url,
+                },
+                {
+                  headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                  },
                 }
-              });
-              
+              );
+
               if (certificateRes.data.success) {
                 setCertificate(certificateRes.data.certificate);
                 setShowCertificate(true);
               }
             }
           } catch (err) {
-            console.error('Error generating certificate:', err);
+            console.error("Error generating certificate:", err);
             Swal.fire({
               icon: "error",
               title: "Error",
               text: "There was an error generating your certificate. Please try again.",
-              confirmButtonText: "OK"
+              confirmButtonText: "OK",
             });
           }
         }
@@ -257,7 +340,7 @@ const RegisteredEventDetail = () => {
           title: "Success!",
           text: "Feedback submitted successfully! You can now download your certificate.",
           timer: 2000,
-          showConfirmButton: false
+          showConfirmButton: false,
         });
       }
     } catch (err) {
@@ -266,7 +349,7 @@ const RegisteredEventDetail = () => {
         icon: "error",
         title: "Error",
         text: "There was an issue submitting your feedback. Please try again.",
-        confirmButtonText: "OK"
+        confirmButtonText: "OK",
       });
     }
   };
@@ -291,12 +374,16 @@ const RegisteredEventDetail = () => {
             {!hasSubmittedFeedback ? (
               <>
                 <p className="past-event-heading">
-                  This event has already passed. Please provide your feedback below to receive your certificate.
+                  This event has already passed. Please provide your feedback
+                  below to receive your certificate.
                 </p>
 
                 {/* Display the feedback form if it exists */}
                 {feedbackForm ? (
-                  <form className="feedback-form" onSubmit={handleFeedbackSubmit}>
+                  <form
+                    className="feedback-form"
+                    onSubmit={handleFeedbackSubmit}
+                  >
                     <h2 className="feedback-form-title">Your Feedback</h2>
                     {feedbackForm.questions.map((q, index) => (
                       <div key={index} className="feedback-question">
@@ -389,7 +476,8 @@ const RegisteredEventDetail = () => {
             ) : (
               <>
                 <p className="past-event-heading">
-                  Thank you for your feedback! Your certificate is being generated.
+                  Thank you for your feedback! Your certificate is being
+                  generated.
                 </p>
                 {certificateTemplate ? (
                   <div className="certificate-preview">

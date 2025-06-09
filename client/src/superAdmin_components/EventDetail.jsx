@@ -4,15 +4,14 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const EventDetail = () => {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const { id } = useParams();
   const [event, setEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showRescheduleForm, setShowRescheduleForm] = useState(false);
-  const [rescheduleData, setRescheduleData] = useState({
-    newDate: "",
-    newTime: "",
-    reason: ""
+  const [eventData, setEventData] = useState({
+    date: "",
+    time: "",
   });
 
   useEffect(() => {
@@ -21,7 +20,10 @@ const EventDetail = () => {
         const res = await axios.get(`/api/events/${id}`);
         setEvent(res.data.event);
       } catch (err) {
-        console.error("Failed to fetch event:", err.response?.data || err.message);
+        console.error(
+          "Failed to fetch event:",
+          err.response?.data || err.message
+        );
       }
     };
 
@@ -29,7 +31,11 @@ const EventDetail = () => {
   }, [id]);
 
   const handleCancelEvent = async () => {
-    if (!window.confirm("Are you sure you want to cancel this event? This action cannot be undone.")) {
+    if (
+      !window.confirm(
+        "Are you sure you want to cancel this event? This action cannot be undone."
+      )
+    ) {
       return;
     }
 
@@ -38,7 +44,7 @@ const EventDetail = () => {
       const res = await axios.put(`/api/events/${id}/cancel`);
       if (res.data.success) {
         toast.success("Event cancelled successfully");
-        navigate("/admin/events");
+        navigate("/superadmin/events");
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to cancel event");
@@ -53,32 +59,26 @@ const EventDetail = () => {
 
   const handleRescheduleSubmit = async (e) => {
     e.preventDefault();
-    if (!rescheduleData.newDate || !rescheduleData.newTime || !rescheduleData.reason) {
+    if (!eventData.date || !eventData.time) {
       toast.error("Please fill in all fields");
       return;
     }
 
     setIsLoading(true);
     try {
-      const res = await axios.put(`/api/events/${id}/reschedule`, rescheduleData);
-      if (res.data.success) {
-        toast.success("Event rescheduled successfully");
-        setShowRescheduleForm(false);
-        // Refresh event data
-        const updatedEvent = await axios.get(`/api/events/${id}`);
-        setEvent(updatedEvent.data.event);
-      }
+      const res = await axios.put(`/api/events/${id}`, eventData);
+
+      toast.success("Event rescheduled successfully");
+      setShowRescheduleForm(false);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to reschedule event");
-    } finally {
-      setIsLoading(false);
+      toast.error(err);
     }
   };
 
   const handleRescheduleChange = (e) => {
-    setRescheduleData({
-      ...rescheduleData,
-      [e.target.name]: e.target.value
+    setEventData({
+      ...eventData,
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -95,7 +95,9 @@ const EventDetail = () => {
         </button>
         <div className="bg-white rounded-2xl shadow-2xl p-10 flex flex-col items-center">
           <div className="bg-gradient-to-r from-blue-600 to-blue-400 rounded-xl p-6 mb-8 shadow w-full flex items-center justify-center">
-            <h1 className="text-4xl font-extrabold text-white tracking-wide text-center">{event.title}</h1>
+            <h1 className="text-4xl font-extrabold text-white tracking-wide text-center">
+              {event.title}
+            </h1>
           </div>
           <div className="w-full flex flex-col gap-4 mb-8">
             <div className="flex items-center gap-2 text-lg text-gray-700">
@@ -118,13 +120,16 @@ const EventDetail = () => {
           </div>
 
           {showRescheduleForm ? (
-            <form onSubmit={handleRescheduleSubmit} className="w-full space-y-4 mb-6">
+            <form
+              onSubmit={handleRescheduleSubmit}
+              className="w-full space-y-4 mb-6"
+            >
               <div className="flex flex-col gap-2">
                 <label className="font-semibold text-gray-700">New Date</label>
                 <input
                   type="date"
-                  name="newDate"
-                  value={rescheduleData.newDate}
+                  name="date"
+                  value={eventData.date}
                   onChange={handleRescheduleChange}
                   className="border border-gray-300 rounded-lg px-4 py-2"
                   required
@@ -134,24 +139,24 @@ const EventDetail = () => {
                 <label className="font-semibold text-gray-700">New Time</label>
                 <input
                   type="time"
-                  name="newTime"
-                  value={rescheduleData.newTime}
+                  name="time"
+                  value={eventData.time}
                   onChange={handleRescheduleChange}
                   className="border border-gray-300 rounded-lg px-4 py-2"
                   required
                 />
               </div>
-              <div className="flex flex-col gap-2">
+              {/* <div className="flex flex-col gap-2">
                 <label className="font-semibold text-gray-700">Reason for Rescheduling</label>
                 <textarea
                   name="reason"
-                  value={rescheduleData.reason}
+                  value={eventData.reason}
                   onChange={handleRescheduleChange}
                   className="border border-gray-300 rounded-lg px-4 py-2 h-24"
                   placeholder="Please provide a reason for rescheduling..."
                   required
                 />
-              </div>
+              </div> */}
               <div className="flex gap-4 mt-4">
                 <button
                   type="submit"
@@ -162,7 +167,10 @@ const EventDetail = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowRescheduleForm(false)}
+                  onClick={() => {
+                    setShowRescheduleForm(false);
+                    setIsLoading(false); // Reset loading state on cancel
+                  }}
                   className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
                 >
                   Cancel

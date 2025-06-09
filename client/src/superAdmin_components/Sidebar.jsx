@@ -1,6 +1,6 @@
-import React, { useContext } from "react"; // Import useContext
+import React, { useContext } from "react"; 
 import { useNavigate, useLocation } from "react-router-dom";
-import { AppContent } from "../context/AppContext"; // Import AppContent
+import { AppContent } from "../context/AppContext"; 
 import axios from "axios";
 import { toast } from "react-toastify";
 import { assets } from "../assets/assets";
@@ -10,7 +10,7 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { userData, backendUrl, setUserData, setIsLoggedin } =
-    useContext(AppContent); // Use AppContent context
+    useContext(AppContent); 
 
   const logout = async () => {
     try {
@@ -36,7 +36,7 @@ const Sidebar = () => {
             'You have been successfully logged out.',
             'success'
           );
-          navigate("/");
+          navigate("/admin");
         }
       }
     } catch (error) {

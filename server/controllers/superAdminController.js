@@ -122,6 +122,37 @@ const updateUser = async (req, res) => {
   }
 };
 
+const updateAdminOrSuperadmin = async (req, res) => {
+  console.log("Update Admin/Superadmin Request:");
+  try {
+    const { id } = req.params;
+    const updateData = req.body; // Contains fields to update, including userType, disabled, etc.
+console.log(req.body);
+    // Use your admin model here, e.g., adminModel
+    const updatedAdmin = await adminModel.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
+
+    if (!updatedAdmin) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Admin/Superadmin not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Admin/Superadmin updated successfully",
+      user: updatedAdmin,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error updating admin/superadmin",
+      error: error.message,
+    });
+  }
+};
+
 const cancelEvent = async (req, res) => {
   try {
     const eventId = req.params.id;
@@ -142,4 +173,4 @@ const cancelEvent = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-module.exports = { createSuperAdmin, enableUser, disableUser, updateUser, cancelEvent };
+module.exports = { createSuperAdmin, enableUser, disableUser, updateUser, cancelEvent, updateAdminOrSuperadmin };

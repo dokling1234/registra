@@ -57,7 +57,7 @@ const EventDetail = () => {
     setShowRescheduleForm(true);
   };
 
- const handleRescheduleSubmit = async (e) => {
+  const handleRescheduleSubmit = async (e) => {
     e.preventDefault();
     if (!eventData.date || !eventData.time) {
       toast.error("Please fill in all fields");
@@ -167,7 +167,10 @@ const EventDetail = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowRescheduleForm(false)}
+                  onClick={() => {
+                    setShowRescheduleForm(false);
+                    setIsLoading(false); // Reset loading state on cancel
+                  }}
                   className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
                 >
                   Cancel

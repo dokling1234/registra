@@ -40,7 +40,10 @@ const Events = () => {
         const res = await axios.get("/api/events");
         setEvents(res.data.events);
       } catch (err) {
-        console.error("Error fetching events:", err.response?.data || err.message);
+        console.error(
+          "Error fetching events:",
+          err.response?.data || err.message
+        );
       }
     };
     fetchEvents();
@@ -52,46 +55,47 @@ const Events = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     try {
       let imageUrl = "";
-  
+
       if (imageFile) {
         const formData = new FormData();
         formData.append("file", imageFile);
-        formData.append("upload_preset", "event_preset"); 
-  
+        formData.append("upload_preset", "event_preset");
+
         try {
           const uploadRes = await axios.post(
             `https://api.cloudinary.com/v1_1/dqbnc38or/image/upload`,
             formData,
             {
-              withCredentials: false, 
+              withCredentials: false,
             }
           );
           imageUrl = uploadRes.data.secure_url;
         } catch (uploadError) {
           console.error("Cloudinary upload error:", uploadError);
-          toast.error("Image upload failed. Please check your network or try a smaller image.");
+          toast.error(
+            "Image upload failed. Please check your network or try a smaller image."
+          );
           return;
         }
       }
-  
+
       const timeIn24Hour = eventData.time.split(" ")[0];
-  
+
       const payload = {
         ...eventData,
         time: timeIn24Hour,
         image: imageUrl,
         cost: eventData.cost,
-          coordinates: lngLat,
       };
-  
+
       const { data } = await axios.post(
         `${backendUrl}/api/events/create`,
         payload
       );
-  
+
       if (data.success) {
         toast.success("Event created successfully!");
         setShowAddForm(false);
@@ -153,25 +157,30 @@ const Events = () => {
         center: [121.0437, 14.676],
         zoom: 12,
       });
-  
+
       mapRef.current = map;
-  
+
       map.on("click", async (e) => {
         const { lng, lat } = e.lngLat;
         setLngLat([lng, lat]);
-  
+
         if (markerRef.current) {
           markerRef.current.remove();
         }
-  
-        const newMarker = new maplibregl.Marker().setLngLat([lng, lat]).addTo(map);
+
+        const newMarker = new maplibregl.Marker()
+          .setLngLat([lng, lat])
+          .addTo(map);
         markerRef.current = newMarker;
-  
+
         try {
-          const res = await axios.post(`${backendUrl}/api/event/location/reverse-geocode`, {
-            lat,
-            lon: lng,
-          });
+          const res = await axios.post(
+            `${backendUrl}/api/event/location/reverse-geocode`,
+            {
+              lat,
+              lon: lng,
+            }
+          );
           const { display_name } = res.data;
           setPlaceName(display_name);
 
@@ -179,12 +188,11 @@ const Events = () => {
             ...prevData,
             location: display_name,
           }));
-          
         } catch (err) {
           console.error("Reverse geocoding failed", err);
         }
       });
-  
+
       return () => map.remove();
     }
   }, [showAddForm]);
@@ -197,6 +205,37 @@ const Events = () => {
     return null;
   }
 
+  const handleEdit = (eventId) => {
+    navigate(`/superadmin/events/edit/${eventId}`); // Add rescheduling logic here
+    // Add edit logic here (e.g., open a modal or form)
+  };
+
+  const handleReschedule = (eventId) => {
+    navigate(`/superadmin/events/reschedule/${eventId}`); // Add rescheduling logic here
+  };
+
+  const handleCancel = async (eventId) => {
+    try {
+      const confirm = window.confirm(
+        "Are you sure you want to cancel this event?"
+      );
+      if (!confirm) return;
+
+      const { data } = await axios.put(
+        `${backendUrl}/api/superadmin/cancel-event/${eventId}`
+      );
+      if (data.success) {
+        toast.success("Event cancelled successfully");
+        const res = await axios.get("/api/events");
+        setEvents(res.data.events);
+      } else {
+        toast.error(data.message || "Failed to cancel");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Error cancelling event");
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
@@ -208,12 +247,14 @@ const Events = () => {
             <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-lg shadow-sm">
               <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
                 <span className="text-blue-600 font-semibold text-lg">
-                  {userData.fullName.charAt(0).toUpperCase()}
+                    {userData.fullName.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div className="flex flex-col">
                 <p className="text-sm text-gray-500">Welcome back,</p>
-                <p className="text-lg font-semibold text-gray-800">{userData.fullName}</p>
+                <p className="text-lg font-semibold text-gray-800">
+                  {userData.fullName}
+                </p>
               </div>
             </div>
           ) : (
@@ -244,7 +285,13 @@ const Events = () => {
               { name: "title", label: "Title" },
               { name: "date", label: "Date", type: "date" },
               { name: "price", label: "Event Price (ticket/registration fee)" },
-              { name: "cost", label: "Event Cost (expenses, e.g. rent, materials)", type: "number", helper: "How much you spent for this event (e.g. venue, food, materials, etc.)" },
+              {
+                name: "cost",
+                label: "Event Cost (expenses, e.g. rent, materials)",
+                type: "number",
+                helper:
+                  "How much you spent for this event (e.g. venue, food, materials, etc.)",
+              },
               { name: "about", label: "About the Event" },
               { name: "hostName", label: "Host Name" },
             ].map(({ name, label, type = "text", helper }) => (
@@ -258,7 +305,9 @@ const Events = () => {
                   className="border border-gray-300 rounded-md px-4 py-2"
                   required={["title", "date", "cost"].includes(name)}
                 />
-                {helper && <span className="text-xs text-gray-500 mt-1">{helper}</span>}
+                {helper && (
+                  <span className="text-xs text-gray-500 mt-1">{helper}</span>
+                )}
               </div>
             ))}
 
@@ -313,7 +362,7 @@ const Events = () => {
                 <input
                   type="text"
                   name="location"
-                  value={eventData.location} 
+                  value={eventData.location}
                   onChange={handleChange}
                   className="flex-1 border border-gray-300 rounded-md px-4 py-2"
                   placeholder="Ex: SM Megamall, etc"
@@ -364,9 +413,14 @@ const Events = () => {
 
             <div className="flex flex-col">
               <label className="mb-1 font-semibold">Pick Location (Map)</label>
-              <div ref={mapContainer} className="h-64 rounded border border-gray-300 mb-2" />
+              <div
+                ref={mapContainer}
+                className="h-64 rounded border border-gray-300 mb-2"
+              />
               <p className="text-sm text-gray-500">
-                {placeName ? `Selected: ${placeName}` : "Click on the map to select a location"}
+                {placeName
+                  ? `Selected: ${placeName}`
+                  : "Click on the map to select a location"}
               </p>
             </div>
 
@@ -405,26 +459,59 @@ const Events = () => {
             </thead>
             <tbody>
               {events.length > 0 ? (
-                events.map((event, idx) => (
-                  <tr key={idx} className="border-t">
-                    <td className="px-6 py-4">{event.title}</td>
-                    <td className="px-6 py-4">
-                      {new Date(event.date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4">{event.time}</td>
-                    <td className="px-6 py-4">₱{event.price}</td>
-                    <td className="px-6 py-4">{event.eventType}</td>
-                    <td className="px-10 py-4">
-                      {event.registrations ? event.registrations.length : 0} 
-                      {/* / {event.maxParticipants || 'N/A'} */}
-                    </td>
-                    <td className="px-6 py-4">
-                      <Link to={`/adminevents/${event._id}`} className="text-blue-600 hover:underline text-sm">
-                        View
-                      </Link>
-                    </td>
-                  </tr>
-                ))
+                events.map((event, idx) => {
+                  const isPastEvent = new Date(event.date) < new Date();
+
+                  return (
+                    <tr key={idx} className="border-t">
+                      <td className="px-6 py-4">{event.title}</td>
+                      <td className="px-6 py-4">
+                        {new Date(event.date).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4">{event.time}</td>
+                      <td className="px-6 py-4">₱{event.price}</td>
+                      <td className="px-6 py-4">{event.eventType}</td>
+                      <td className="px-10 py-4">
+                        {event.registrations ? event.registrations.length : 0}
+                      </td>
+                      <td className="px-6 py-4">
+                        {event.status === "cancelled" ? (
+                          <span className="text-red-600 font-semibold">
+                            Cancelled
+                          </span>
+                        ) : isPastEvent ? (
+                          <Link
+                            to={`/adminevents/${event._id}`}
+                            className="text-blue-600 hover:underline text-sm"
+                          >
+                            View
+                          </Link>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button
+                              className="text-yellow-600 hover:underline text-sm"
+                              onClick={() => handleEdit(event._id)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="text-indigo-600 hover:underline text-sm"
+                              onClick={() => handleReschedule(event._id)}
+                            >
+                              Reschedule
+                            </button>
+                            <button
+                              className="text-red-600 hover:underline text-sm"
+                              onClick={() => handleCancel(event._id)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td
@@ -443,4 +530,4 @@ const Events = () => {
   );
 };
 
-export default Events; 
+export default Events;

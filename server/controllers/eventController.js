@@ -484,7 +484,6 @@ const getEventByTitle = async (req, res) => {
     });
 
     // Ensure the response is structured as expected
-    console.log("Found events:", events);
     res.status(200).json({ success: true, events });
   } catch (err) {
     console.error("Error searching events:", err);
