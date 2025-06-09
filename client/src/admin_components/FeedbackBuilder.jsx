@@ -10,6 +10,7 @@ const FeedbackBuilder = () => {
   const [eventQuery, setEventQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [existingForm, setExistingForm] = useState(null);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -17,7 +18,13 @@ const FeedbackBuilder = () => {
         axios
           .post("/api/events/search", { title: eventQuery })
           .then((res) => {
-            setSearchResults(res.data.events || []);
+            // Filter out events whose date has already passed
+            const now = new Date();
+            const filtered = (res.data.events || []).filter((event) => {
+              const eventDate = new Date(event.date);
+              return eventDate >= now;
+            });
+            setSearchResults(filtered);
           })
           .catch((err) => {
             console.error("Error fetching events:", err);
@@ -25,17 +32,52 @@ const FeedbackBuilder = () => {
       } else {
         setSearchResults([]);
       }
-    }, 300); 
+    }, 300);
 
     return () => clearTimeout(delayDebounceFn);
   }, [eventQuery]);
+
+  // Check for existing feedback form when event is selected
+  useEffect(() => {
+    if (selectedEvent) {
+      console.log(`selecte ${selectedEvent._id}`);
+
+      axios
+        .get(`/api/feedback/getFeedback/${selectedEvent._id}`)
+        .then((res) => {
+          if (res.data && res.data.questions && res.data.questions.length > 0) {
+            setExistingForm(res.data);
+            setQuestions(res.data.questions);
+          } else {
+            setExistingForm(null);
+            setQuestions([]);
+          }
+        })
+        .catch((err) => {
+          setExistingForm(null);
+          setQuestions([]);
+        });
+    } else {
+      setExistingForm(null);
+      setQuestions([]);
+    }
+  }, [selectedEvent]);
 
   const addQuestion = (type = "Text") => {
     const newQuestion = {
       id: Date.now(),
       type,
       text: "Untitled Question",
-      options: type === "Choice" ? ["Very Unsatisfied", "Unsatisfied", "Neutral", "Satisfied", "Very Satisfied"] : [],
+      options:
+        type === "Choice"
+          ? [
+              "Very Unsatisfied",
+              "Unsatisfied",
+              "Neutral",
+              "Satisfied",
+              "Very Satisfied",
+            ]
+          : [],
       statements: type === "Likert" ? ["Statement 1", "Statement 2"] : [],
     };
     setQuestions([...questions, newQuestion]);
@@ -88,7 +130,10 @@ const FeedbackBuilder = () => {
 
   const renderQuestion = (q, index) => {
     return (
-      <div className="border p-4 mb-4 rounded-md bg-white shadow" key={q.id}>
+      <div
+        className="border p-4 mb-4 rounded-md bg-white shadow"
+        key={q.id || index}
+      >
         <div className="flex items-center justify-between mb-2">
           <div className="flex gap-2 items-center">
             <span className="font-medium">{index + 1}.</span>
@@ -105,40 +150,60 @@ const FeedbackBuilder = () => {
           <button
             onClick={() => removeQuestion(q.id)}
             className="text-red-500 text-xl"
+            type="button"
           >
             🗑
           </button>
         </div>
 
-        {q.type === "Choice" &&
-          q.options.map((opt, i) => (
-            <div key={i} className="flex items-center gap-2 mb-2">
-              <input type="radio" disabled />
-              <input
-                type="text"
-                value={opt}
-                placeholder={`Option ${i + 1}`}
-                onChange={(e) => updateOption(q.id, i, e.target.value)}
-                className="border px-2 py-1 rounded w-full"
-              />
-            </div>
-          ))}
-        {q.type === "Choice" && (
-          <button
-            className="text-sm text-blue-600 hover:underline"
-            onClick={() => addOption(q.id)}
-          >
-            + Add Option
-          </button>
-        )}
-
         {q.type === "Likert" && (
           <>
             <div className="grid grid-cols-6 gap-2 mb-2 font-medium">
               <div></div>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <span key={n}>Option {n}</span>
-              ))}
+              {q.likertOptions && q.likertOptions.length === 5
+                ? q.likertOptions.map((opt, i) => (
+                    <input
+                      key={i}
+                      type="text"
+                      value={opt}
+                      onChange={(e) => {
+                        const newOpts = [...q.likertOptions];
+                        newOpts[i] = e.target.value;
+                        handleQuestionChange(q.id, "likertOptions", newOpts);
+                      }}
+                      className="border px-2 py-1 rounded text-xs text-center"
+                      placeholder={`Option ${i + 1}`}
+                    />
+                  ))
+                : // fallback to default options if not set
+                  [
+                    "Very Unsatisfied",
+                    "Unsatisfied",
+                    "Neutral",
+                    "Satisfied",
+                    "Very Satisfied",
+                  ].map((opt, i) => (
+                    <input
+                      key={i}
+                      type="text"
+                      value={q.likertOptions ? q.likertOptions[i] : opt}
+                      onChange={(e) => {
+                        const newOpts = q.likertOptions
+                          ? [...q.likertOptions]
+                          : [
+                              "Very Unsatisfied",
+                              "Unsatisfied",
+                              "Neutral",
+                              "Satisfied",
+                              "Very Satisfied",
+                            ];
+                        newOpts[i] = e.target.value;
+                        handleQuestionChange(q.id, "likertOptions", newOpts);
+                      }}
+                      className="border px-2 py-1 rounded text-xs text-center"
+                      placeholder={`Option ${i + 1}`}
+                    />
+                  ))}
             </div>
             {q.statements.map((stmt, i) => (
               <div key={i} className="grid grid-cols-6 gap-2 mb-2 items-center">
@@ -152,7 +217,16 @@ const FeedbackBuilder = () => {
                   }}
                   className="border px-2 py-1 rounded"
                 />
-                {[1, 2, 3, 4, 5].map((n) => (
+                {(q.likertOptions && q.likertOptions.length === 5
+                  ? q.likertOptions
+                  : [
+                      "Very Unsatisfied",
+                      "Unsatisfied",
+                      "Neutral",
+                      "Satisfied",
+                      "Very Satisfied",
+                    ]
+                ).map((_, n) => (
                   <input key={n} type="radio" disabled />
                 ))}
               </div>
@@ -160,6 +234,7 @@ const FeedbackBuilder = () => {
             <button
               className="text-sm text-blue-600 hover:underline"
               onClick={() => addStatement(q.id)}
+              type="button"
             >
               + Add Statement
             </button>
@@ -188,20 +263,23 @@ const FeedbackBuilder = () => {
 
   const handleSubmit = () => {
     if (!selectedEvent) {
-      toast.error("Please select an event before submitting the feedback form.");
+      toast.error(
+        "Please select an event before submitting the feedback form."
+      );
       return;
     }
 
     // Ensure all questions have a non-empty text
-    const questionsWithText = questions.map(q => ({
+    const questionsWithText = questions.map((q) => ({
       ...q,
-      text: q.text && q.text.trim() !== '' ? q.text : 'Untitled Question',
+      text: q.text && q.text.trim() !== "" ? q.text : "Untitled Question",
     }));
 
     const feedbackData = {
       eventId: selectedEvent._id,
       title: "Event Feedback",
       questions: questionsWithText,
+      date: selectedEvent.date, // <-- Add this
     };
 
     axios
@@ -219,11 +297,15 @@ const FeedbackBuilder = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-white flex flex-col items-center py-12 px-4">
       <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl p-10 flex flex-col items-center">
         <div className="bg-gradient-to-r from-blue-600 to-blue-400 rounded-xl p-6 mb-8 shadow w-full flex items-center justify-center">
-          <h2 className="text-2xl font-extrabold text-white tracking-wide text-center">Event Feedback Builder</h2>
+          <h2 className="text-2xl font-extrabold text-white tracking-wide text-center">
+            Event Feedback Builder
+          </h2>
         </div>
         {/* Event Selection */}
         <div className="mb-8 w-full">
-          <label className="block font-semibold text-lg mb-2 text-gray-700">Select Event</label>
+          <label className="block font-semibold text-lg mb-2 text-gray-700">
+            Select Event
+          </label>
           <input
             type="text"
             value={eventQuery}
@@ -257,29 +339,67 @@ const FeedbackBuilder = () => {
             </p>
           )}
         </div>
-        {/* Questions Section */}
-        <div className="w-full mb-8">
-          <label className="block font-semibold text-lg mb-2 text-gray-700">Questions</label>
-          {questions.map((q, idx) => renderQuestion(q, idx))}
-          <div className="flex flex-wrap gap-2 mt-4">
-            {questionTypes.map((type) => (
-              <button
-                key={type}
-                onClick={() => addQuestion(type)}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow"
-              >
-                Add {type}
-              </button>
-            ))}
+        {/* Show existing feedback form if it exists */}
+        {existingForm ? (
+          <div className="w-full mb-8">
+            <div className="p-4 mb-4 rounded bg-blue-50 border border-blue-200">
+              <p className="font-semibold text-blue-700 mb-2">
+                A feedback form already exists for this event.
+              </p>
+              <p className="text-gray-700 mb-2">
+                You can view or edit the existing form below.
+              </p>
+            </div>
+            <label className="block font-semibold text-lg mb-2 text-gray-700">
+              Existing Questions
+            </label>
+            {questions.map((q, idx) => renderQuestion(q, idx))}
+            <div className="flex flex-wrap gap-2 mt-4">
+              {questionTypes.map((type) => (
+                <button
+                  key={type}
+                  onClick={() => addQuestion(type)}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow"
+                  type="button"
+                >
+                  Add {type}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={handleSubmit}
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow mt-2"
+            >
+              Update Feedback Form
+            </button>
           </div>
-        </div>
-
-        <button
-          onClick={handleSubmit}
-          className="w-full bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow mt-2"
-        >
-          Submit Feedback Form
-        </button>
+        ) : (
+          // No existing form, allow to create new
+          <div className="w-full mb-8">
+            <label className="block font-semibold text-lg mb-2 text-gray-700">
+              Questions
+            </label>
+            {questions.map((q, idx) => renderQuestion(q, idx))}
+            <div className="flex flex-wrap gap-2 mt-4">
+              {questionTypes.map((type) => (
+                <button
+                  key={type}
+                  onClick={() => addQuestion(type)}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow"
+                  type="button"
+                >
+                  Add {type}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={handleSubmit}
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow mt-2"
+            >
+              Submit Feedback Form
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
