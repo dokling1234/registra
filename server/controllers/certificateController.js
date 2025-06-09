@@ -3,11 +3,9 @@ const Event = require("../models/eventModel.js");
 const CertificateTemplate = require("../models/certificateTemplateModel.js");
 
 const saveCertificate = async (req, res) => {
-  console.log("savecert");
   try {
     const { eventId, certificateUrl } = req.body;
-    console.log("sdad");
-    console.log(eventId, certificateUrl);
+
     const userId = req.user.userId; // From auth middleware
 
     // Check if certificate already exists
@@ -47,11 +45,9 @@ const saveCertificate = async (req, res) => {
 };
 
 const getCertificate = async (req, res) => {
-  console.log("getcertificate");
   try {
     const { eventId } = req.params;
-    const userId = req.user.userId; // From auth middleware
-    console.log("getCertificate", eventId, userId);
+    const userId = req.user.userId; 
     const certificate = await Certificate.findOne({ eventId, userId });
     if (!certificate) {
       return res.status(404).json({
@@ -64,9 +60,7 @@ const getCertificate = async (req, res) => {
       success: true,
       certificate,
     });
-    console.log("Certificate fetched successfully");
   } catch (err) {
-    console.log("Error fetching certificate:");
 
     console.error("Error fetching certificate:", err);
     res.status(500).json({
@@ -77,10 +71,8 @@ const getCertificate = async (req, res) => {
 };
 
 const saveTemplate = async (req, res) => {
-  console.log("savetemplate_____");
   try {
     const { eventId, organizers, templateId, templates } = req.body; // <-- add templates
-    console.log(eventId, organizers, templateId, templates);
     if (!eventId || !organizers) {
       return res.status(400).json({
         success: false,
@@ -115,7 +107,7 @@ const saveTemplate = async (req, res) => {
       template,
     });
   } catch (err) {
-    console.log(err);
+    console.err("error found:", err);
     res.status(500).json({
       success: false,
       error: err.message,
@@ -123,10 +115,11 @@ const saveTemplate = async (req, res) => {
   }
 };
 
-const getTemplate = async (req, res) => {
-  console.log("gettemplate");
+const   getTemplate = async (req, res) => {
+  console.log("Template");
   try {
     const { eventId } = req.params;
+    console.log(eventId);
     const template = await CertificateTemplate.findOne({ eventId });
     if (!template) {
       return res.status(404).json({
@@ -140,7 +133,7 @@ const getTemplate = async (req, res) => {
         organizers: template.organizers,
         templateId: template.templateId,
         eventId: template.eventId,
-        templates: template.templates, // <-- add this line
+        templates: template.templates, 
       },
     });
   } catch (err) {
@@ -153,7 +146,6 @@ const getTemplate = async (req, res) => {
 
 const deleteCertificate = async (req, res) => {
   const { publicId } = req.body;
-  console.log("delete");
   try {
     await cloudinary.uploader.destroy(`certificate/${publicId}`, {
       resource_type: "raw",

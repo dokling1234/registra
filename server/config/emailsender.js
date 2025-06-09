@@ -22,9 +22,7 @@ function generateOTP() {
 }
 
 async function sendOTP(email, otp) {
-  console.log(email+"emailsender"+otp);
   if (!canResendOTP(email)) {
-    console.log(email);
     throw new Error("You can only request a new OTP every 5 minutes.");
   }
   otpStorage[email] = otp;
@@ -37,7 +35,6 @@ async function sendOTP(email, otp) {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`OTP sent to ${email}`);
   } catch (error) {
     console.error("Error sending email:", error.message, error.stack);
     throw new Error("Failed to send OTP");

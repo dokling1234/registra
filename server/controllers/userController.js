@@ -11,22 +11,14 @@ const getUserData = async (req, res) => {
   try {
     const { userId, userType } = req.user;
 
-    console.log("Incoming user info from token middleware:");
-    console.log("req.user:", req.user);
 
     let user;
 
     if (userType === "admin" || userType === "superadmin") {
-      console.log("Fetching admin:", userId);
-      console.log(userType)
       user = await adminModel.findById(userId);
     } else {
-      console.log("Fetching regular user:", userId);
       user = await userModel.findById(userId);
-            console.log(userType)
-
     }
-console.log(user)
     // if (!user) {
     //   return res.json({
     //     success: false,
@@ -54,7 +46,6 @@ console.log(user)
 };
 const getAllUsers = async (req, res) => {
   try {
-    console.log("usercontroller getallusers..."); // Debugging
     const users = await userModel.find({}); // Fetch all users from the database
 
     if (users.length === 0) {
@@ -125,7 +116,6 @@ const resetPassword = async (req, res) => {
 
 const getAllAdmins = async (req, res) => {
   try {
-    console.log("usercontroller getalladmins..."); // Debugging
 
     const admins = await adminModel.find({}); // Fetch all users from the database
 
@@ -174,7 +164,6 @@ const sendOTPHandler = async (req, res, next) => {
 const verifyOTP = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
-        console.log(email, "", otp);
 
     if (!email || !otp) {
       return res
@@ -183,8 +172,7 @@ const verifyOTP = async (req, res, next) => {
     }
 
     const storedOTP = otpStorage[email];
-    console.log(storedOTP);
-    console.log("storedOTP");
+
     if (!storedOTP) {
       return res
         .status(400)
@@ -192,15 +180,12 @@ const verifyOTP = async (req, res, next) => {
     }
 
     const { code, timestamp } = storedOTP;
-    console.log(storedOTP.code);
     if (Date.now() - timestamp > MAX_OTP_AGE) {
-      console.log("otp exipred");
       delete otpStorage[email];
       return res.status(400).json({ status: false, message: "OTP expired" });
     }
 
     if (storedOTP !== otp) {
-      console.log(code, otp); 
       return res.status(400).json({ status: false, message: "Invalid OTP" });
     }
 
@@ -474,7 +459,6 @@ const checkEmail = async (req, res) => {
 };
 
 const mobileRegister = async (req, res, next) => {
-  console.log("ssssssssssssssssssssssssssss");
   try {
     const {
       fullName,
@@ -488,7 +472,6 @@ const mobileRegister = async (req, res, next) => {
       aboutMe = "",
       profileImage = "default-profile.png",
     } = req.body;
-    console.log("mobileRegister", req.body);
     if (
       !fullName ||
       !contactNumber ||
@@ -503,7 +486,6 @@ const mobileRegister = async (req, res, next) => {
         .json({ status: false, message: "All fields are required" });
     }
     if (membership === "member" && !icpepId) {
-      console.log("_____________________membership");
       return res
         .status(400)
         .json({ status: false, message: "ICPEP ID is required for Members" });

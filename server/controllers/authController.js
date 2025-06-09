@@ -11,7 +11,6 @@ const {
 
 // register controller
 const register = async (req, res) => {
-  console.log("register");
   const {
     fullName,
     email,
@@ -115,7 +114,6 @@ const login = async (req, res) => {
       },
     });
   } catch (error) {
-    console.log("Login error:", error);
     return res.json({ success: false, message: error.message });
   }
 };
@@ -134,12 +132,10 @@ const adminLogin = async (req, res) => {
     const admin = await adminModel.findOne({ email });
 
     if (!admin) {
-      console.log("not admin");
       return res.json({ success: false, message: `Account not found` });
     }
 
     if (admin.userType !== "admin" && admin.userType !== "superadmin") {
-      console.log("not an account");
       return res.json({ success: false, message: "Unauthorized user type" });
     }
 
@@ -163,9 +159,6 @@ const adminLogin = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
     );
-    console.log(admin._id);
-    console.log(admin.fullName);
-    console.log(admin.userType);
 
     res.cookie("token", token, {
       httpOnly: true,
@@ -207,7 +200,6 @@ const logout = async (req, res) => {
 };
 // Send Verification OTP to the User Email
 const sendVerifyOtp = async (req, res) => {
-  console.log("asdsda");
   try {
     const { userId } = req.user;
 
@@ -233,11 +225,8 @@ const sendVerifyOtp = async (req, res) => {
         user.email
       ),
     };
-    console.log("mailoptions");
     await transporter.sendMail(mailOptions);
-    console.log(user.email);
-    console.log(otp);
-    console.log("otp sent");
+ 
     return res.json({ success: true, message: "OTP sent successfully" });
   } catch (error) {
     return res.json({ success: false, message: error.message });
@@ -368,7 +357,6 @@ const resetPassword = async (req, res) => {
 };
 
 const mobileAdminLogin = async (req, res) => {
-  console.log("mobileAdminLogin")
   const { email, password } = req.body;
 
   if (!email || !password) {

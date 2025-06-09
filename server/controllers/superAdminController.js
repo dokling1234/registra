@@ -91,7 +91,6 @@ const disableUser = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
-  console.log("Update User Request:");
   try {
     const { id } = req.params;
     const updateData = req.body; // Contains any fields to update, including disabled
@@ -123,11 +122,9 @@ const updateUser = async (req, res) => {
 };
 
 const updateAdminOrSuperadmin = async (req, res) => {
-  console.log("Update Admin/Superadmin Request:");
   try {
     const { id } = req.params;
     const updateData = req.body; // Contains fields to update, including userType, disabled, etc.
-console.log(req.body);
     // Use your admin model here, e.g., adminModel
     const updatedAdmin = await adminModel.findByIdAndUpdate(id, updateData, {
       new: true,

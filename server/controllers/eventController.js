@@ -32,7 +32,7 @@ const createEvent = async (req, res) => {
     } = req.body;
 
     /*   const creator = req.user._id;
-     */ console.log("test");
+     */ 
 
     const event = new eventModel({
       title,
@@ -49,7 +49,6 @@ const createEvent = async (req, res) => {
       image,
     });
 
-    console.log("test2");
 
     if (req.body.organizers) {
       event.organizers = req.body.organizers;
@@ -98,14 +97,12 @@ const getAllEvents = async (req, res) => {
       events: events,
       count: events.length,
     });
-    console.log("Fetched all events successfully" + events.length);
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to fetch events" });
   }
 };
 // ========== GET EVENTS WITH FILTERS (Mobile) ==========
 const getEvents = async (req, res) => {
-  console.log("getevents");
   try {
     const {
       type,
@@ -160,7 +157,6 @@ const getEvents = async (req, res) => {
 
     const events = await eventModel.aggregate(pipeline);
     res.status(200).json(events);
-    console.log(events);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -182,7 +178,6 @@ const getEventById = async (req, res) => {
 };
 
 const registerForEvent = async (req, res) => {
-  console.log("registerforevent");
   const { eventId } = req.params;
   const {
     fullName,
@@ -193,7 +188,6 @@ const registerForEvent = async (req, res) => {
     receipt,
     membership,
   } = req.body;
-  console.log(fullName);
   const { userId } = req.user;
 
   try {
@@ -232,7 +226,6 @@ const registerForEvent = async (req, res) => {
       membership: membership || "Member",
       receipt,
     });
-    console.log("Registrations before save:", event.registrations);
 
     await event.save();
 
@@ -245,8 +238,6 @@ const registerForEvent = async (req, res) => {
 
 const updateEvent = async (req, res) => {
   try {
-    console.log("Updating event with ID:", req.params.id);
-    console.log("Update data:", req.body);
     const updated = await eventModel.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -355,14 +346,12 @@ const updatePaymentStatus = async (req, res) => {
   const { registrantId, paymentStatus, fullName, userType } = req.body;
 
   try {
-    console.log("_____________________" + id);
     const event = await eventModel.findById(req.params.id);
     if (!event) {
       return res
         .status(404)
         .json({ success: false, message: "Event not found" });
     }
-    console.log(registrantId + "_____________________");
     const registrant = event.registrations.find(
       (reg) => reg._id.toString() === registrantId
     );
@@ -371,11 +360,8 @@ const updatePaymentStatus = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Registrant not found" });
     }
-    console.log(registrant);
-    console.log("BODY:", req.body);
-
+    
     if (paymentStatus === "paid") {
-      console.log("Generating encrypted QR Code...");
 
       const qrData = {
         id: registrant._id.toString(),
@@ -406,7 +392,6 @@ const updatePaymentStatus = async (req, res) => {
 
 const getRegisteredEvents = async (req, res) => {
   const { userId } = req.user;
-  console.log("==============================");
 
   try {
     const registeredEvents = await eventModel.find({
@@ -440,7 +425,6 @@ const getRegisteredEventDetail = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Event not found" });
     }
-    console.log(userId);
     const registration = event.registrations.find(
       (reg) => reg.userId.toString() === userId
     );
@@ -451,10 +435,7 @@ const getRegisteredEventDetail = async (req, res) => {
         message: "You are not registered for this event.",
       });
     }
-    console.log(
-      "________________________________________",
-      registration.ticketQR
-    );
+
     const eventWithTicket = {
       ...event._doc,
       ticketUrl: registration.ticketQR, // base64 string
@@ -470,7 +451,6 @@ const getRegisteredEventDetail = async (req, res) => {
 const getEventByTitle = async (req, res) => {
   try {
     const { title } = req.body;
-    console.log("Searching for events with title:", title);
 
     if (!title) {
       return res
@@ -524,9 +504,7 @@ const mobileRegisterForEvent = async (req, res) => {
 };
 
 const mobileGetRegisteredEvents = async (req, res) => {
-  console.log("1");
   const { userId } = req.query;
-  console.log("User ID:", userId);
   try {
     if (!userId) {
       return res.status(400).json({ message: "User ID is required" });
@@ -574,7 +552,6 @@ const getTicketQR = async (req, res) => {
 
 const getRegisteredPastEvents = async (req, res) => {
   const userId = req.query.userId;
-  console.log(userId);
   try {
     if (!userId) {
       return res.status(400).json({ message: "User ID is required" });
