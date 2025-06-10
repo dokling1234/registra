@@ -6,34 +6,19 @@ import Sidebar from "../admin_components/Sidebar";
 
 const Receipt = () => {
   const navigate = useNavigate();
-  const { userData, getUserData } = useContext(AppContent);
+  const { userData, isAdmin } = useContext(AppContent);
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showReceiptPopup, setShowReceiptPopup] = useState(false);
   const [currentReceipt, setCurrentReceipt] = useState(null);
 
-  // useEffect(() => {
-  //   const checkAccess = async () => {
-  //     try {
-  //       if (!userData) {
-  //         const fetched = await getUserData();
-  //         if (fetched?.userType !== "admin") {
-  //           navigate("/admin");
-  //           return;
-  //         }
-  //       } else if (userData.userType !== "admin") {
-  //         navigate("/admin");
-  //         return;
-  //       }
-  //     } catch (error) {
-  //       console.error("Error checking access:", error);
-  //       navigate("/admin");
-  //     }
-  //   };
-
-  //   checkAccess();
-  // }, [userData, navigate, getUserData]);
+  useEffect(() => {
+        if (!isAdmin) {
+          // Not an admin, redirect to home or another page
+          navigate("/admin");
+        }
+      }, [isAdmin, navigate]);
 
   useEffect(() => {
     const fetchEvents = async () => {

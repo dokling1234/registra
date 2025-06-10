@@ -6,34 +6,19 @@ import Sidebar from "../superAdmin_components/Sidebar";
 
 const Receipt = () => {
   const navigate = useNavigate();
-  const { userData, getUserData } = useContext(AppContent);
+  const { userData, getUserData, isAdmin } = useContext(AppContent);
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showReceiptPopup, setShowReceiptPopup] = useState(false);
   const [currentReceipt, setCurrentReceipt] = useState(null);
 
-  // useEffect(() => {
-  //   const checkAccess = async () => {
-  //     try {
-  //       if (!userData) {
-  //         const fetched = await getUserData();
-  //         if (fetched?.userType !== "admin") {
-  //           navigate("/admin");
-  //           return;
-  //         }
-  //       } else if (userData.userType !== "admin") {
-  //         navigate("/admin");
-  //         return;
-  //       }
-  //     } catch (error) {
-  //       console.error("Error checking access:", error);
-  //       navigate("/admin");
-  //     }
-  //   };
-
-  //   checkAccess();
-  // }, [userData, navigate, getUserData]);
+  useEffect(() => {
+    if (!isAdmin) {
+      // Not an admin, redirect to home or another page
+      navigate("/admin");
+    }
+  }, [isAdmin, navigate]);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -261,17 +246,33 @@ const Receipt = () => {
               </button>
             </div>
             <div className="mb-4 flex justify-center">
-              <img src={currentReceipt.receipt} alt="Receipt" className="max-w-full h-auto rounded max-h-96" />
+              <img
+                src={currentReceipt.receipt}
+                alt="Receipt"
+                className="max-w-full h-auto rounded max-h-96"
+              />
             </div>
             <div className="flex justify-center gap-4 w-full">
-            <button
-                onClick={() => handlePaymentStatus(currentReceipt.eventId, currentReceipt.registrantId, "paid")}
+              <button
+                onClick={() =>
+                  handlePaymentStatus(
+                    currentReceipt.eventId,
+                    currentReceipt.registrantId,
+                    "paid"
+                  )
+                }
                 className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition flex-1 mx-2"
               >
                 Confirm
               </button>
               <button
-                onClick={() => handlePaymentStatus(currentReceipt.eventId, currentReceipt.registrantId, "rejected")}
+                onClick={() =>
+                  handlePaymentStatus(
+                    currentReceipt.eventId,
+                    currentReceipt.registrantId,
+                    "rejected"
+                  )
+                }
                 className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition flex-1 mx-2"
               >
                 Reject

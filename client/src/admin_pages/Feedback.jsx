@@ -8,8 +8,14 @@ import FeedbackBuilder from "../admin_components/FeedbackBuilder";
 
 const Feedback = () => {
   const navigate = useNavigate();
-  const { userData } = useContext(AppContent);
+  const { userData, isAdmin } = useContext(AppContent);
 
+useEffect(() => {
+      if (!isAdmin) {
+        // Not an admin, redirect to home or another page
+        navigate("/admin");
+      }
+    }, [isAdmin, navigate]);
 
   return (
     <div className="flex min-h-screen bg-gray-100">

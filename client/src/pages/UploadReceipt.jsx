@@ -13,14 +13,21 @@ import { AppContent } from "../context/AppContext";
 
 const UploadReceipt = () => {
   const { id } = useParams();
-  const { userData } = useContext(AppContent);
+  const { userData, isAdmin } = useContext(AppContent);
   const [accountName, setAccountName] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
   const [receipt, setReceipt] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
-
   const navigate = useNavigate();
   // Set userData to form fields when component mounts
+
+  useEffect(() => {
+    if (isAdmin) {
+      // Not an admin, redirect to home or another page
+      navigate("/");
+    }
+  }, [isAdmin, navigate]);
+  
   useEffect(() => {
     if (userData) {
       console.log(userData);
@@ -41,7 +48,7 @@ const UploadReceipt = () => {
     }
   };
 
-const handleRegister = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
 
     let imageUrl = "";
@@ -94,7 +101,6 @@ const handleRegister = async (e) => {
       });
 
       console.log({ accountName, mobileNumber, receipt, receiptUrl: imageUrl });
-
     } catch (err) {
       console.error("Backend registration error:", err);
       Swal.fire({

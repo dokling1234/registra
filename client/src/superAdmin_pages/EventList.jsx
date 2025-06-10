@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from "react";
-import Sidebar from '../superAdmin_components/Sidebar';
+import Sidebar from "../superAdmin_components/Sidebar";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { AppContent } from "../context/AppContext";
@@ -8,8 +8,15 @@ import { Link } from "react-router-dom";
 
 const EventList = () => {
   const navigate = useNavigate();
-  const { userData } = useContext(AppContent);
+  const { userData, isAdmin } = useContext(AppContent);
   const [events, setEvents] = useState([]);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      // Not an admin, redirect to home or another page
+      navigate("/admin");
+    }
+  }, [isAdmin, navigate]);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -35,16 +42,18 @@ const EventList = () => {
           <h1 className="text-3xl font-bold">Events</h1>
           {userData ? (
             <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-lg shadow-sm">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-              <span className="text-blue-600 font-semibold text-lg">
-                {userData.fullName.charAt(0).toUpperCase()}
-              </span>
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <span className="text-blue-600 font-semibold text-lg">
+                  {userData.fullName.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <p className="text-sm text-gray-500">Welcome back,</p>
+                <p className="text-lg font-semibold text-gray-800">
+                  {userData.fullName}
+                </p>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <p className="text-sm text-gray-500">Welcome back,</p>
-              <p className="text-lg font-semibold text-gray-800">{userData.fullName}</p>
-            </div>
-          </div>
           ) : (
             <button
               onClick={() => navigate("/")}
@@ -81,7 +90,7 @@ const EventList = () => {
                     <td className="px-6 py-4">₱{event.price}</td>
                     <td className="px-6 py-4">{event.eventType}</td>
                     <td className="px-6 py-4">
-            <span className="text-gray-400 italic">Done</span>
+                      <span className="text-gray-400 italic">Done</span>
                     </td>
                   </tr>
                 ))

@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from "react";
 import { assets } from "../assets/assets";
-import Sidebar from '../admin_components/Sidebar';
+import Sidebar from "../admin_components/Sidebar";
 import { useNavigate } from "react-router-dom";
 import { AppContent } from "../context/AppContext";
 import axios from "axios";
@@ -15,8 +15,8 @@ import {
   Title,
   Tooltip,
   Legend,
-} from 'chart.js';
-import { Line, Bar, Pie } from 'react-chartjs-2';
+} from "chart.js";
+import { Line, Bar, Pie } from "react-chartjs-2";
 
 ChartJS.register(
   CategoryScale,
@@ -37,9 +37,19 @@ const Home = () => {
   const [totalEvents, setTotalEvents] = useState(0);
   const [totalAdmins, setTotalAdmins] = useState(0);
   const [incomeData, setIncomeData] = useState({ labels: [], data: [] });
-  const [registrationData, setRegistrationData] = useState({ labels: [], data: [] });
+  const [registrationData, setRegistrationData] = useState({
+    labels: [],
+    data: [],
+  });
   const [eventTypeData, setEventTypeData] = useState({ labels: [], data: [] });
-  const { userData } = useContext(AppContent);
+  const { userData, isAdmin } = useContext(AppContent);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      // Not an admin, redirect to home or another page
+      navigate("/admin");
+    }
+  }, [isAdmin, navigate]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -94,26 +104,28 @@ const Home = () => {
         const last6Months = Array.from({ length: 6 }, (_, i) => {
           const d = new Date();
           d.setMonth(d.getMonth() - i);
-          return d.toLocaleString('default', { month: 'short' });
+          return d.toLocaleString("default", { month: "short" });
         }).reverse();
 
         // Income data for line chart
         const monthlyIncome = {};
-        last6Months.forEach(month => monthlyIncome[month] = 0);
+        last6Months.forEach((month) => (monthlyIncome[month] = 0));
 
         // Registration data for bar chart
         const eventRegistrations = {};
-        
+
         // Event type data for pie chart
         const eventTypes = {};
 
-        eventsData.forEach(event => {
+        eventsData.forEach((event) => {
           if (Array.isArray(event.registrations)) {
             // Process income data
-            event.registrations.forEach(reg => {
-              if (reg.paymentStatus === 'paid') {
+            event.registrations.forEach((reg) => {
+              if (reg.paymentStatus === "paid") {
                 const regDate = new Date(reg.registeredAt || event.date);
-                const month = regDate.toLocaleString('default', { month: 'short' });
+                const month = regDate.toLocaleString("default", {
+                  month: "short",
+                });
                 if (last6Months.includes(month)) {
                   monthlyIncome[month] += event.price || 0;
                 }
@@ -124,7 +136,7 @@ const Home = () => {
             eventRegistrations[event.title] = event.registrations.length;
 
             // Process event type data
-            const type = event.eventType || 'Other';
+            const type = event.eventType || "Other";
             eventTypes[type] = (eventTypes[type] || 0) + 1;
           }
         });
@@ -132,25 +144,28 @@ const Home = () => {
         // Set income data
         setIncomeData({
           labels: last6Months,
-          data: last6Months.map(month => monthlyIncome[month])
+          data: last6Months.map((month) => monthlyIncome[month]),
         });
 
         // Set registration data
         const sortedEvents = Object.entries(eventRegistrations)
-          .sort(([,a], [,b]) => b - a)
+          .sort(([, a], [, b]) => b - a)
           .slice(0, 5);
         setRegistrationData({
           labels: sortedEvents.map(([title]) => title),
-          data: sortedEvents.map(([,count]) => count)
+          data: sortedEvents.map(([, count]) => count),
         });
 
         // Set event type data
         setEventTypeData({
           labels: Object.keys(eventTypes),
-          data: Object.values(eventTypes)
+          data: Object.values(eventTypes),
         });
       } catch (err) {
-        console.error("Error fetching events/registrations:", err.response?.data || err.message);
+        console.error(
+          "Error fetching events/registrations:",
+          err.response?.data || err.message
+        );
       }
     };
     fetchEventsAndRegistrations();
@@ -172,7 +187,9 @@ const Home = () => {
                 </div>
                 <div className="flex flex-col">
                   <p className="text-sm text-gray-500">Welcome back,</p>
-                  <p className="text-lg font-semibold text-gray-800">{userData.fullName}</p>
+                  <p className="text-lg font-semibold text-gray-800">
+                    {userData.fullName}
+                  </p>
                 </div>
               </div>
             ) : (
@@ -191,7 +208,7 @@ const Home = () => {
               <p className="text-gray-500 mb-2">Total Users</p>
               <h2 className="text-3xl font-bold">{totalUsers}</h2>
             </div>
-           
+
             {/* Card 2 */}
             <div className="bg-white p-6 rounded-lg shadow">
               <p className="text-gray-500 mb-2">Events</p>
@@ -209,32 +226,36 @@ const Home = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Income Trend Chart */}
             <div className="bg-white p-6 rounded-lg shadow lg:col-span-2">
-              <h2 className="text-xl font-bold mb-4 text-gray-800">Income Trend (Last 6 Months)</h2>
+              <h2 className="text-xl font-bold mb-4 text-gray-800">
+                Income Trend (Last 6 Months)
+              </h2>
               <div className="h-[300px]">
                 <Line
                   data={{
                     labels: incomeData.labels,
-                    datasets: [{
-                      label: 'Monthly Income (₱)',
-                      data: incomeData.data,
-                      borderColor: 'rgb(75, 192, 192)',
-                      tension: 0.1
-                    }]
+                    datasets: [
+                      {
+                        label: "Monthly Income (₱)",
+                        data: incomeData.data,
+                        borderColor: "rgb(75, 192, 192)",
+                        tension: 0.1,
+                      },
+                    ],
                   }}
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                      legend: { position: 'top' },
+                      legend: { position: "top" },
                     },
                     scales: {
                       y: {
                         beginAtZero: true,
                         ticks: {
-                          callback: value => '₱' + value.toLocaleString()
-                        }
-                      }
-                    }
+                          callback: (value) => "₱" + value.toLocaleString(),
+                        },
+                      },
+                    },
                   }}
                 />
               </div>
@@ -242,53 +263,57 @@ const Home = () => {
 
             {/* Event Registrations Chart */}
             <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-xl font-bold mb-4">Top Events by Registrations</h2>
+              <h2 className="text-xl font-bold mb-4">
+                Top Events by Registrations
+              </h2>
               <div className="h-[300px]">
                 <Bar
                   data={{
                     labels: registrationData.labels,
-                    datasets: [{
-                      label: 'Number of Registrations',
-                      data: registrationData.data,
-                      backgroundColor: 'rgba(54, 162, 235, 0.8)',
-                      borderColor: 'rgb(54, 162, 235)',
-                      borderWidth: 1,
-                    }]
+                    datasets: [
+                      {
+                        label: "Number of Registrations",
+                        data: registrationData.data,
+                        backgroundColor: "rgba(54, 162, 235, 0.8)",
+                        borderColor: "rgb(54, 162, 235)",
+                        borderWidth: 1,
+                      },
+                    ],
                   }}
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                      legend: { 
-                        display: false 
+                      legend: {
+                        display: false,
                       },
                       tooltip: {
                         callbacks: {
-                          label: function(context) {
+                          label: function (context) {
                             return `Registrations: ${context.raw}`;
-                          }
-                        }
-                      }
+                          },
+                        },
+                      },
                     },
                     scales: {
                       y: {
                         beginAtZero: true,
                         ticks: {
                           stepSize: 1,
-                          precision: 0
+                          precision: 0,
                         },
                         title: {
                           display: true,
-                          text: 'Number of Registrations'
-                        }
+                          text: "Number of Registrations",
+                        },
                       },
                       x: {
                         ticks: {
                           maxRotation: 45,
-                          minRotation: 45
-                        }
-                      }
-                    }
+                          minRotation: 45,
+                        },
+                      },
+                    },
                   }}
                 />
               </div>
@@ -296,34 +321,38 @@ const Home = () => {
 
             {/* Event Type Distribution Chart */}
             <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-xl font-bold mb-4">Event Type Distribution</h2>
+              <h2 className="text-xl font-bold mb-4">
+                Event Type Distribution
+              </h2>
               <div className="h-[300px]">
                 <Pie
                   data={{
                     labels: eventTypeData.labels,
-                    datasets: [{
-                      data: eventTypeData.data,
-                      backgroundColor: [
-                        'rgba(255, 99, 132, 0.5)',
-                        'rgba(54, 162, 235, 0.5)',
-                        'rgba(255, 206, 86, 0.5)',
-                        'rgba(75, 192, 192, 0.5)',
-                        'rgba(153, 102, 255, 0.5)',
-                      ],
-                    }]
+                    datasets: [
+                      {
+                        data: eventTypeData.data,
+                        backgroundColor: [
+                          "rgba(255, 99, 132, 0.5)",
+                          "rgba(54, 162, 235, 0.5)",
+                          "rgba(255, 206, 86, 0.5)",
+                          "rgba(75, 192, 192, 0.5)",
+                          "rgba(153, 102, 255, 0.5)",
+                        ],
+                      },
+                    ],
                   }}
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                      legend: { 
-                        position: 'right',
+                      legend: {
+                        position: "right",
                         labels: {
                           boxWidth: 15,
-                          padding: 10
-                        }
-                      }
-                    }
+                          padding: 10,
+                        },
+                      },
+                    },
                   }}
                 />
               </div>

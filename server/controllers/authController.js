@@ -7,6 +7,7 @@ const crypto = require("crypto");
 const {
   EMAIL_VERIFY_TEMPLATE,
   PASSWORD_RESET_TEMPLATE,
+  LOGIN_OTP_TEMPLATE
 } = require("../config/emailTemplates.js");
 
 // register controller
@@ -104,7 +105,7 @@ const login = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Login successful auth",
+      message: "Login Successful",
       user: {
         isVerified: account.isVerified,
         id: account._id,

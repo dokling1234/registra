@@ -1,19 +1,22 @@
 import React, { useContext, useEffect, useState } from "react";
-import Navbar from "../components/Navbar"; 
-import Footer from "../components/Footer"; 
+import Navbar from "../components/Navbar";
+import { useNavigate } from "react-router-dom";
+
+import Footer from "../components/Footer";
 import { AppContent } from "../context/AppContext";
-import axios from "axios"; 
-import "./Profile.css"; 
+import axios from "axios";
+import "./Profile.css";
 import { assets } from "../assets/assets";
 import EventCard from "../components/RegisteredEventCard";
 import Swal from "sweetalert2";
 
 const Profile = () => {
-  const { userData, backendUrl, getUserData } = useContext(AppContent); 
-  const [isEditing, setIsEditing] = useState(false); 
-  const [isResettingPassword, setIsResettingPassword] = useState(false); 
-  const [formData, setFormData] = useState({}); 
-  const [aboutMe, setaboutMe] = useState(""); 
+  const { userData, backendUrl, getUserData, isAdmin } = useContext(AppContent);
+  const navigate = useNavigate();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [formData, setFormData] = useState({});
+  const [aboutMe, setaboutMe] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = React.useRef();
@@ -22,15 +25,24 @@ const Profile = () => {
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
-  }); 
+  });
   const [showPasswords, setShowPasswords] = useState({
     currentPassword: false,
     newPassword: false,
     confirmPassword: false,
-  }); 
+  });
   const [pastEvents, setPastEvents] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
-  const [eventFilter, setEventFilter] = useState("all"); 
+  const [eventFilter, setEventFilter] = useState("all");
+  
+    console.log(isAdmin);
+    useEffect(() => {
+      if (isAdmin) {
+        // Not an admin, redirect to home or another page
+        navigate("/");
+      }
+    }, [isAdmin, navigate]);
+  
 
   useEffect(() => {
     if (userData) {
@@ -42,7 +54,7 @@ const Profile = () => {
         icpepId: userData.icpepId || "",
         profileImage: userData.profileImage || "",
       });
-      setaboutMe(userData.aboutMe || ""); 
+      setaboutMe(userData.aboutMe || "");
     }
   }, [userData]);
 
@@ -76,24 +88,23 @@ const Profile = () => {
   }, [userData, backendUrl]);
 
   const handleEditProfile = () => {
-    setIsEditing(true); 
+    setIsEditing(true);
   };
 
   const handleImageClick = () => {
-     if (isEditing) {
+    if (isEditing) {
       Swal.fire({
-        title: 'Change Profile Picture',
-        text: 'Would you like to change your profile picture?',
-        icon: 'question',
+        title: "Change Profile Picture",
+        text: "Would you like to change your profile picture?",
+        icon: "question",
         showCancelButton: true,
-        confirmButtonColor: '#2563eb',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Yes, change it!',
-        cancelButtonText: 'No, cancel'
+        confirmButtonColor: "#2563eb",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "Yes, change it!",
+        cancelButtonText: "No, cancel",
       }).then((result) => {
         if (result.isConfirmed) {
           fileInputRef.current.click();
-          
         }
       });
     }
@@ -105,7 +116,7 @@ const Profile = () => {
 
     if (!file) return;
 
-    setSelectedImage(URL.createObjectURL(file)); 
+    setSelectedImage(URL.createObjectURL(file));
 
     const formData = new FormData();
     formData.append("file", file);
@@ -123,13 +134,12 @@ const Profile = () => {
       setIsUploading(false);
       console.log("uploaded");
       Swal.fire({
-        title: 'Success!',
-        text: 'Profile picture uploaded successfully!',
-        icon: 'success',
+        title: "Success!",
+        text: "Profile picture uploaded successfully!",
+        icon: "success",
         timer: 1500,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
-
     } catch (error) {
       console.error("Error response:", error.response?.data || error.message);
       await Swal.fire({
@@ -161,7 +171,7 @@ const Profile = () => {
         });
 
         setIsEditing(false);
-        setSelectedImage(null); 
+        setSelectedImage(null);
         setFormData({
           fullName: userData.fullName || "",
           email: userData.email || "",
@@ -181,7 +191,7 @@ const Profile = () => {
   };
 
   const handleaboutMeChange = (e) => {
-    setaboutMe(e.target.value); 
+    setaboutMe(e.target.value);
   };
 
   const handlePasswordChange = (e) => {
@@ -195,19 +205,19 @@ const Profile = () => {
     }));
   };
   const handleSaveProfile = async () => {
-    console.log("Form Data:", formData); 
-    console.log("About Us:", aboutMe); 
+    console.log("Form Data:", formData);
+    console.log("About Us:", aboutMe);
 
     try {
       const response = await axios.put(
         `${backendUrl}/api/user/update`,
         { ...formData, aboutMe },
         {
-          withCredentials: true, 
+          withCredentials: true,
         }
       );
 
-      console.log("Server Response:", response.data); 
+      console.log("Server Response:", response.data);
 
       if (response.data.success) {
         Swal.fire({
@@ -217,8 +227,8 @@ const Profile = () => {
           showConfirmButton: false,
           timer: 1500,
         });
-        setIsEditing(false); 
-        await getUserData(); 
+        setIsEditing(false);
+        await getUserData();
       } else {
         await Swal.fire({
           icon: "error",
@@ -228,7 +238,7 @@ const Profile = () => {
         });
       }
     } catch (error) {
-      console.error("Error updating profile:", error); 
+      console.error("Error updating profile:", error);
       await Swal.fire({
         icon: "error",
         title: "Error",

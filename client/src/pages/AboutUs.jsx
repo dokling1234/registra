@@ -1,9 +1,21 @@
-import React from "react";
-import Navbar from "../components/Navbar";
+import React, {  useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { AppContent } from "../context/AppContext";import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import "./AboutUs.css"; // Import the CSS file for styling
 
 const AboutUs = () => {
+
+  const { isAdmin } = useContext(AppContent);
+    const navigate = useNavigate();
+  
+    console.log(isAdmin);
+    useEffect(() => {
+      if (isAdmin) {
+        // Not an admin, redirect to home or another page
+        navigate("/");
+      }
+    }, [isAdmin, navigate]);
   return (
     <>
       <Navbar />

@@ -32,7 +32,7 @@ const templateOptions = [
 
 const Certificate = () => {
   const navigate = useNavigate();
-  const { userData, backendUrl } = useContext(AppContent);
+  const { userData, backendUrl, isAdmin } = useContext(AppContent);
   const [organizers, setOrganizers] = useState([
     { name: "Organizer Name", label: "Organizer", signature: null },
   ]);
@@ -47,6 +47,13 @@ const Certificate = () => {
 
   // For PDF generation
   const certificateRef = React.useRef();
+
+  useEffect(() => {
+      if (!isAdmin) {
+        // Not an admin, redirect to home or another page
+        navigate("/admin");
+      }
+    }, [isAdmin, navigate]);
 
   useEffect(() => {
     const fetchTemplatePreview = async () => {

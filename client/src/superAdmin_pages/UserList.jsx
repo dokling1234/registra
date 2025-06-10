@@ -7,7 +7,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 
 const UserList = () => {
-  const { userData } = useContext(AppContent);
+  const { userData, isAdmin } = useContext(AppContent);
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,6 +28,13 @@ const UserList = () => {
   const [adminCreateMessage, setAdminCreateMessage] = useState("");
 
   const usersPerPage = 10;
+
+  useEffect(() => {
+    if (!isAdmin) {
+      // Not an admin, redirect to home or another page
+      navigate("/admin");
+    }
+  }, [isAdmin, navigate]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -563,7 +570,9 @@ const UserList = () => {
                                   ? "text-green-600 hover:text-green-800"
                                   : "text-red-600 hover:text-red-800"
                               } p-1 rounded-full hover:bg-gray-200 transition duration-150 ease-in-out`}
-                              aria-label={user.disabled ? "Enable user" : "Disable user"}
+                              aria-label={
+                                user.disabled ? "Enable user" : "Disable user"
+                              }
                             >
                               {user.disabled ? (
                                 <svg
@@ -574,7 +583,11 @@ const UserList = () => {
                                   stroke="currentColor"
                                   className="w-5 h-5"
                                 >
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  />
                                 </svg>
                               ) : (
                                 <svg

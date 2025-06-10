@@ -16,6 +16,7 @@ export const AppContextProvider = (props) => {
     try {
         const { data } = await axios.get(backendUrl + "/api/auth/is-auth");
 
+        console.log(data)
         if (data.success) {
             setIsLoggedin(true);
             setIsAdmin(data.isAdmin || false);
