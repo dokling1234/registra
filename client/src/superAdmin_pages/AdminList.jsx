@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "../admin_components/Sidebar";
+import Sidebar from "../superAdmin_components/Sidebar";
 import { AppContent } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import axios from "axios";
 import Swal from "sweetalert2";
 
-const UserList = () => {
+const AdminList = () => {
   const { userData } = useContext(AppContent);
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
@@ -58,6 +58,7 @@ const UserList = () => {
     fetchUsers();
   }, []);
 
+  // Handler for normal users (student/professional)
   const handleSave = async (userId) => {
     try {
       const userResponse = await axios.put(
@@ -86,10 +87,50 @@ const UserList = () => {
     }
   };
 
-  // --- Search and Pagination Logic ---
+  // Handler for admin/superadmin
+  const handleAdminSave = async (userId) => {
+    try {
+      const adminResponse = await axios.put(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/superadmin/admin/update/${userId}`,
+        editedUser,
+        { withCredentials: true }
+      );
+
+      if (adminResponse.data.success) {
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: "Admin/Superadmin updated successfully.",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+        setUsers((prevUsers) =>
+          prevUsers.map((user) =>
+            user._id === userId ? adminResponse.data.user : user
+          )
+        );
+        setEditingUserId(null);
+      }
+    } catch (error) {
+      console.error("Error updating admin/superadmin:", error.message);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to update admin/superadmin. Please try again.",
+        confirmButtonText: "OK",
+      });
+    }
+  };
+
+  // Search and Pagination
   const filteredUsers = users
     .filter(
-      (user) => user.userType !== "admin" && user.userType !== "superadmin"
+      (user) =>
+        user.userType !== "student" &&
+        user.userType !== "professional" &&
+        user.userType !== "Professional"
     )
     .filter((user) => {
       const query = searchQuery.toLowerCase();
@@ -105,15 +146,13 @@ const UserList = () => {
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
-  const name = userData.fullName;
-
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
 
       <main className="flex-1 p-6 ml-64">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">User List</h1>
+          <h1 className="text-3xl font-bold">Administrator List</h1>
           {showAdminModal && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
               <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
@@ -310,12 +349,12 @@ const UserList = () => {
             >
               Create Admin
             </button>
-            {/* <button
+            <button
               onClick={() => setShowSuperadminModal(true)}
               className="text-purple-600 hover:underline"
             >
               Create Super Admin
-            </button> */}
+            </button>
           </div>
         </div>
 
@@ -339,9 +378,7 @@ const UserList = () => {
                   <th className="p-3">Name</th>
                   <th className="p-3">Type</th>
                   <th className="p-3">Email</th>
-                  <th className="p-3">Contact</th>
                   <th className="p-3">ICPEP ID</th>
-                  <th className="p-3">Status</th>
                   <th className="p-3">Actions</th>
                 </tr>
               </thead>
@@ -349,9 +386,12 @@ const UserList = () => {
                 {currentUsers.length > 0 ? (
                   currentUsers.map((user, index) => {
                     const isEditing = user._id === editingUserId;
-                    const canEditType =
+                    const canEditUserType =
                       user.userType === "student" ||
                       user.userType === "professional";
+                    const canEditAdminType =
+                      user.userType === "admin" ||
+                      user.userType === "superadmin";
 
                     return (
                       <tr key={index} className="border-b hover:bg-gray-50">
@@ -372,7 +412,7 @@ const UserList = () => {
                           )}
                         </td>
                         <td className="p-3">
-                          {isEditing && canEditType ? (
+                          {isEditing && canEditUserType ? (
                             <select
                               value={editedUser.userType}
                               onChange={(e) =>
@@ -385,6 +425,20 @@ const UserList = () => {
                             >
                               <option value="student">Student</option>
                               <option value="professional">Professional</option>
+                            </select>
+                          ) : isEditing && canEditAdminType ? (
+                            <select
+                              value={editedUser.userType}
+                              onChange={(e) =>
+                                setEditedUser({
+                                  ...editedUser,
+                                  userType: e.target.value,
+                                })
+                              }
+                              className="border px-2 py-1 rounded w-full"
+                            >
+                              <option value="admin">admin</option>
+                              <option value="superadmin">superadmin</option>
                             </select>
                           ) : (
                             user.userType
@@ -409,22 +463,6 @@ const UserList = () => {
                         <td className="p-3">
                           {isEditing ? (
                             <input
-                              value={editedUser.contactNumber}
-                              onChange={(e) =>
-                                setEditedUser({
-                                  ...editedUser,
-                                  contactNumber: e.target.value,
-                                })
-                              }
-                              className="border px-2 py-1 rounded w-full"
-                            />
-                          ) : (
-                            user.contactNumber
-                          )}
-                        </td>
-                        <td className="p-3">
-                          {isEditing ? (
-                            <input
                               value={editedUser.icpepId}
                               onChange={(e) =>
                                 setEditedUser({
@@ -438,19 +476,6 @@ const UserList = () => {
                             user.icpepId
                           )}
                         </td>
-                        <td className="p-3">
-                          {/* Status column: checks if user.disabled is true or false */}
-                          {user.disabled ? (
-                            <span className="text-red-600 font-semibold">
-                              Disabled
-                            </span>
-                          ) : (
-                            <span className="text-green-600 font-semibold">
-                              Enabled
-                            </span>
-                          )}
-                        </td>
-
                         <td className="p-3 flex items-center gap-4">
                           {user.userType !== "superadmin" && (
                             <button
@@ -511,9 +536,7 @@ const UserList = () => {
                                   ? "text-green-600 hover:text-green-800"
                                   : "text-red-600 hover:text-red-800"
                               } p-1 rounded-full hover:bg-gray-200 transition duration-150 ease-in-out`}
-                              aria-label={
-                                user.disabled ? "Enable user" : "Disable user"
-                              }
+                              aria-label={user.disabled ? "Enable user" : "Disable user"}
                             >
                               {user.disabled ? (
                                 <svg
@@ -551,26 +574,49 @@ const UserList = () => {
                             </span>
                           ) : editingUserId === user._id ? (
                             <>
-                              <button
-                                onClick={() => handleSave(user._id)}
-                                className="text-green-600 hover:text-green-800 p-1 rounded-full hover:bg-gray-200 transition duration-150 ease-in-out"
-                                aria-label="Save changes"
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  strokeWidth={1.5}
-                                  stroke="currentColor"
-                                  className="w-5 h-5"
+                              {canEditAdminType ? (
+                                <button
+                                  onClick={() => handleAdminSave(user._id)}
+                                  className="text-green-600 hover:text-green-800 p-1 rounded-full hover:bg-gray-200 transition duration-150 ease-in-out"
+                                  aria-label="Save changes"
                                 >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                  />
-                                </svg>
-                              </button>
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={1.5}
+                                    stroke="currentColor"
+                                    className="w-5 h-5"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                  </svg>
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleSave(user._id)}
+                                  className="text-green-600 hover:text-green-800 p-1 rounded-full hover:bg-gray-200 transition duration-150 ease-in-out"
+                                  aria-label="Save changes"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={1.5}
+                                    stroke="currentColor"
+                                    className="w-5 h-5"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
                               <button
                                 onClick={() => setEditingUserId(null)}
                                 className="text-gray-600 hover:text-gray-800 p-1 rounded-full hover:bg-gray-200 transition duration-150 ease-in-out"
@@ -593,7 +639,7 @@ const UserList = () => {
                               </button>
                             </>
                           ) : (
-                            canEditType && (
+                            (canEditUserType || canEditAdminType) && (
                               <button
                                 onClick={() => {
                                   setEditingUserId(user._id);
@@ -664,4 +710,4 @@ const UserList = () => {
   );
 };
 
-export default UserList;
+export default AdminList;

@@ -91,7 +91,9 @@ const UserList = () => {
   const handleAdminSave = async (userId) => {
     try {
       const adminResponse = await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/superadmin/admin/update/${userId}`,
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/superadmin/admin/update/${userId}`,
         editedUser,
         { withCredentials: true }
       );
@@ -123,14 +125,18 @@ const UserList = () => {
   };
 
   // Search and Pagination
-  const filteredUsers = users.filter((user) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      user.fullName?.toLowerCase().includes(query) ||
-      user.userType?.toLowerCase().includes(query) ||
-      user.email?.toLowerCase().includes(query)
-    );
-  });
+  const filteredUsers = users
+    .filter(
+      (user) => user.userType !== "admin" && user.userType !== "superadmin"
+    )
+    .filter((user) => {
+      const query = searchQuery.toLowerCase();
+      return (
+        user.fullName?.toLowerCase().includes(query) ||
+        user.userType?.toLowerCase().includes(query) ||
+        user.email?.toLowerCase().includes(query)
+      );
+    });
 
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
@@ -364,14 +370,14 @@ const UserList = () => {
             <p>Loading users...</p>
           ) : (
             <table className="min-w-full text-sm text-left text-gray-700">
-              <thead className="bg-gray-200 text-xs uppercase sticky top-0 z-10">
+              <thead className="bg-gray-200 text-xs uppercase top-0 z-10">
                 <tr className="bg-gray-200 text-left">
                   <th className="p-3">Name</th>
                   <th className="p-3">Type</th>
                   <th className="p-3">Email</th>
                   <th className="p-3">Contact</th>
                   <th className="p-3">ICPEP ID</th>
-                  <th className="p-3">About Us</th>
+                  <th className="p-3">Status</th>
                   <th className="p-3">Actions</th>
                 </tr>
               </thead>
@@ -486,19 +492,15 @@ const UserList = () => {
                           )}
                         </td>
                         <td className="p-3">
-                          {isEditing ? (
-                            <input
-                              value={editedUser.aboutMe}
-                              onChange={(e) =>
-                                setEditedUser({
-                                  ...editedUser,
-                                  aboutMe: e.target.value,
-                                })
-                              }
-                              className="border px-2 py-1 rounded w-full"
-                            />
+                          {/* Status column: checks if user.disabled is true or false */}
+                          {user.disabled ? (
+                            <span className="text-red-600 font-semibold">
+                              Disabled
+                            </span>
                           ) : (
-                            user.aboutMe
+                            <span className="text-green-600 font-semibold">
+                              Enabled
+                            </span>
                           )}
                         </td>
                         <td className="p-3 flex items-center gap-4">
@@ -558,11 +560,38 @@ const UserList = () => {
                               }}
                               className={`${
                                 user.disabled
-                                  ? "text-green-600 hover:underline"
-                                  : "text-red-600 hover:underline"
-                              }`}
+                                  ? "text-green-600 hover:text-green-800"
+                                  : "text-red-600 hover:text-red-800"
+                              } p-1 rounded-full hover:bg-gray-200 transition duration-150 ease-in-out`}
+                              aria-label={user.disabled ? "Enable user" : "Disable user"}
                             >
-                              {user.disabled ? "Enable" : "Disable"}
+                              {user.disabled ? (
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  strokeWidth={1.5}
+                                  stroke="currentColor"
+                                  className="w-5 h-5"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              ) : (
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  strokeWidth={1.5}
+                                  stroke="currentColor"
+                                  className="w-5 h-5"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                                  />
+                                </svg>
+                              )}
                             </button>
                           )}
 
@@ -572,26 +601,68 @@ const UserList = () => {
                             </span>
                           ) : editingUserId === user._id ? (
                             <>
-                              {(canEditAdminType) ? (
+                              {canEditAdminType ? (
                                 <button
                                   onClick={() => handleAdminSave(user._id)}
-                                  className="text-green-600 hover:underline"
+                                  className="text-green-600 hover:text-green-800 p-1 rounded-full hover:bg-gray-200 transition duration-150 ease-in-out"
+                                  aria-label="Save changes"
                                 >
-                                  Save
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={1.5}
+                                    stroke="currentColor"
+                                    className="w-5 h-5"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                  </svg>
                                 </button>
                               ) : (
                                 <button
                                   onClick={() => handleSave(user._id)}
-                                  className="text-green-600 hover:underline"
+                                  className="text-green-600 hover:text-green-800 p-1 rounded-full hover:bg-gray-200 transition duration-150 ease-in-out"
+                                  aria-label="Save changes"
                                 >
-                                  Save
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={1.5}
+                                    stroke="currentColor"
+                                    className="w-5 h-5"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                  </svg>
                                 </button>
                               )}
                               <button
                                 onClick={() => setEditingUserId(null)}
-                                className="text-gray-600 hover:underline"
+                                className="text-gray-600 hover:text-gray-800 p-1 rounded-full hover:bg-gray-200 transition duration-150 ease-in-out"
+                                aria-label="Cancel editing"
                               >
-                                Cancel
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  strokeWidth={1.5}
+                                  stroke="currentColor"
+                                  className="w-5 h-5"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
+                                </svg>
                               </button>
                             </>
                           ) : (
@@ -601,9 +672,23 @@ const UserList = () => {
                                   setEditingUserId(user._id);
                                   setEditedUser({ ...user });
                                 }}
-                                className="text-blue-600 hover:underline"
+                                className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-gray-200 transition duration-150 ease-in-out"
+                                aria-label="Edit user"
                               >
-                                Edit
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  strokeWidth={1.5}
+                                  stroke="currentColor"
+                                  className="w-5 h-5"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14.25v4.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 18V7.5a2.25 2.25 0 012.25-2.25H10.5"
+                                  />
+                                </svg>
                               </button>
                             )
                           )}

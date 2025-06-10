@@ -422,6 +422,43 @@ const mobileAdminLogin = async (req, res) => {
   }
 };
 
+const adminChangePassword = async (req, res) => {
+  try {
+    const { newPassword, icpepId, email } = req.body;
+
+    // Get the logged-in user's email from the session or JWT
+    // Example: req.user.email (make sure your auth middleware sets req.user)
+    if (!email) {
+      return res.status(401).json({ success: false, message: "Unauthorized. Please log in." });
+    }
+
+    if (!icpepId || !newPassword) {
+      return res.status(400).json({ success: false, message: "New ICPEP ID and new password are required." });
+    }
+
+    // Find user by their own email
+    const user = await adminModel.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    // Only allow admin or superadmin to change their own password and ICPEP ID
+    if (!["admin", "superadmin"].includes(user.userType)) {
+      return res.status(403).json({ success: false, message: "Not authorized to change password for this user." });
+    }
+
+    // Hash new password and update ICPEP ID
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.icpepId = icpepId;
+    await user.save();
+
+    return res.json({ success: true, message: "Password and ICPEP ID changed successfully." });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -433,4 +470,5 @@ module.exports = {
   resetPassword,
   adminLogin,
   mobileAdminLogin,
+  adminChangePassword
 };

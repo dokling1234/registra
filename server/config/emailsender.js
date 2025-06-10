@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const { PASSWORD_RESET_TEMPLATE } = require("./emailTemplates");
 
 let otpStorage = {};
 let otpTimestamps = {};
@@ -7,8 +8,8 @@ const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
   auth: {
-    user: "pernida12345@gmail.com", 
-    pass: "ivhgdymrsuzzkqrh", 
+    user: "pernida12345@gmail.com",
+    pass: "ivhgdymrsuzzkqrh",
   },
   tls: {
     rejectUnauthorized: false,
@@ -18,7 +19,6 @@ const transporter = nodemailer.createTransport({
 // Function to generate a random 4-digit OTP
 function generateOTP() {
   return Math.floor(1000 + Math.random() * 9000).toString();
-
 }
 
 async function sendOTP(email, otp) {
@@ -30,7 +30,10 @@ async function sendOTP(email, otp) {
     from: "pernida12345@gmail.com",
     to: email,
     subject: "Password Reset OTP",
-    text: `Your OTP for password reset is: ${otp}`,
+    html: PASSWORD_RESET_TEMPLATE.replace("{{otp}}", otp).replace(
+      "{{email}}",
+      email
+    ),
   };
 
   try {

@@ -170,4 +170,6 @@ const cancelEvent = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
 module.exports = { createSuperAdmin, enableUser, disableUser, updateUser, cancelEvent, updateAdminOrSuperadmin };

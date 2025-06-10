@@ -1,19 +1,19 @@
 import React, { useContext, useEffect, useState } from "react";
-import Navbar from "../components/Navbar"; // Import the Navbar component
-import Footer from "../components/Footer"; // Import the Footer component
+import Navbar from "../components/Navbar"; 
+import Footer from "../components/Footer"; 
 import { AppContent } from "../context/AppContext";
-import axios from "axios"; // Import Axios for API calls
-import "./Profile.css"; // Import the CSS file for styling
+import axios from "axios"; 
+import "./Profile.css"; 
 import { assets } from "../assets/assets";
 import EventCard from "../components/RegisteredEventCard";
 import Swal from "sweetalert2";
 
 const Profile = () => {
-  const { userData, backendUrl, getUserData } = useContext(AppContent); // Access user data and backend URL from context
-  const [isEditing, setIsEditing] = useState(false); // State to toggle edit mode
-  const [isResettingPassword, setIsResettingPassword] = useState(false); // State to toggle reset password mode
-  const [formData, setFormData] = useState({}); // State to store form data
-  const [aboutMe, setaboutMe] = useState(""); // State to store About Us description
+  const { userData, backendUrl, getUserData } = useContext(AppContent); 
+  const [isEditing, setIsEditing] = useState(false); 
+  const [isResettingPassword, setIsResettingPassword] = useState(false); 
+  const [formData, setFormData] = useState({}); 
+  const [aboutMe, setaboutMe] = useState(""); 
   const [selectedImage, setSelectedImage] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = React.useRef();
@@ -22,15 +22,15 @@ const Profile = () => {
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
-  }); // State to store password reset data
+  }); 
   const [showPasswords, setShowPasswords] = useState({
     currentPassword: false,
     newPassword: false,
     confirmPassword: false,
-  }); // State to toggle visibility of password fields
+  }); 
   const [pastEvents, setPastEvents] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
-  const [eventFilter, setEventFilter] = useState("all"); // 'all', 'past', 'upcoming'
+  const [eventFilter, setEventFilter] = useState("all"); 
 
   useEffect(() => {
     if (userData) {
@@ -42,7 +42,7 @@ const Profile = () => {
         icpepId: userData.icpepId || "",
         profileImage: userData.profileImage || "",
       });
-      setaboutMe(userData.aboutMe || ""); // Initialize About Us description
+      setaboutMe(userData.aboutMe || ""); 
     }
   }, [userData]);
 
@@ -57,7 +57,6 @@ const Profile = () => {
           }
         );
 
-        // Separate past and upcoming events
         const currentDate = new Date();
         const past = res.data.filter(
           (event) => new Date(event.date) < currentDate
@@ -77,7 +76,7 @@ const Profile = () => {
   }, [userData, backendUrl]);
 
   const handleEditProfile = () => {
-    setIsEditing(true); // Enable edit mode
+    setIsEditing(true); 
   };
 
   const handleImageClick = () => {
@@ -106,7 +105,7 @@ const Profile = () => {
 
     if (!file) return;
 
-    setSelectedImage(URL.createObjectURL(file)); // For immediate preview
+    setSelectedImage(URL.createObjectURL(file)); 
 
     const formData = new FormData();
     formData.append("file", file);
@@ -162,7 +161,7 @@ const Profile = () => {
         });
 
         setIsEditing(false);
-        setSelectedImage(null); // Reset preview
+        setSelectedImage(null); 
         setFormData({
           fullName: userData.fullName || "",
           email: userData.email || "",
@@ -182,7 +181,7 @@ const Profile = () => {
   };
 
   const handleaboutMeChange = (e) => {
-    setaboutMe(e.target.value); // Update About Us description
+    setaboutMe(e.target.value); 
   };
 
   const handlePasswordChange = (e) => {
@@ -196,19 +195,19 @@ const Profile = () => {
     }));
   };
   const handleSaveProfile = async () => {
-    console.log("Form Data:", formData); // Log the form data for debugging
-    console.log("About Us:", aboutMe); // Log the About Us description
+    console.log("Form Data:", formData); 
+    console.log("About Us:", aboutMe); 
 
     try {
       const response = await axios.put(
         `${backendUrl}/api/user/update`,
         { ...formData, aboutMe },
         {
-          withCredentials: true, // Ensure credentials are included
+          withCredentials: true, 
         }
       );
 
-      console.log("Server Response:", response.data); // Log the server response
+      console.log("Server Response:", response.data); 
 
       if (response.data.success) {
         Swal.fire({
@@ -218,8 +217,8 @@ const Profile = () => {
           showConfirmButton: false,
           timer: 1500,
         });
-        setIsEditing(false); // Exit edit mode
-        await getUserData(); // Refresh user data
+        setIsEditing(false); 
+        await getUserData(); 
       } else {
         await Swal.fire({
           icon: "error",
@@ -229,7 +228,7 @@ const Profile = () => {
         });
       }
     } catch (error) {
-      console.error("Error updating profile:", error); // Log the error
+      console.error("Error updating profile:", error); 
       await Swal.fire({
         icon: "error",
         title: "Error",
@@ -244,7 +243,6 @@ const Profile = () => {
   const handleResetPassword = async () => {
     const { currentPassword, newPassword, confirmPassword } = passwordData;
 
-    // 1. Check for empty fields
     if (!currentPassword || !newPassword || !confirmPassword) {
       Swal.fire({
         icon: "error",
@@ -254,7 +252,6 @@ const Profile = () => {
       return;
     }
 
-    // 2. Check password length
     if (newPassword.length < 8) {
       Swal.fire({
         icon: "error",
@@ -264,7 +261,6 @@ const Profile = () => {
       return;
     }
 
-    // 3. Check password match
     if (newPassword !== confirmPassword) {
       Swal.fire({
         icon: "error",
@@ -274,7 +270,6 @@ const Profile = () => {
       return;
     }
 
-    // 4. Proceed with API call
     try {
       const response = await axios.post(
         `${backendUrl}/api/user/reset-password`,

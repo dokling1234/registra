@@ -4,6 +4,8 @@
     --secondary-color: #f7941d;
     --text-color: #333;
     --light-bg: #f8f9fa;
+    --card-bg: #ffffff;
+    --body-bg: #E3F4F4;
 }
 
 body {
@@ -12,6 +14,7 @@ body {
     font-style: normal;
     color: var(--text-color);
     line-height: 1.6;
+    background-color: var(--body-bg);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -63,6 +66,7 @@ h1, h2, h3, h4, h5, h6 {
     max-width: 1200px; /* Set a maximum width for the container */
     margin: 0 auto; /* Center the container horizontally */
     padding: 0 1rem; /* Add minimal padding on the left and right */
+    background-color: var(--section-bg);
 }
 
 /* Hero Section */
@@ -107,7 +111,7 @@ h1, h2, h3, h4, h5, h6 {
     margin: 0 auto; /* Center the card */
     max-width: 800px; /* Limit the width of the card */
     text-align: center; /* Center text inside the card */
-    background-color: white; /* Ensure a visible background color */
+    background-color: var(--card-bg);
     margin-bottom: 5rem;
 }
 
@@ -142,3 +146,4 @@ h1, h2, h3, h4, h5, h6 {
     height: 2px;
     background-color: var(--secondary-color);
 }
+
