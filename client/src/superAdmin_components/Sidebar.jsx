@@ -12,7 +12,6 @@ const Sidebar = () => {
   const { userData, backendUrl, setUserData, setIsLoggedin } =
     useContext(AppContent);
   const [showChangeModal, setShowChangeModal] = useState(false);
-  const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [icpepId, setIcpepId] = useState("");
   const [changeLoading, setChangeLoading] = useState(false);
