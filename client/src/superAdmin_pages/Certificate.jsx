@@ -13,7 +13,7 @@ import certificateTemplates from "../admin_components/CertificateTemplates";
 import GoldTemplate from "../admin_components/CertificateTemplates/GoldTemplate";
 import MaroonCertificate from "../admin_components/CertificateTemplates/MaroonCertificate";
 import RoyalBlueTemplate from "../admin_components/CertificateTemplates/RoyalBlueTemplate";
-import ElegantBlackTemplate from "../admin_components/CertificateTemplates/ElegantBlackTemplate";
+import ElegantBlackTemplate from "../admin_components/CertificateTemplates/ElegantGreenTemplate";
 
 // Map template IDs to components
 const templateMap = {

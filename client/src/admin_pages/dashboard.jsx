@@ -45,8 +45,13 @@ const Home = () => {
   const { userData, isAdmin } = useContext(AppContent);
 
   useEffect(() => {
+    console.log(userData);
+    console.log(isAdmin);
     if (!isAdmin) {
-      // Not an admin, redirect to home or another page
+      localStorage.removeItem("isAdmin");
+      localStorage.removeItem("userData");
+      localStorage.removeItem("isLoggedin");
+      console.log("cleared");
       navigate("/admin");
     }
   }, [isAdmin, navigate]);

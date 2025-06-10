@@ -1,7 +1,7 @@
 import GoldTemplate from './GoldTemplate';
 import MaroonCertificate from './MaroonCertificate';
 import RoyalBlueTemplate from './RoyalBlueTemplate';
-import ElegantBlackTemplate from './ElegantBlackTemplate';
+import ElegantBlackTemplate from './ElegantGreenTemplate';
 export const certificateTemplates = [
   {
     id: 'modern-gold',

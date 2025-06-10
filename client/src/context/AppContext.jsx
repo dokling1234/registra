@@ -8,43 +8,50 @@ export const AppContextProvider = (props) => {
     axios.defaults.withCredentials = true;
 
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
-    const [isLoggedin, setIsLoggedin] = useState(false);
-    const [userData, setUserData] = useState(false);
-    const [isAdmin, setIsAdmin] = useState(false); // NEW: track if admin
+    const [isLoggedin, setIsLoggedin] = useState(() => {
+        const stored = localStorage.getItem("isLoggedin");
+        return stored ? JSON.parse(stored) : false;
+    });
+    const [userData, setUserData] = useState(() => {
+        const stored = localStorage.getItem("userData");
+        return stored ? JSON.parse(stored) : false;
+    });
+    const [isAdmin, setIsAdmin] = useState(() => {
+        const stored = localStorage.getItem("isAdmin");
+        return stored ? JSON.parse(stored) : false;
+    });
+
+    // Persist to localStorage on change
+    useEffect(() => {
+        localStorage.setItem("isLoggedin", JSON.stringify(isLoggedin));
+    }, [isLoggedin]);
+    useEffect(() => {
+        localStorage.setItem("userData", JSON.stringify(userData));
+    }, [userData]);
+    useEffect(() => {
+        localStorage.setItem("isAdmin", JSON.stringify(isAdmin));
+    }, [isAdmin]);
 
     const getAuthState = async () => {
-    try {
-        const { data } = await axios.get(backendUrl + "/api/auth/is-auth");
+        try {
+            const { data } = await axios.get(backendUrl + "/api/auth/is-auth");
 
-        console.log(data)
-        if (data.success) {
-            setIsLoggedin(true);
-            setIsAdmin(data.isAdmin || false);
-            await getUserData(data.isAdmin || false);
-        } else {
-            console.warn("Auth check failed:", data);
+            if (data.success) {
+                setIsLoggedin(true);
+                setIsAdmin(data.isAdmin || false);
+                await getUserData(data.isAdmin || false);
+            } else {
+                setIsLoggedin(false);
+                setIsAdmin(false);
+                setUserData(false);
+            }
+        } catch (error) {
+            setIsLoggedin(false);
+            setIsAdmin(false);
+            setUserData(false);
         }
-    } catch (error) {
-        console.error("Auth check error:", error);  // LOG ERROR DETAILS
+    };
 
-        if (error.response) {
-            // Server responded with a status outside 2xx
-            console.error("Response error:", error.response.data);
-            //toast.error(error.response.data?.message || "Server error");
-        } else if (error.request) {
-            // Request made, no response
-            console.error("No response received:", error.request);
-            toast.error("No response from server");
-        } else {
-            // Something else happened setting up the request
-            console.error("Request setup error:", error.message);
-            toast.error(error.message);
-        }
-
-        setIsLoggedin(false);
-        setIsAdmin(false);
-    }
-};
     const getUserData = async (isAdminFlag = isAdmin) => {
         try {
             const endpoint = isAdminFlag 
