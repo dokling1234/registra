@@ -1,6 +1,6 @@
 import React from "react";
 
-const ElegantBlackTemplate = ({
+const ElegantGreenTemplate = ({
   event,
   organizers,
   editing,
@@ -10,10 +10,10 @@ const ElegantBlackTemplate = ({
   removeOrganizer,
 }) => (
   <div
-    className="certificate-template relative bg-black text-white rounded-2xl shadow-2xl flex flex-col items-center border-0"
+    className="certificate-template relative bg-gradient-to-br from-white via-green-50 to-green-200 text-gray-900 rounded-2xl shadow-2xl flex flex-col items-center border-0"
     style={{
-      width: 1056,
-      height: 816,
+      minWidth: 1056,
+      minHheight: 816,
       padding: 0,
       overflow: "hidden",
     }}
@@ -22,7 +22,7 @@ const ElegantBlackTemplate = ({
       style={{
         position: "absolute",
         inset: 0,
-        background: "linear-gradient(135deg, #000000, #333333)",
+        background: "linear-gradient(135deg, #bbf7d0 0%, #f0fdf4 100%)",
         borderRadius: "1.25rem",
         padding: "10px",
         zIndex: 0,
@@ -32,41 +32,39 @@ const ElegantBlackTemplate = ({
       style={{
         position: "absolute",
         inset: 10,
-        background: "#111111",
-        border: "2px solid #FFD700",
+        background: "#fff",
+        border: "2px solid #22c55e",
         borderRadius: "1rem",
         zIndex: 1,
       }}
     />
     <div className="relative z-10 flex flex-col items-center w-full px-16 py-14">
-      <h2 className="text-6xl font-serif font-bold text-white tracking-widest mb-2">
+      <h2 className="text-6xl font-serif font-bold text-green-900 tracking-widest mb-2">
         CERTIFICATE
       </h2>
-      <div className="text-3xl font-serif text-yellow-400 tracking-widest mb-6">
+      <div className="text-3xl font-serif text-green-600 tracking-widest mb-6">
         OF EXCELLENCE
       </div>
-      <div className="text-2xl text-gray-300 mb-4 mt-4">
+      <div className="text-2xl text-gray-700 mb-4 mt-4">
         THIS IS PROUDLY PRESENTED TO
       </div>
       <div
-        className="text-5xl text-blue-900 mb-4"
+        className="text-5xl text-green-900 mb-4"
         style={{
           fontFamily: "cursive, Pacifico, Arial",
           minHeight: "2.5em",
           height: "2.5em",
         }}
       ></div>
-      <div className="text-2xl text-gray-300 mb-8 text-center max-w-3xl">
+      <div className="text-2xl text-gray-700 mb-8 text-center max-w-3xl">
         For remarkable achievement in{" "}
-        <span className="font-semibold text-yellow-300">{event.title}</span> on{" "}
-        <span className="font-semibold text-yellow-300">
+        <span className="font-semibold text-green-700">{event.title}</span> on{" "}
+        <span className="font-semibold text-green-700">
           {new Date(event.date).toLocaleDateString()}
         </span>
         .
       </div>
-      <div className="flex justify-center items-center my-10">
-
-      </div>
+      <div className="flex justify-center items-center my-10"></div>
       <div className="flex flex-row justify-center gap-24 mt-12 w-full">
         {editing ? (
           <div className="flex flex-col w-full items-center">
@@ -86,7 +84,7 @@ const ElegantBlackTemplate = ({
                     handleOrganizerChange(idx, "name", e.target.value)
                   }
                   placeholder="Organizer Name"
-                  className="border px-4 py-2 rounded mb-2 text-center text-lg bg-gray-800 text-white"
+                  className="border px-4 py-2 rounded mb-2 text-center text-lg bg-gray-100 text-gray-900"
                 />
                 <input
                   type="text"
@@ -95,7 +93,7 @@ const ElegantBlackTemplate = ({
                     handleOrganizerChange(idx, "label", e.target.value)
                   }
                   placeholder="Label"
-                  className="border px-4 py-2 rounded mb-2 text-center text-lg bg-gray-800 text-white"
+                  className="border px-4 py-2 rounded mb-2 text-center text-lg bg-gray-100 text-gray-900"
                 />
                 <input
                   type="file"
@@ -135,11 +133,11 @@ const ElegantBlackTemplate = ({
               )}
               <span
                 style={{ fontFamily: "cursive, Pacifico, Arial" }}
-                className="text-2xl text-yellow-300 mb-2"
+                className="text-2xl text-green-700 mb-2"
               >
                 {org.name}
               </span>
-              <span className="text-lg text-gray-400 uppercase tracking-widest">
+              <span className="text-lg text-green-900 uppercase tracking-widest">
                 {org.label}
               </span>
             </div>
@@ -150,4 +148,4 @@ const ElegantBlackTemplate = ({
   </div>
 );
 
-export default ElegantBlackTemplate;
+export default ElegantGreenTemplate;
