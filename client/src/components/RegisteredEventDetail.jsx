@@ -2,12 +2,13 @@ import React, { useEffect, useState, useContext, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { AppContent } from "../context/AppContext";
-import Navbar from "../components/Navbar"; // Import Navbar
-import "./RegisteredEventDetail.css"; // Import CSS for styling
+import Navbar from "../components/Navbar";
+import "./RegisteredEventDetail.css";
 import html2pdf from "html2pdf.js";
 import Swal from "sweetalert2";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 // Certificate Component
 const Certificate = ({ templateUrl, userName }) => {
@@ -39,6 +40,43 @@ const Certificate = ({ templateUrl, userName }) => {
     renderToPng();
     // eslint-disable-next-line
   }, [pngUrl, userName]);
+
+  // Download as PDF using the templateUrl
+  const handleDownloadPDF = async () => {
+  if (!templateUrl) return;
+
+  // Fetch the original PDF as ArrayBuffer
+  const existingPdfBytes = await fetch(templateUrl).then(res => res.arrayBuffer());
+
+  // Load a PDFDocument from the existing PDF bytes
+  const pdfDoc = await PDFDocument.load(existingPdfBytes);
+
+  // Get the first page
+  const pages = pdfDoc.getPages();
+  const firstPage = pages[0];
+
+  // Draw the user's name (adjust position and font size as needed)
+  const { width, height } = firstPage.getSize();
+  const font = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+  const fontSize = 48;
+  firstPage.drawText(userName, {
+    x: width / 2 - (userName.length * fontSize * 0.25), // Centered, adjust as needed
+    y: height * 0.66, // Adjust Y as needed
+    size: fontSize,
+    font,
+    color: rgb(0, 0, 0),
+  });
+
+  // Serialize the PDFDocument to bytes (a Uint8Array)
+  const pdfBytes = await pdfDoc.save();
+
+  // Trigger download
+  const blob = new Blob([pdfBytes], { type: "application/pdf" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "certificate.pdf";
+  link.click();
+};
 
   return (
     <div className="certificate-container">
@@ -90,7 +128,7 @@ const Certificate = ({ templateUrl, userName }) => {
               fontSize: "3rem",
               fontWeight: "bold",
               color: "#000000",
-              fontFamily: " Times New Roman",
+              fontFamily: "Times New Roman",
               textShadow: "0 2px 8px #fff, 0 2px 8px #fff",
               pointerEvents: "none",
               userSelect: "none",
@@ -120,15 +158,14 @@ const Certificate = ({ templateUrl, userName }) => {
           <div>Loading certificate preview...</div>
         )}
       </div>
-      {finalPng && (
-        <a
-          href={finalPng}
-          download="certificate.png"
-          className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-block text-center"
+      <div className="flex gap-4 mt-4 justify-center">
+        <button
+          onClick={handleDownloadPDF}
+          className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors inline-block text-center"
         >
-          Download Certificate
-        </a>
-      )}
+          Download as PDF
+        </button>
+      </div>
     </div>
   );
 };

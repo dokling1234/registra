@@ -5,19 +5,19 @@
 }
 
 /* Card Container */
-.card-container {
+/* .card-container {
   background-color: white;
   border-radius: 16px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  max-width: 400px;
+  max-width: 100%;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
+} */
 
-.card-container:hover {
+/* .card-container:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
-}
+} */
 
 /* Card Image */
 .card-image {
@@ -28,7 +28,8 @@
 
 /* Card Content */
 .card-content {
-  padding: 16px; /* Equivalent to p-4 */
+  padding: 16px;
+   /* Equivalent to p-4 */
 }
 
 .card-date-time {

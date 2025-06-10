@@ -484,23 +484,29 @@ const Events = () => {
 
                         ) : (
                           <div className="flex gap-2">
-                            <button
-                              className="text-yellow-600 hover:underline text-sm"
+                           <button
+                              className="text-yellow-600"
                               onClick={() => handleEdit(event._id)}
                             >
-                              Edit
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                              </svg>
                             </button>
                             <button
-                              className="text-indigo-600 hover:underline text-sm"
+                              className="text-indigo-600"
                               onClick={() => handleReschedule(event._id)}
                             >
-                              Reschedule
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h8m-8 4h8m-8 4h8m2-4V6a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-3a2 2 0 000 0z" />
+                              </svg>
                             </button>
                             <button
-                              className="text-red-600 hover:underline text-sm"
+                              className="text-red-600"
                               onClick={() => handleCancel(event._id)}
                             >
-                              Cancel
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-9H4a1 1 0 01-1-1V5a1 1 0 011-1h9V3a1 1 0 011-1h2a1 1 0 011 1v1h2a1 1 0 011 1v1a1 1 0 01-1 1z" />
+                              </svg>
                             </button>
                           </div>
                         )}

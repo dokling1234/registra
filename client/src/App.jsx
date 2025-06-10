@@ -38,6 +38,7 @@ import SuperAdminCertificate from "./superAdmin_pages/Certificate";
 import SuperAdminReport from "./superAdmin_pages/Report";
 import SuperAdminReceipt from "./superAdmin_pages/Receipt";
 import SuperAdminReschedule from "./superAdmin_components/Reschedule";
+import SuperAdminAdminList from "./superAdmin_pages/AdminList";
 
 const App = () => {
   return (
@@ -84,6 +85,8 @@ const App = () => {
           element={<SuperAdminEditEvent />}
         />
         <Route path="/superadmin/userlist" element={<SuperAdminUserList />} />
+        <Route path="/superadmin/adminlist" element={<SuperAdminAdminList />} />
+
         <Route path="superadmin/feedback" element={<SuperAdminFeedback />} />
         <Route
           path="/superadmin/feedback/Builder"
@@ -99,7 +102,6 @@ const App = () => {
           path="/superadmin/events/reschedule/:id"
           element={<SuperAdminReschedule />}
         />
-
       </Routes>
     </AppContextProvider>
   );
