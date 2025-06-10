@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const Admin = require("../models/adminModel.js");
 const Event = require("../models/eventModel.js");
 const transporter = require("../config/nodemailer"); 
+mongoose = require("mongoose");
 const crypto = require("crypto");
 
 // Admin Login

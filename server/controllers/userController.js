@@ -4,7 +4,7 @@ const adminModel = require("../models/adminModel.js");
 const UserService = require("../services/user.services.js");
 const { otpStorage } = require("../config/emailsender.js");
 const { generateOTP, sendOTP } = require("../config/emailsender.js");
-
+const {LOGIN_OTP_TEMPLATE} = require("../config/emailTemplates.js");
 const MAX_OTP_AGE = 1 * 60 * 1000;
 
 const getUserData = async (req, res) => {
@@ -278,7 +278,7 @@ const mobileLogin = async (req, res, next) => {
     } else {
       const otp = generateOTP();
       otpStorage[email] = { code: otp, timestamp: Date.now() };
-      sendOTP(email, otp);
+      sendOTP(email, otp, LOGIN_OTP_TEMPLATE, "Login Verification OTP");
 
       return res.status(200).json({
         _id: user._id,
@@ -323,7 +323,7 @@ const resendOTP = async (req, res) => {
 
     const otp = generateOTP();
     otpStorage[email] = { code: otp, timestamp: Date.now() };
-    await sendOTP(email, otp);
+    await sendOTP(email, otp, LOGIN_OTP_TEMPLATE, "Login Verification OTP");
 
     res.status(200).json({ status: true, message: "OTP resent to your email" });
   } catch (error) {

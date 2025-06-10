@@ -8,8 +8,15 @@ import { Link } from "react-router-dom";
 
 const EventList = () => {
   const navigate = useNavigate();
-  const { userData } = useContext(AppContent);
+  const { userData, isAdmin } = useContext(AppContent);
   const [events, setEvents] = useState([]);
+
+  useEffect(() => {
+        if (!isAdmin) {
+          // Not an admin, redirect to home or another page
+          navigate("/admin");
+        }
+      }, [isAdmin, navigate]);
 
   useEffect(() => {
     const fetchEvents = async () => {

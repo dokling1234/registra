@@ -7,7 +7,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 
 const AdminList = () => {
-  const { userData } = useContext(AppContent);
+  const { userData, isAdmin } = useContext(AppContent);
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,6 +28,13 @@ const AdminList = () => {
   const [adminCreateMessage, setAdminCreateMessage] = useState("");
 
   const usersPerPage = 10;
+
+  useEffect(() => {
+        if (!isAdmin) {
+          // Not an admin, redirect to home or another page
+          navigate("/admin");
+        }
+      }, [isAdmin, navigate]);
 
   useEffect(() => {
     const fetchUsers = async () => {

@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { assets } from "../assets/assets";
 import { useNavigate } from "react-router-dom";
 import { AppContent } from "../context/AppContext";
@@ -6,7 +6,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const ResetPassword = () => {
-  const { backendUrl } = useContext(AppContent);
+  const { backendUrl, isAdmin } = useContext(AppContent);
   axios.defaults.withCredentials = true;
 
   const navigate = useNavigate();
@@ -87,6 +87,14 @@ const ResetPassword = () => {
     }
   };
 
+  useEffect(() => {
+      if (isAdmin) {
+        // Not an admin, redirect to home or another page
+        navigate("/");
+      }
+    }, [isAdmin, navigate]);
+  
+    
   return (
     <div className="flex items-center justify-center min-h-screen px-6 sm:px-0 bg-gradient-to-br from-blue-200 to-[#60B5FF]">
       <img

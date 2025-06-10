@@ -30,7 +30,7 @@ ChartJS.register(
 
 const Report = () => {
   const navigate = useNavigate();
-  const { userData } = useContext(AppContent);
+  const { userData, isAdmin } = useContext(AppContent);
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [eventTypes, setEventTypes] = useState([]);
@@ -41,6 +41,13 @@ const Report = () => {
   const selectedEvent = filteredEvents.find((ev) => ev._id === selectedEventId);
   const [eventSummary, setEventSummary] = useState("");
   const [generatedReport, setGeneratedReport] = useState(null);
+
+  useEffect(() => {
+        if (!isAdmin) {
+          // Not an admin, redirect to home or another page
+          navigate("/admin");
+        }
+      }, [isAdmin, navigate]);
 
   useEffect(() => {
     const fetchEvents = async () => {

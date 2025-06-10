@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { AppContent } from "../context/AppContext";
 import RegisteredEventCard from "../components/RegisteredEventCard";
@@ -7,10 +8,20 @@ import "./RegisteredEvents.css";
 import Footer from "../components/Footer";
 
 const RegisteredEvents = () => {
-  const { backendUrl } = useContext(AppContent);
+  const { backendUrl, isAdmin } = useContext(AppContent);
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [filter, setFilter] = useState("all"); // 'all', 'upcoming', 'past'
 
+
+  useEffect(() => {
+      if (isAdmin) {
+        // Not an admin, redirect to home or another page
+        navigate("/");
+      }
+    }, [isAdmin, navigate]);
+  
+    
   useEffect(() => {
     const fetchEvents = async () => {
       try {

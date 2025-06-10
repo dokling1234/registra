@@ -14,7 +14,7 @@ const Events = () => {
   const [lngLat, setLngLat] = useState(null);
   const [placeName, setPlaceName] = useState("");
   const navigate = useNavigate();
-  const { userData, getUserData, backendUrl } = useContext(AppContent);
+  const { userData, getUserData, backendUrl, isAdmin } = useContext(AppContent);
   const markerRef = useRef(null);
   const mapRef = useRef(null);
   const [imageFile, setImageFile] = useState(null);
@@ -33,6 +33,12 @@ const Events = () => {
     eventType: "",
     eventTarget: "",
   });
+  useEffect(() => {
+        if (!isAdmin) {
+          // Not an admin, redirect to home or another page
+          navigate("/admin");
+        }
+      }, [isAdmin, navigate]);
 
   useEffect(() => {
     const fetchEvents = async () => {

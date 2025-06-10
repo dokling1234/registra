@@ -30,7 +30,7 @@ ChartJS.register(
 
 const Report = () => {
   const navigate = useNavigate();
-  const { userData } = useContext(AppContent);
+  const { userData, isAdmin } = useContext(AppContent);
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [eventTypes, setEventTypes] = useState([]);
@@ -41,6 +41,13 @@ const Report = () => {
   const selectedEvent = filteredEvents.find((ev) => ev._id === selectedEventId);
   const [eventSummary, setEventSummary] = useState("");
   const [generatedReport, setGeneratedReport] = useState(null);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      // Not an admin, redirect to home or another page
+      navigate("/admin");
+    }
+  }, [isAdmin, navigate]);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -167,7 +174,10 @@ const Report = () => {
         <div className="flex flex-col sm:flex-row gap-4 mb-6 w-full">
           {/* Filter Dropdown */}
           <div className="flex-1">
-            <label htmlFor="eventType" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="eventType"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Filter by Event Type:
             </label>
             <select
@@ -181,31 +191,40 @@ const Report = () => {
               <option value="Seminar">Seminar</option>
               <option value="Webinar">Webinar</option>
               {/* Filter out All if it exists in fetched types, map others */}
-              {eventTypes.filter(type => type !== "All" && type !== "Seminar" && type !== "Webinar").map((type, idx) => (
-                <option key={idx} value={type}>
-                  {type}
-                </option>
-              ))}
+              {eventTypes
+                .filter(
+                  (type) =>
+                    type !== "All" && type !== "Seminar" && type !== "Webinar"
+                )
+                .map((type, idx) => (
+                  <option key={idx} value={type}>
+                    {type}
+                  </option>
+                ))}
             </select>
           </div>
 
           {/* Date Range Filter */}
           <div className="flex-1 flex gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Start Date
+              </label>
               <input
                 type="date"
                 value={startDate}
-                onChange={e => setStartDate(e.target.value)}
+                onChange={(e) => setStartDate(e.target.value)}
                 className="border border-gray-300 rounded-md px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                End Date
+              </label>
               <input
                 type="date"
                 value={endDate}
-                onChange={e => setEndDate(e.target.value)}
+                onChange={(e) => setEndDate(e.target.value)}
                 className="border border-gray-300 rounded-md px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
