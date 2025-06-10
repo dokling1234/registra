@@ -43,7 +43,7 @@ const Home = () => {
   });
   const [eventTypeData, setEventTypeData] = useState({ labels: [], data: [] });
   const { userData, isAdmin } = useContext(AppContent);
-
+  
   useEffect(() => {
     console.log(userData);
     console.log(isAdmin);
@@ -51,7 +51,7 @@ const Home = () => {
       localStorage.removeItem("isAdmin");
       localStorage.removeItem("userData");
       localStorage.removeItem("isLoggedin");
-      console.log("cleared");
+      isAdmin(false);
       navigate("/admin");
     }
   }, [isAdmin, navigate]);

@@ -90,7 +90,6 @@ const Login = () => {
 
           // Find the current user in the response
           const currentUser = userResponse.data.users.find(user => user.email === email);
-          console.log("Current user data:", currentUser);
 
           // Check if the user is disabled
           if (currentUser?.disabled) {
