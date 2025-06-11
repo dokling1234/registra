@@ -471,6 +471,7 @@ const mobileRegister = async (req, res, next) => {
       membership,
       aboutMe = "",
       profileImage = "default-profile.png",
+      isDisabled = false,
     } = req.body;
     if (
       !fullName ||

@@ -45,13 +45,11 @@ const Home = () => {
   const { userData, isAdmin } = useContext(AppContent);
   
   useEffect(() => {
-    console.log(userData);
-    console.log(isAdmin);
     if (!isAdmin) {
       localStorage.removeItem("isAdmin");
       localStorage.removeItem("userData");
       localStorage.removeItem("isLoggedin");
-      isAdmin(false);
+
       navigate("/admin");
     }
   }, [isAdmin, navigate]);
