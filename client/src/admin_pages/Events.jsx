@@ -181,7 +181,7 @@ const Events = () => {
 
         try {
           const res = await axios.post(
-            `${backendUrl}/api/event/location/reverse-geocode`,
+            `${backendUrl}/api/events/location/reverse-geocode`,
             {
               lat,
               lon: lng,

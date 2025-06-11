@@ -302,6 +302,7 @@ const geocodeAddress = async (req, res) => {
 };
 
 const reverseGeocode = async (req, res) => {
+  console.log("reverseGeocode");
   const { lat, lon } = req.body;
 
   if (!lat || !lon) {

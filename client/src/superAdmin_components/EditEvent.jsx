@@ -97,7 +97,7 @@ const EditEvent = () => {
       }));
 
       axios
-        .post("/api/event/location/reverse-geocode", { lat, lon: lng })
+        .post("/api/events/location/reverse-geocode", { lat, lon: lng })
         .then((res) => {
           const { display_name } = res.data;
           setEventData((prev) => ({
