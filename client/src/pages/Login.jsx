@@ -308,7 +308,7 @@ const Login = () => {
 {/* Mobile App Download Link */}
 <div className="mt-6 text-center">
           <a
-            href="https://github.com/dokling1234/registra/archive/refs/tags/v0.01.zip"
+            href="https://github.com/dokling1234/registra/releases/download/v0.01/app-release1.apk"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors text-sm"
