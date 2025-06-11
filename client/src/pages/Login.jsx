@@ -305,7 +305,20 @@ const Login = () => {
             {state}
           </button>
         </form>
-
+{/* Mobile App Download Link */}
+<div className="mt-6 text-center">
+          <a
+            href="https://github.com/dokling1234/registra/archive/refs/tags/v0.01.zip"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors text-sm"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+            Download Mobile App
+          </a>
+        </div>
         {state === "Sign Up" ? (
           <p className="text-gray-400 text-center text-xs mt-4">
             Already have an account?{" "}

@@ -262,7 +262,13 @@ const geocodeAddress = async (req, res) => {
     const geoRes = await axios.get(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
         address
-      )}&format=json`
+      )}&format=json`,
+      {
+        headers: {
+          'User-Agent': 'RegistraApp/1.0 (https://registra-b7181b9e50a0.herokuapp.com; carrel.golosinda@gmail.com)'
+        },
+        timeout: 10000 // 10 second timeout
+      }
     );
 
     if (geoRes.data && geoRes.data.length > 0) {
@@ -277,6 +283,20 @@ const geocodeAddress = async (req, res) => {
     }
   } catch (err) {
     console.error("Geocoding error:", err.message);
+    
+    // Handle specific error cases
+    if (err.response?.status === 403) {
+      return res.status(429).json({ 
+        message: "Geocoding service temporarily unavailable. Please try again later." 
+      });
+    }
+    
+    if (err.code === 'ECONNABORTED') {
+      return res.status(408).json({ 
+        message: "Geocoding request timed out. Please try again." 
+      });
+    }
+    
     res.status(500).json({ message: "Geocoding failed" });
   }
 };
@@ -292,7 +312,13 @@ const reverseGeocode = async (req, res) => {
 
   try {
     const response = await axios.get(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+      {
+        headers: {
+          'User-Agent': 'RegistraApp/1.0 (https://registra-b7181b9e50a0.herokuapp.com; carrel.golosinda@gmail.com)'
+        },
+        timeout: 10000 // 10 second timeout
+      }
     );
 
     const data = response.data;
@@ -304,6 +330,20 @@ const reverseGeocode = async (req, res) => {
     }
   } catch (err) {
     console.error("Reverse geocoding error:", err.message);
+    
+    // Handle specific error cases
+    if (err.response?.status === 403) {
+      return res.status(429).json({ 
+        message: "Geocoding service temporarily unavailable. Please try again later." 
+      });
+    }
+    
+    if (err.code === 'ECONNABORTED') {
+      return res.status(408).json({ 
+        message: "Geocoding request timed out. Please try again." 
+      });
+    }
+    
     res.status(500).json({ message: "Reverse geocoding failed" });
   }
 };
