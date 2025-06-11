@@ -41,6 +41,8 @@ const Report = () => {
   const selectedEvent = filteredEvents.find((ev) => ev._id === selectedEventId);
   const [eventSummary, setEventSummary] = useState("");
   const [generatedReport, setGeneratedReport] = useState(null);
+  const [feedbackData, setFeedbackData] = useState(null);
+  const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
 
   useEffect(() => {
         if (!isAdmin) {
@@ -83,6 +85,108 @@ const Report = () => {
     }
     setFilteredEvents(filtered);
   }, [events, selectedType, startDate, endDate]);
+
+  const fetchFeedbackData = async (eventId) => {
+    if (!eventId) return;
+    
+    setIsLoadingFeedback(true);
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/feedback/getEventFeedbackData/${eventId}`,
+        { withCredentials: false }
+      );
+      setFeedbackData(response.data);
+    } catch (error) {
+      console.error("Error fetching feedback data:", error);
+      setFeedbackData(null);
+    } finally {
+      setIsLoadingFeedback(false);
+    }
+  };
+
+  // Process feedback data for charts - moved outside component for reuse
+  const processQuestionData = (question, questionIndex, answers) => {
+    const questionAnswers = answers.map(answer => answer.answers[questionIndex]);
+    
+    if (question.type === "Choice") {
+      const optionCounts = {};
+      questionAnswers.forEach(answer => {
+        if (answer && answer.answer) {
+          const value = answer.answer;
+          optionCounts[value] = (optionCounts[value] || 0) + 1;
+        }
+      });
+      return {
+        type: "choice",
+        labels: Object.keys(optionCounts),
+        data: Object.values(optionCounts),
+        backgroundColor: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"]
+      };
+    } else if (question.type === "Likert") {
+      // Handle Likert scale questions with statements
+      const statementData = {};
+      questionAnswers.forEach(answer => {
+        if (answer && answer.answers && Array.isArray(answer.answers)) {
+          answer.answers.forEach(statementAnswer => {
+            if (statementAnswer.statement && statementAnswer.value) {
+              if (!statementData[statementAnswer.statement]) {
+                statementData[statementAnswer.statement] = { total: 0, count: 0 };
+              }
+              statementData[statementAnswer.statement].total += statementAnswer.value;
+              statementData[statementAnswer.statement].count += 1;
+            }
+          });
+        }
+      });
+      
+      const statements = Object.keys(statementData);
+      const averages = statements.map(stmt => 
+        statementData[stmt].count > 0 
+          ? (statementData[stmt].total / statementData[stmt].count).toFixed(1)
+          : 0
+      );
+      
+      return {
+        type: "likert",
+        labels: statements,
+        data: averages,
+        backgroundColor: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"]
+      };
+    } else if (question.type === "Rating") {
+      const ratingCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      questionAnswers.forEach(answer => {
+        if (answer && answer.answer) {
+          const rating = parseInt(answer.answer);
+          if (rating >= 1 && rating <= 5) {
+            ratingCounts[rating]++;
+          }
+        }
+      });
+      return {
+        type: "rating",
+        labels: ["1 Star", "2 Stars", "3 Stars", "4 Stars", "5 Stars"],
+        data: Object.values(ratingCounts),
+        backgroundColor: ["#ef4444", "#f59e0b", "#eab308", "#10b981", "#3b82f6"]
+      };
+    } else if (question.type === "Text") {
+      return {
+        type: "text",
+        responses: questionAnswers.filter(answer => answer && answer.answer).map(answer => answer.answer)
+      };
+    }
+    return null;
+  };
+
+  const getAverageRating = (questionIndex, answers) => {
+    const questionAnswers = answers.map(answer => answer.answers[questionIndex]);
+    const ratings = questionAnswers
+      .filter(answer => answer && answer.answer)
+      .map(answer => parseInt(answer.answer))
+      .filter(rating => !isNaN(rating));
+    
+    if (ratings.length === 0) return 0;
+    return (ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(1);
+  };
 
   const handlePrint = () => {
     if (!generatedReport) return;
@@ -138,6 +242,176 @@ const Report = () => {
       </div>
     );
   };
+
+  const FeedbackReport = ({ feedbackData }) => {
+    if (!feedbackData || !feedbackData.form || !feedbackData.answers) {
+      return (
+        <div className="text-center py-8 text-gray-500">
+          No feedback data available for this event.
+        </div>
+      );
+    }
+
+    const { form, answers, totalResponses } = feedbackData;
+
+    return (
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-6">Feedback Report</h2>
+        
+        <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+          <h3 className="text-lg font-semibold mb-2">Feedback Summary</h3>
+          <p><strong>Total Responses:</strong> {totalResponses}</p>
+          <p><strong>Response Rate:</strong> {totalResponses > 0 ? `${((totalResponses / (selectedEvent?.registrations?.length || 1)) * 100).toFixed(1)}%` : '0%'}</p>
+        </div>
+
+        {form.questions.map((question, index) => {
+          const questionData = processQuestionData(question, index, answers);
+          
+          if (!questionData) return null;
+
+          return (
+            <div key={index} className="mb-8 p-6 bg-white rounded-lg shadow">
+              <h4 className="text-lg font-semibold mb-4">{question.text || `Question ${index + 1}`}</h4>
+              
+              {questionData.type === "choice" && (
+                <div>
+                  <div className="mb-4">
+                    <Bar
+                      data={{
+                        labels: questionData.labels,
+                        datasets: [{
+                          label: 'Responses',
+                          data: questionData.data,
+                          backgroundColor: questionData.backgroundColor.slice(0, questionData.labels.length),
+                        }]
+                      }}
+                      options={{
+                        responsive: true,
+                        plugins: {
+                          legend: { display: false },
+                        },
+                        scales: {
+                          y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                          }
+                        }
+                      }}
+                      height={100}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {questionData.labels.map((label, i) => (
+                      <div key={i} className="text-center p-3 bg-gray-50 rounded">
+                        <div className="font-semibold">{label}</div>
+                        <div className="text-2xl text-blue-600">{questionData.data[i]}</div>
+                        <div className="text-sm text-gray-500">
+                          {((questionData.data[i] / totalResponses) * 100).toFixed(1)}%
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {questionData.type === "rating" && (
+                <div>
+                  <div className="mb-4">
+                    <Bar
+                      data={{
+                        labels: questionData.labels,
+                        datasets: [{
+                          label: 'Responses',
+                          data: questionData.data,
+                          backgroundColor: questionData.backgroundColor,
+                        }]
+                      }}
+                      options={{
+                        responsive: true,
+                        plugins: {
+                          legend: { display: false },
+                        },
+                        scales: {
+                          y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                          }
+                        }
+                      }}
+                      height={100}
+                    />
+                  </div>
+                  <div className="text-center p-4 bg-yellow-50 rounded">
+                    <div className="text-2xl font-bold text-yellow-600">
+                      Average Rating: {getAverageRating(index, answers)} ⭐
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {questionData.type === "likert" && (
+                <div>
+                  <div className="mb-4">
+                    <Bar
+                      data={{
+                        labels: questionData.labels,
+                        datasets: [{
+                          label: 'Average Score',
+                          data: questionData.data,
+                          backgroundColor: questionData.backgroundColor.slice(0, questionData.labels.length),
+                        }]
+                      }}
+                      options={{
+                        responsive: true,
+                        plugins: {
+                          legend: { display: false },
+                        },
+                        scales: {
+                          y: {
+                            beginAtZero: true,
+                            max: 5,
+                            ticks: { stepSize: 1 }
+                          }
+                        }
+                      }}
+                      height={100}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {questionData.labels.map((label, i) => (
+                      <div key={i} className="text-center p-3 bg-purple-50 rounded border-l-4 border-purple-500">
+                        <div className="font-semibold text-sm mb-1">{label}</div>
+                        <div className="text-2xl text-purple-600">{questionData.data[i]}</div>
+                        <div className="text-xs text-gray-500">Average Score</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {questionData.type === "text" && (
+                <div>
+                  <div className="mb-4">
+                    <div className="text-lg font-semibold text-blue-600 mb-2">
+                      Text Responses ({questionData.responses.length})
+                    </div>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto space-y-2">
+                    {questionData.responses.map((response, i) => (
+                      <div key={i} className="p-3 bg-gray-50 rounded border-l-4 border-blue-500">
+                        <p className="text-sm text-gray-700">"{response}"</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
@@ -412,11 +686,36 @@ const Report = () => {
                 ...selectedEvent,
                 eventSummary,
               });
+              // Fetch feedback data when generating report
+              fetchFeedbackData(selectedEvent._id);
             }}
             disabled={!selectedEventId}
           >
-            Generate Report
+            Generate Complete Report
           </button>
+
+          {/* Loading indicator */}
+          {isLoadingFeedback && (
+            <div className="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <span className="text-blue-600">Loading feedback data...</span>
+              </div>
+            </div>
+          )}
+
+          {/* Feedback Data Status */}
+          {feedbackData && (
+            <div className="mb-4 p-3 bg-green-50 rounded border border-green-200">
+              <div className="flex items-center gap-2">
+                <span className="text-green-600 font-semibold">✓</span>
+                <span className="text-green-700">
+                  Feedback data loaded ({feedbackData.totalResponses} responses)
+                </span>
+              </div>
+            </div>
+          )}
+
           {selectedEvent && generatedReport && (
             <div>
               <div
@@ -536,6 +835,188 @@ const Report = () => {
                     })()}
                   </p>
                 </div>
+
+                {/* Feedback Report Section */}
+                {feedbackData && (
+                  <div className="mb-4" style={{ pageBreakBefore: 'always' }}>
+                    <h2 className="text-lg font-semibold mb-2">Feedback Report</h2>
+                    <div className="mb-4 p-4 bg-blue-50 rounded">
+                      <h3 className="text-md font-semibold mb-2">Feedback Summary</h3>
+                      <p><strong>Total Responses:</strong> {feedbackData.totalResponses}</p>
+                      <p><strong>Response Rate:</strong> {feedbackData.totalResponses > 0 ? `${((feedbackData.totalResponses / (selectedEvent?.registrations?.length || 1)) * 100).toFixed(1)}%` : '0%'}</p>
+                    </div>
+
+                    {feedbackData.form.questions.map((question, index) => {
+                      const questionData = processQuestionData(question, index, feedbackData.answers);
+                      
+                      if (!questionData) return null;
+
+                      return (
+                        <div key={index} className="mb-6 p-4 border rounded">
+                          <h4 className="text-md font-semibold mb-3">{question.text || `Question ${index + 1}`}</h4>
+                          
+                          {questionData.type === "choice" && (
+                            <div>
+                              <div className="mb-3">
+                                <Bar
+                                  data={{
+                                    labels: questionData.labels,
+                                    datasets: [{
+                                      label: 'Responses',
+                                      data: questionData.data,
+                                      backgroundColor: questionData.backgroundColor.slice(0, questionData.labels.length),
+                                    }]
+                                  }}
+                                  options={{
+                                    responsive: true,
+                                    plugins: {
+                                      legend: { display: false },
+                                    },
+                                    scales: {
+                                      y: {
+                                        beginAtZero: true,
+                                        ticks: { stepSize: 1 }
+                                      }
+                                    }
+                                  }}
+                                  height={80}
+                                />
+                              </div>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                {questionData.labels.map((label, i) => (
+                                  <div key={i} className="text-center p-2 bg-gray-50 rounded">
+                                    <div className="font-semibold text-xs">{label}</div>
+                                    <div className="text-lg text-blue-600">{questionData.data[i]}</div>
+                                    <div className="text-xs text-gray-500">
+                                      {((questionData.data[i] / feedbackData.totalResponses) * 100).toFixed(1)}%
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {questionData.type === "rating" && (
+                            <div>
+                              <div className="mb-3">
+                                <Bar
+                                  data={{
+                                    labels: questionData.labels,
+                                    datasets: [{
+                                      label: 'Responses',
+                                      data: questionData.data,
+                                      backgroundColor: questionData.backgroundColor,
+                                    }]
+                                  }}
+                                  options={{
+                                    responsive: true,
+                                    plugins: {
+                                      legend: { display: false },
+                                    },
+                                    scales: {
+                                      y: {
+                                        beginAtZero: true,
+                                        ticks: { stepSize: 1 }
+                                      }
+                                    }
+                                  }}
+                                  height={80}
+                                />
+                              </div>
+                              <div className="text-center p-3 bg-yellow-50 rounded">
+                                <div className="text-lg font-bold text-yellow-600">
+                                  Average Rating: {getAverageRating(index, feedbackData.answers)} ⭐
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {questionData.type === "likert" && (
+                            <div>
+                              <div className="mb-3">
+                                <Bar
+                                  data={{
+                                    labels: questionData.labels,
+                                    datasets: [{
+                                      label: 'Average Score',
+                                      data: questionData.data,
+                                      backgroundColor: questionData.backgroundColor.slice(0, questionData.labels.length),
+                                    }]
+                                  }}
+                                  options={{
+                                    responsive: true,
+                                    plugins: {
+                                      legend: { display: false },
+                                    },
+                                    scales: {
+                                      y: {
+                                        beginAtZero: true,
+                                        max: 5,
+                                        ticks: { stepSize: 1 }
+                                      }
+                                    }
+                                  }}
+                                  height={80}
+                                />
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {questionData.labels.map((label, i) => (
+                                  <div key={i} className="text-center p-2 bg-purple-50 rounded border-l-2 border-purple-500">
+                                    <div className="font-semibold text-xs mb-1">{label}</div>
+                                    <div className="text-lg text-purple-600">{questionData.data[i]}</div>
+                                    <div className="text-xs text-gray-500">Average Score</div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {questionData.type === "text" && (
+                            <div>
+                              <div className="mb-3">
+                                <div className="text-md font-semibold text-blue-600 mb-2">
+                                  Text Responses ({questionData.responses.length})
+                                </div>
+                              </div>
+                              <div className="max-h-48 overflow-y-auto space-y-2">
+                                {questionData.responses.map((response, i) => (
+                                  <div key={i} className="p-2 bg-gray-50 rounded border-l-2 border-blue-500 text-sm">
+                                    <p className="text-gray-700">"{response}"</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Feedback Insights Summary */}
+                {feedbackData && (
+                  <div className="mt-6 p-4 bg-gray-50 rounded border">
+                    <h3 className="text-lg font-semibold mb-3">Feedback Insights</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-semibold text-blue-600 mb-2">Response Analysis</h4>
+                        <p className="text-sm">
+                          • Total feedback responses: <strong>{feedbackData.totalResponses}</strong><br/>
+                          • Response rate: <strong>{feedbackData.totalResponses > 0 ? `${((feedbackData.totalResponses / (selectedEvent?.registrations?.length || 1)) * 100).toFixed(1)}%` : '0%'}</strong><br/>
+                          • Questions answered: <strong>{feedbackData.form.questions.length}</strong>
+                        </p>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-green-600 mb-2">Key Takeaways</h4>
+                        <p className="text-sm">
+                          • {feedbackData.totalResponses > 0 ? 'Feedback data available for analysis' : 'No feedback responses yet'}<br/>
+                          • {feedbackData.form.questions.filter(q => q.type === 'Rating' || q.type === 'Likert').length > 0 ? 'Quantitative feedback collected' : 'No quantitative questions'}<br/>
+                          • {feedbackData.form.questions.filter(q => q.type === 'Text').length > 0 ? 'Qualitative feedback available' : 'No text-based questions'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-center mt-6 gap-4">
@@ -545,10 +1026,32 @@ const Report = () => {
                 >
                   Download PDF
                 </button>
+                {feedbackData && (
+                  <button
+                    onClick={() => {
+                      const feedbackSection = document.getElementById("downloadableReport");
+                      if (feedbackSection) {
+                        const originalContents = document.body.innerHTML;
+                        document.body.innerHTML = feedbackSection.innerHTML;
+                        window.print();
+                        document.body.innerHTML = originalContents;
+                        window.location.reload();
+                      }
+                    }}
+                    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
+                  >
+                    Print Report with Feedback
+                  </button>
+                )}
               </div>
             </div>
           )}
         </div>
+
+        {/* Feedback Report */}
+        {selectedEvent && feedbackData && (
+          <FeedbackReport feedbackData={feedbackData} />
+        )}
       </main>
     </div>
   );
