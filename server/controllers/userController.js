@@ -519,7 +519,8 @@ const mobileRegister = async (req, res, next) => {
       userType,
       membership,
       aboutMe,
-      profileImage
+      profileImage,
+      isDisabled
     );
 
     res.json({ status: true, success: "User Registered Successfully" });
