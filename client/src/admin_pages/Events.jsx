@@ -62,6 +62,12 @@ const Events = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validate that coordinates are provided
+    if (!lngLat) {
+      toast.error("Please select a location on the map before creating the event.");
+      return;
+    }
+
     try {
       let imageUrl = "";
 
@@ -95,6 +101,7 @@ const Events = () => {
         time: timeIn24Hour,
         image: imageUrl,
         cost: eventData.cost,
+        coordinates: lngLat,
       };
 
       const { data } = await axios.post(
@@ -121,6 +128,8 @@ const Events = () => {
           eventTarget: "",
         });
         setImageFile(null);
+        setLngLat(null);
+        setPlaceName("");
       } else {
         toast.error(data.message || "Something went wrong.");
       }
@@ -428,6 +437,11 @@ const Events = () => {
                   ? `Selected: ${placeName}`
                   : "Click on the map to select a location"}
               </p>
+              {lngLat && (
+                <p className="text-xs text-green-600 mt-1">
+                  ✓ Coordinates selected: {lngLat[1]?.toFixed(6)}, {lngLat[0]?.toFixed(6)}
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col">

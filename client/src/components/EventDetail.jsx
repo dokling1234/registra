@@ -20,6 +20,8 @@ const EventDetail = () => {
   const [event, setEvent] = useState(null);
   const [isRegistered, setIsRegistered] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [mapLoading, setMapLoading] = useState(false);
+  const [mapError, setMapError] = useState(false);
   const { userData } = useContext(AppContent);
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
@@ -40,34 +42,73 @@ const EventDetail = () => {
           "Failed to fetch event:",
           err.response?.data || err.message
         );
+        setLoading(false);
       }
     };
     fetchEvent();
   }, [id, userData?.id]);
 
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current || !event?.coordinates)
+    if (!mapContainerRef.current || mapRef.current || !event?.coordinates) {
       return;
+    }
 
     const [lng, lat] = event.coordinates;
-    if (isNaN(lng) || isNaN(lat)) return;
+    if (isNaN(lng) || isNaN(lat)) {
+      console.error("Invalid coordinates:", event.coordinates);
+      setMapError(true);
+      return;
+    }
 
-    mapRef.current = new maplibregl.Map({
-      container: mapContainerRef.current,
-      style:
-        "https://api.maptiler.com/maps/streets-v2/style.json?key=cyT8CBxXMzVIORtIP1Pj",
-      center: [lng, lat],
-      zoom: 16,
-    });
+    setMapLoading(true);
+    setMapError(false);
 
-    const marker = new maplibregl.Marker()
-      .setLngLat([lng, lat])
-      .setPopup(
-        new maplibregl.Popup().setText(event.location || "Event Location")
-      )
-      .addTo(mapRef.current);
+    try {
+      mapRef.current = new maplibregl.Map({
+        container: mapContainerRef.current,
+        style:
+          "https://api.maptiler.com/maps/streets-v2/style.json?key=cyT8CBxXMzVIORtIP1Pj",
+        center: [lng, lat],
+        zoom: 16,
+        attributionControl: false, // Disable attribution for cleaner look
+      });
 
-    markerRef.current = marker;
+      mapRef.current.on('load', () => {
+        setMapLoading(false);
+        
+        // Add marker after map loads
+        const marker = new maplibregl.Marker({ color: '#FF0000' })
+          .setLngLat([lng, lat])
+          .setPopup(
+            new maplibregl.Popup().setText(event.location || "Event Location")
+          )
+          .addTo(mapRef.current);
+
+        markerRef.current = marker;
+      });
+
+      mapRef.current.on('error', (e) => {
+        console.error("Map error:", e);
+        setMapError(true);
+        setMapLoading(false);
+      });
+
+    } catch (error) {
+      console.error("Error initializing map:", error);
+      setMapError(true);
+      setMapLoading(false);
+    }
+
+    // Cleanup function
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+      if (markerRef.current) {
+        markerRef.current = null;
+      }
+    };
   }, [event]);
 
   if (loading || !event) return <div className="loading">Loading...</div>;
