@@ -1,7 +1,7 @@
 import GoldTemplate from './GoldTemplate';
 import MaroonCertificate from './MaroonCertificate';
 import RoyalBlueTemplate from './RoyalBlueTemplate';
-import ElegantBlackTemplate from './ElegantGreenTemplate';
+import ElegantGreenTemplate from './ElegantGreenTemplate';
 export const certificateTemplates = [
   {
     id: 'modern-gold',
@@ -19,9 +19,9 @@ export const certificateTemplates = [
     component: RoyalBlueTemplate,
   },
   {
-    id: 'e;legant-black',
-    name: 'Elegant Black',
-    component: ElegantBlackTemplate,
+    id: 'elegant-green',
+    name: 'Elegant Green',
+    component: ElegantGreenTemplate,
   },
 ];
 export default certificateTemplates;
