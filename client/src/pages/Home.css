@@ -4,13 +4,13 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    min-height: 100vh;;
+    min-height: 100vh;
     padding-top: 10rem; /* To account for Navbar height */
   }
   
   /* Add margin between Navbar and Header */
   .home-container > *:nth-child(2) {
-    margin-top: 1.5rem; /* Space between Navbar and Header */
+    margin-top: 1.5rem; 
   }
   
   /* Add smaller margin between Header and EventList */
