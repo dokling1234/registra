@@ -13,21 +13,21 @@ import certificateTemplates from "../admin_components/CertificateTemplates";
 import GoldTemplate from "../admin_components/CertificateTemplates/GoldTemplate";
 import MaroonCertificate from "../admin_components/CertificateTemplates/MaroonCertificate";
 import RoyalBlueTemplate from "../admin_components/CertificateTemplates/RoyalBlueTemplate";
-import ElegantBlackTemplate from "../admin_components/CertificateTemplates/ElegantGreenTemplate";
+import ElegantGreenTemplate from "../admin_components/CertificateTemplates/ElegantGreenTemplate";
 
 // Map template IDs to components
 const templateMap = {
   gold: GoldTemplate,
   maroon: MaroonCertificate,
   royalblue: RoyalBlueTemplate,
-  elegantblack: ElegantBlackTemplate,
+  elegantgreen: ElegantGreenTemplate,
 };
 
 const templateOptions = [
   { id: "gold", name: "Gold" },
   { id: "maroon", name: "Maroon" },
   { id: "royalblue", name: "Royal Blue" },
-  { id: "elegantblack", name: "Elegant Black" },
+  { id: "elegantgreen", name: "Elegant Green" },
 ];
 
 const Certificate = () => {
