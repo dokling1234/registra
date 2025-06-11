@@ -164,6 +164,32 @@ const mobileCheckSubmission = async (req, res) => {
   }
 };
 
+const getEventFeedbackData = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    // Find the feedback form for this event
+    const feedbackForm = await FeedbackForm.findOne({ eventId });
+    if (!feedbackForm) {
+      return res.status(404).json({ message: "No feedback form found for this event" });
+    }
+
+    // Find all feedback answers for this form
+    const feedbackAnswers = await FeedbackAnswer.find({ 
+      feedbackFormId: feedbackForm._id 
+    }).populate('respondentId', 'fullName email userType');
+
+    res.json({
+      form: feedbackForm,
+      answers: feedbackAnswers,
+      totalResponses: feedbackAnswers.length
+    });
+  } catch (err) {
+    console.error("Error fetching event feedback data:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   createFeedbackForm,
   getFeedbackForm,
@@ -171,4 +197,5 @@ module.exports = {
   checkSubmission,
   mobileSubmitFeedback,
   mobileCheckSubmission,
+  getEventFeedbackData,
 };
