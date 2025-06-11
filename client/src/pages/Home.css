@@ -5,7 +5,7 @@
     align-items: center;
     justify-content: flex-start;
     min-height: 100vh;
-    padding-top: 10rem; /* To account for Navbar height */
+    padding-top: 10rem; 
   }
   
   /* Add margin between Navbar and Header */
