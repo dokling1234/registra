@@ -216,7 +216,7 @@ const Events = () => {
     return <div className="text-center mt-10 text-gray-600">Loading...</div>;
   }
 
-  if (userData.userType !== "superadmin") {
+  if (userData.userType !== "admin") {
     return null;
   }
 
