@@ -12,6 +12,8 @@ import Footer from "../components/Footer";
 import "./EventDetail.css";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { FaFacebook, FaTwitter, FaLink } from "react-icons/fa";
+import Swal from "sweetalert2";
 
 const EventDetail = () => {
   const navigate = useNavigate();
@@ -26,7 +28,22 @@ const EventDetail = () => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
+  const createGoogleCalendarLink = (event) => {
+    const startDate = new Date(event.date);
+    const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // 2-hour duration
 
+    const formatDate = (date) => date.toISOString().replace(/-|:|\.\d+/g, "");
+
+    const details = encodeURIComponent(event.about || "");
+    const location = encodeURIComponent(event.location || "");
+    const title = encodeURIComponent(event.title);
+
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatDate(
+      startDate
+    )}/${formatDate(
+      endDate
+    )}&details=${details}&location=${location}&sf=true&output=xml`;
+  };
   useEffect(() => {
     const fetchEvent = async () => {
       try {
@@ -73,11 +90,11 @@ const EventDetail = () => {
         attributionControl: false, // Disable attribution for cleaner look
       });
 
-      mapRef.current.on('load', () => {
+      mapRef.current.on("load", () => {
         setMapLoading(false);
-        
+
         // Add marker after map loads
-        const marker = new maplibregl.Marker({ color: '#FF0000' })
+        const marker = new maplibregl.Marker({ color: "#FF0000" })
           .setLngLat([lng, lat])
           .setPopup(
             new maplibregl.Popup().setText(event.location || "Event Location")
@@ -87,12 +104,11 @@ const EventDetail = () => {
         markerRef.current = marker;
       });
 
-      mapRef.current.on('error', (e) => {
+      mapRef.current.on("error", (e) => {
         console.error("Map error:", e);
         setMapError(true);
         setMapLoading(false);
       });
-
     } catch (error) {
       console.error("Error initializing map:", error);
       setMapError(true);
@@ -133,15 +149,58 @@ const EventDetail = () => {
               <p>{new Date(event.date).toDateString()}</p>
               <p>{event.time}</p>
               {!isPastEvent && (
-                <button
-                  onClick={() => navigate(`/uploadreceipt/${id}`)}
-                  disabled={isRegistered}
-                  className={`register-button ${
-                    isRegistered ? "registered" : "not-registered"
-                  }`}
-                >
-                  {isRegistered ? "Already Registered" : "Book Now"}
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      if (isRegistered) {
+                        Swal.fire({
+                          icon: "info",
+                          title: "You're already registered!",
+                          text: "You have already booked this event.",
+                          confirmButtonColor: "#2563EB",
+                        });
+                      } else {
+                        Swal.fire({
+                          title: "Confirm Booking",
+                          text: "Do you want to book this event?",
+                          icon: "question",
+                          showCancelButton: true,
+                          confirmButtonColor: "#2563EB",
+                          cancelButtonColor: "#9CA3AF",
+                          confirmButtonText: "Yes, book it!",
+                        }).then((result) => {
+                          if (result.isConfirmed) {
+                            Swal.fire({
+                              title: "Booking Confirmed!",
+                              text: "Redirecting to payment/receipt upload...",
+                              icon: "success",
+                              timer: 1500,
+                              showConfirmButton: false,
+                            });
+                            setTimeout(() => {
+                              navigate(`/uploadreceipt/${id}`);
+                            }, 1500);
+                          }
+                        });
+                      }
+                    }}
+                    className={`register-button ${
+                      isRegistered ? "registered" : "not-registered"
+                    }`}
+                  >
+                    {isRegistered ? "Already Registered" : "Book Now"}
+                  </button>
+
+                  {/* Add to Google Calendar */}
+                  <button
+                    onClick={() =>
+                      window.open(createGoogleCalendarLink(event), "_blank")
+                    }
+                    className="calendar-button"
+                  >
+                    Add to Google Calendar
+                  </button>
+                </>
               )}
             </div>
             <div className="event-banner-text">
@@ -162,6 +221,63 @@ const EventDetail = () => {
               <div ref={mapContainerRef} className="event-map-container" />
               <p>{event.location}</p>
             </div>
+          </div>
+        </div>
+        {/* Share This Event */}
+        <div className="event-share-section">
+          <h2>Share This Event</h2>
+          <div className="share-icons">
+            {/* Facebook */}
+            <FaFacebook
+              className="share-icon facebook"
+              onClick={() =>
+                window.open(
+                  `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+                    window.location.href
+                  )}&quote=${encodeURIComponent(
+                    `${event.title} - ${event.about}\nDate: ${new Date(
+                      event.date
+                    ).toDateString()}`
+                  )}`,
+                  "_blank"
+                )
+              }
+            />
+
+            {/* Twitter */}
+            <FaTwitter
+              className="share-icon twitter"
+              onClick={() =>
+                window.open(
+                  `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                    `${event.title} - ${event.about}\nDate: ${new Date(
+                      event.date
+                    ).toDateString()}\n`
+                  )}&url=${encodeURIComponent(window.location.href)}`,
+                  "_blank"
+                )
+              }
+            />
+
+            {/* Copy Link + Details */}
+            <FaLink
+              className="share-icon copy"
+              onClick={() => {
+                const eventSummary = `${event.title}\n${
+                  event.about
+                }\nDate: ${new Date(event.date).toDateString()}\n${
+                  window.location.href
+                }`;
+                navigator.clipboard.writeText(eventSummary);
+                Swal.fire({
+                  icon: "success",
+                  title: "Details copied!",
+                  text: "Event details and link have been copied to your clipboard.",
+                  showConfirmButton: false,
+                  timer: 1500,
+                });
+              }}
+            />
           </div>
         </div>
       </div>
