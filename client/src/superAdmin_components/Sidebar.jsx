@@ -52,34 +52,34 @@ const Sidebar = () => {
     return location.pathname === path;
   };
 
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    setChangeLoading(true);
-    try {
-      // Only send newPassword and icpepId, do NOT send email (backend uses logged-in user)
-      const { data } = await axios.post(
-        backendUrl + "/api/auth/change-password",
-        { newPassword, icpepId, email: userData.email },
-        { withCredentials: true }
-      );
-      if (data.success) {
-        Swal.fire("Success", "Account updated successfully!", "success");
-        setShowChangeModal(false);
-        setNewPassword("");
-        setIcpepId("");
-      } else {
-        Swal.fire("Error", data.message || "Failed to update account", "error");
-      }
-    } catch (error) {
-      Swal.fire(
-        "Error",
-        error.response?.data?.message || error.message,
-        "error"
-      );
-    } finally {
-      setChangeLoading(false);
-    }
-  };
+  // const handleChangePassword = async (e) => {
+  //   e.preventDefault();
+  //   setChangeLoading(true);
+  //   try {
+  //     // Only send newPassword and icpepId, do NOT send email (backend uses logged-in user)
+  //     const { data } = await axios.post(
+  //       backendUrl + "/api/auth/change-password",
+  //       { newPassword, icpepId, email: userData.email },
+  //       { withCredentials: true }
+  //     );
+  //     if (data.success) {
+  //       Swal.fire("Success", "Account updated successfully!", "success");
+  //       setShowChangeModal(false);
+  //       setNewPassword("");
+  //       setIcpepId("");
+  //     } else {
+  //       Swal.fire("Error", data.message || "Failed to update account", "error");
+  //     }
+  //   } catch (error) {
+  //     Swal.fire(
+  //       "Error",
+  //       error.response?.data?.message || error.message,
+  //       "error"
+  //     );
+  //   } finally {
+  //     setChangeLoading(false);
+  //   }
+  // };
 
   return (
     <div className="h-screen w-64 bg-gray-900 text-white flex flex-col justify-between fixed">
@@ -214,7 +214,7 @@ const Sidebar = () => {
               />
               Administrators
             </button>
-            <button
+            {/* <button
               onClick={() => setShowChangeModal(true)}
               className="text-left hover:bg-gray-700 p-3 rounded-lg w-full transition-colors flex items-center gap-2"
             >
@@ -224,7 +224,7 @@ const Sidebar = () => {
                 className="w-5 h-5"
               />
               Change Password
-            </button>
+            </button> */}
           </nav>
         </div>
       </div>
