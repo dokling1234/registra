@@ -4,9 +4,6 @@ const FeedbackForm = require("../models/feedbackFormModel.js");
 const FeedbackAnswer = require("../models/feedbackAnswerModel.js");
 const OpenAI = require("openai");
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
 
 const createFeedbackForm = async (req, res) => {
   try {
