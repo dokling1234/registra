@@ -2,7 +2,6 @@ const userModel = require("../models/userModel.js");
 const adminModel = require("../models/adminModel.js");
 const FeedbackForm = require("../models/feedbackFormModel.js");
 const FeedbackAnswer = require("../models/feedbackAnswerModel.js");
-const OpenAI = require("openai");
 
 
 const createFeedbackForm = async (req, res) => {
