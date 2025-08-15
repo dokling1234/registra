@@ -328,5 +328,4 @@ module.exports = {
   mobileSubmitFeedback,
   mobileCheckSubmission,
   getEventFeedbackData,
-  analyzeFeedback,
 };
