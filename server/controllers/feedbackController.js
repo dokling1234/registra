@@ -179,16 +179,37 @@ const getEventFeedbackData = async (req, res) => {
       feedbackFormId: feedbackForm._id 
     }).populate('respondentId', 'fullName email userType');
 
+    // Prepare feedback text for summarization
+    const feedbackText = feedbackAnswers
+      .map(ans => `From ${ans.respondentId?.fullName || "Anonymous"}: ${JSON.stringify(ans.answers)}`)
+      .join("\n");
+
+    let summary = null;
+    if (feedbackAnswers.length > 0) {
+      // Call OpenAI to summarize
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini", // lightweight & fast model
+        messages: [
+          { role: "system", content: "You are an assistant that summarizes event feedback into concise, clear bullet points." },
+          { role: "user", content: `Here is the feedback collected:\n\n${feedbackText}\n\nPlease summarize the main themes, highlights, and common suggestions.` }
+        ],
+        max_tokens: 300
+      });
+      summary = completion.choices[0].message.content;
+    }
+
     res.json({
       form: feedbackForm,
       answers: feedbackAnswers,
-      totalResponses: feedbackAnswers.length
+      totalResponses: feedbackAnswers.length,
+      summary
     });
   } catch (err) {
     console.error("Error fetching event feedback data:", err);
     res.status(500).json({ error: err.message });
   }
 };
+
 
 module.exports = {
   createFeedbackForm,
