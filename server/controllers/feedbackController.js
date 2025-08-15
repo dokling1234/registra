@@ -175,27 +175,33 @@ const getEventFeedbackData = async (req, res) => {
     }
 
     // Find all feedback answers for this form
-    const feedbackAnswers = await FeedbackAnswer.find({ 
-      feedbackFormId: feedbackForm._id 
+    const feedbackAnswers = await FeedbackAnswer.find({
+      feedbackFormId: feedbackForm._id
     }).populate('respondentId', 'fullName email userType');
 
-    // Prepare feedback text for summarization
+    // Prepare text for summarization
     const feedbackText = feedbackAnswers
-      .map(ans => `From ${ans.respondentId?.fullName || "Anonymous"}: ${JSON.stringify(ans.answers)}`)
-      .join("\n");
+      .map(ans => JSON.stringify(ans.answers))
+      .join("\n")
+      .slice(0, 4000); // limit to avoid huge payloads
 
     let summary = null;
+
     if (feedbackAnswers.length > 0) {
-      // Call OpenAI to summarize
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini", // lightweight & fast model
-        messages: [
-          { role: "system", content: "You are an assistant that summarizes event feedback into concise, clear bullet points." },
-          { role: "user", content: `Here is the feedback collected:\n\n${feedbackText}\n\nPlease summarize the main themes, highlights, and common suggestions.` }
-        ],
-        max_tokens: 300
-      });
-      summary = completion.choices[0].message.content;
+      try {
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            { role: "system", content: "You are an assistant that summarizes event feedback into concise bullet points." },
+            { role: "user", content: `Here is the feedback:\n${feedbackText}` }
+          ],
+          max_tokens: 300
+        });
+        summary = completion.choices[0].message.content;
+      } catch (openAiErr) {
+        console.error("OpenAI summarization error:", openAiErr);
+        summary = "Error generating summary.";
+      }
     }
 
     res.json({
@@ -209,6 +215,7 @@ const getEventFeedbackData = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 
 module.exports = {
