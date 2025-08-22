@@ -1,5 +1,5 @@
 const express = require('express');
-const { getFeedbackForm, createFeedbackForm, submitFeedback, checkSubmission, mobileSubmitFeedback, mobileCheckSubmission, getEventFeedbackData } = require('../controllers/feedbackController.js');
+const { getFeedbackForm, createFeedbackForm, submitFeedback, checkSubmission, mobileSubmitFeedback, mobileCheckSubmission, getEventFeedbackData, analyzeFeedbackData } = require('../controllers/feedbackController.js');
 const userAuth = require('../middleware/userAuth.js');
 
 const feedbackRoutes = express.Router();
@@ -9,6 +9,7 @@ feedbackRoutes.put('/createFeedback', createFeedbackForm);
 feedbackRoutes.post('/submitFeedback/:formId',userAuth, submitFeedback); // formId
 feedbackRoutes.get('/checkSubmission/:eventId', userAuth, checkSubmission);//eventId
 feedbackRoutes.get('/getEventFeedbackData/:eventId', getEventFeedbackData); //eventId
+feedbackRoutes.post('/analyzeFeedback/:eventId', analyzeFeedbackData); //eventId
 
 
 const mobileFeedbackRoutes = express.Router();

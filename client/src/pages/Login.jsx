@@ -20,6 +20,8 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [membership, setMembership] = useState("member");
+  const [agree, setAgree] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   useEffect(() => {
     const savedEmail = localStorage.getItem("userEmail");
@@ -43,18 +45,20 @@ const Login = () => {
     axios.defaults.withCredentials = true;
 
     try {
+      if (state === "Sign Up" && !agree) {
+        toast.error(
+          "You must agree to the Terms and Conditions and Privacy Policy."
+        );
+        return;
+      }
       if (state === "Sign Up") {
-        // Clean and format contact number
         let formattedContact = contactNumber.trim().replace(/[\s-()]/g, "");
-
-        // Convert 0929... → +63929...
         if (formattedContact.startsWith("0")) {
           formattedContact = "+63" + formattedContact.slice(1);
         } else if (!formattedContact.startsWith("+63")) {
           formattedContact = "+63" + formattedContact;
         }
         const formattedStringContact = formattedContact.toString();
-        // Validate Philippine mobile number
         if (!/^\+639\d{9}$/.test(formattedContact)) {
           toast.error(
             "Invalid mobile number. Please enter a valid PH number (e.g., 09291234567)"
@@ -65,7 +69,7 @@ const Login = () => {
           fullName,
           email,
           password,
-          contactNumber: formattedStringContact, 
+          contactNumber: formattedStringContact,
           icpepId,
           userType,
         });
@@ -84,27 +88,28 @@ const Login = () => {
         });
 
         if (data.success) {
-          // Get full user data first
-          const userResponse = await axios.get(`${backendUrl}/api/user/alldata`, { withCredentials: true });
-          console.log("Full user data:", userResponse.data);
+          const userResponse = await axios.get(
+            `${backendUrl}/api/user/alldata`,
+            { withCredentials: true }
+          );
+          const currentUser = userResponse.data.users.find(
+            (user) => user.email === email
+          );
 
-          // Find the current user in the response
-          const currentUser = userResponse.data.users.find(user => user.email === email);
-
-          // Check if the user is disabled
           if (currentUser?.disabled) {
             Swal.fire({
               icon: "error",
               title: "Account Disabled",
               text: "Your account has been disabled. Please contact the administrator for assistance.",
-              confirmButtonText: "OK"
+              confirmButtonText: "OK",
             });
             return;
           }
 
-          // Check if the user is verified
           if (!data.user?.isVerified) {
-            await axios.post(`${backendUrl}/api/auth/send-verify-otp`, { email });
+            await axios.post(`${backendUrl}/api/auth/send-verify-otp`, {
+              email,
+            });
             toast.error("Please verify your email first.");
             navigate("/email-verify");
             return;
@@ -162,9 +167,8 @@ const Login = () => {
                 <img src={assets.phone_icon} width="16" height="18" alt="" />
                 <input
                   onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, ""); // remove non-digits
+                    const value = e.target.value.replace(/\D/g, "");
                     if (value.length <= 11) {
-                      // Force first digit to be 0
                       if (value === "" || value.startsWith("0")) {
                         setContactNumber(value);
                       }
@@ -177,13 +181,12 @@ const Login = () => {
                   required
                 />
               </div>
-              
+
               <div className="mb-4 w-full px-5 py-2.5 rounded-full bg-[#333A5C] w-full text-white">
                 <select
                   value={userType}
                   onChange={(e) => setuserType(e.target.value)}
                   className="bg-transparent outline-none w-full"
-                  s
                   required
                 >
                   <option
@@ -222,9 +225,9 @@ const Login = () => {
                   </option>
                 </select>
               </div>
-              {/* Animated ICPEP Field */}
+
               <div
-                className={`transition-all duration-300 ease-in-outbg-transparent ${
+                className={`transition-all duration-300 ease-in-out ${
                   membership === "member"
                     ? "opacity-100 max-h-40 mb-4"
                     : "opacity-0 max-h-0 mb-0 overflow-hidden"
@@ -235,7 +238,7 @@ const Login = () => {
                   <input
                     onChange={(e) => setIcpepId(e.target.value)}
                     value={icpepId}
-                    className="bg-transparent outline-none focus:outline-none border-transparent w-full text-white"
+                    className="bg-transparent outline-none w-full text-white"
                     placeholder="ICPEP ID"
                     required={membership === "member"}
                   />
@@ -244,25 +247,25 @@ const Login = () => {
             </>
           )}
 
-          <div className="mb-4 flex items-center gap-3 w-full px-5 py-2.5 rounded-full bg-[#333A5C] w-full text-white">
+          <div className="mb-4 flex items-center gap-3 w-full px-5 py-2.5 rounded-full bg-[#333A5C] text-white">
             <img src={assets.mail_icon} alt="" />
             <input
               onChange={(e) => setEmail(e.target.value)}
               value={email}
-              className="bg-transparent outline-none"
+              className="bg-transparent outline-none w-full"
               type="email"
               placeholder="Email"
               required
             />
           </div>
 
-          <div className="mb-4 flex items-center gap-3 w-full px-5 py-2.5 rounded-full bg-[#333A5C] relative w-full text-white">
+          <div className="mb-4 flex items-center gap-3 w-full px-5 py-2.5 rounded-full bg-[#333A5C] relative text-white">
             <img src={assets.lock_icon} alt="Lock Icon" />
             <input
               onChange={(e) => setPassword(e.target.value)}
               value={password}
-              className="bg-transparent outline-none w-full text-white pr-10"
-              type={showPassword ? "" : "password"}
+              className="bg-transparent outline-none w-full pr-10"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
               required
             />
@@ -280,6 +283,37 @@ const Login = () => {
               />
             </button>
           </div>
+
+          {state === "Sign Up" && (
+            <div className="mb-4 flex items-center text-indigo-300 text-xs">
+              <input
+                type="checkbox"
+                checked={agree}
+                onChange={(e) => setAgree(e.target.checked)}
+                className="mr-2 accent-blue-500 w-4 h-4"
+                required
+              />
+              <span>
+                I agree to the{" "}
+                <button
+                  type="button"
+                  onClick={() => setShowTerms(true)}
+                  className="text-blue-400 underline"
+                >
+                  Terms and Conditions
+                </button>{" "}
+                and{" "}
+                <a
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 underline"
+                >
+                  Privacy Policy
+                </a>
+              </span>
+            </div>
+          )}
 
           {state !== "Sign Up" && (
             <div className="mb-4 flex items-center justify-between">
@@ -305,8 +339,8 @@ const Login = () => {
             {state}
           </button>
         </form>
-{/* Mobile App Download Link */}
-<div className="mt-6 text-center">
+
+        <div className="mt-6 text-center">
           <a
             href="https://github.com/dokling1234/registra/releases/download/v0.01/app-release1.apk"
             target="_blank"
@@ -314,11 +348,16 @@ const Login = () => {
             className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors text-sm"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
             </svg>
             Download Mobile App
           </a>
         </div>
+
         {state === "Sign Up" ? (
           <p className="text-gray-400 text-center text-xs mt-4">
             Already have an account?{" "}
@@ -355,6 +394,40 @@ const Login = () => {
           </p>
         )}
       </div>
+
+      {/* Terms Modal - only for Sign Up */}
+      {showTerms && state === "Sign Up" && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-lg w-full text-gray-800 overflow-y-auto max-h-[80vh]">
+            <h2 className="text-xl font-bold mb-4">Terms and Conditions</h2>
+            <p className="font-semibold">
+              By using Registra, you agree to the following terms and
+              conditions:
+            </p>
+            <br />
+            <p className="font-bold">1. Account Registration:</p>
+            <ul className="list-disc list-inside mb-2">
+              <li>
+                You must provide accurate and complete information during
+                registration
+              </li>
+              <li>
+                You are responsible for maintaining the confidentiality of your
+                account
+              </li>
+              <li>You must be at least 18 years old to register</li>
+            </ul>
+            <div className="mt-4 text-right">
+              <button
+                onClick={() => setShowTerms(false)}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
