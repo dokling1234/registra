@@ -5,6 +5,7 @@ const Event = require("../models/eventModel.js");
 const transporter = require("../config/nodemailer"); 
 mongoose = require("mongoose");
 const crypto = require("crypto");
+const { logActivity } = require("../services/activityLogService.js");
 
 // Admin Login
 const adminLogin = async (req, res) => {
@@ -34,6 +35,7 @@ const adminLogin = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
+      await logActivity(req, { action: "login_failed", metadata: { email, userType } });
       return res.json({ success: false, message: "Invalid password" });
     }
 
@@ -54,6 +56,8 @@ const adminLogin = async (req, res) => {
       sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+
+    await logActivity(req, { action: "login_success", targetType: "admin", targetId: admin._id, metadata: { email, userType } });
 
     return res.json({
       success: true,
@@ -83,6 +87,8 @@ const getAdminData = async (req, res) => {
     if (!admin) {
       return res.json({ success: false, message: "Admin not found" });
     }
+
+    await logActivity(req, { action: "get_admin_data", targetType: "admin", targetId: admin._id });
 
     res.json({
       success: true,
@@ -142,6 +148,8 @@ const createAdmin = async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
+    await logActivity(req, { action: "create_admin", targetType: "admin", targetId: newAdmin._id, metadata: { email, fullName } });
+
     res.json({
       success: true,
       message: "Admin created and credentials sent via email.",
@@ -161,6 +169,8 @@ const getAllUsers = async (req, res) => {
         .status(404)
         .json({ success: false, message: "No users found." });
     }
+
+    await logActivity(req, { action: "list_admins", targetType: "admin", metadata: { count: admins.length } });
 
     res.json({ success: true, admins, count: admins.length });
   } catch (error) {
@@ -208,6 +218,7 @@ const getEvents = async (req, res) => {
     pipeline.push({ $match: match });
 
     const events = await Event.aggregate(pipeline);
+    await logActivity(req, { action: "list_events", targetType: "event", metadata: { count: events.length } });
     res.status(200).json(events);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -236,6 +247,8 @@ const registerForEvent = async (req, res) => {
 
     event.registrations.push(registrations);
     await event.save();
+
+    await logActivity(req, { action: "register_for_event", targetType: "event", targetId: id, metadata: { userId, email, paymentStatus } });
 
     res.status(200).json({ message: "Registration successful!" });
   } catch (err) {
@@ -271,6 +284,8 @@ const QRchecker = async (req, res) => {
     registration.attended = true;
     await event.save();
 
+    await logActivity(req, { action: "attendance_update", targetType: "event_registration", targetId: objectId, metadata: { eventId: event._id } });
+
     return res.json({ message: "Attendance updated successfully" });
   } catch (error) {
     console.error(error);
@@ -301,6 +316,8 @@ const pdfCertificate = async (req, res) => {
     );
     fs.writeFileSync(outputPath, modifiedPdfBytes);
 
+    await logActivity(req, { action: "upload_certificate_template", targetType: "certificate_template", metadata: { originalName: req.file.originalname, outputPath } });
+
     res.json({
       success: true,
       message: "PDF modified successfully",
@@ -325,6 +342,8 @@ const changeAdminPassword = async (req, res) => {
       password: hashed,
       passwordChangeRequired: false,
     });
+
+    await logActivity(req, { action: "change_password", targetType: "admin", targetId: adminId });
 
     res.json({
       success: true,

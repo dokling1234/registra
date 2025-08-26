@@ -8,6 +8,7 @@ const jwt = require("jsonwebtoken");
 const transporter = require("../config/nodemailer"); // Adjust path if needed
 
 const crypto = require ("crypto")
+const { logActivity } = require("../services/activityLogService.js");
 
 const createSuperAdmin = async (req, res) => {
   const { fullName, email } = req.body;
@@ -54,6 +55,8 @@ const createSuperAdmin = async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
+    await logActivity(req, { action: "create_superadmin", targetType: "admin", targetId: newAdmin._id, metadata: { email, fullName } });
+
     res.json({
       success: true,
       message: "Admin created and credentials sent via email.",
@@ -71,6 +74,7 @@ const enableUser = async (req, res) => {
       { disabled: false },
       { new: true }
     );
+    await logActivity(req, { action: "enable_user", targetType: "user", targetId: req.params.id });
     res.json({ message: "User enabled successfully", user });
   } catch (error) {
     res.status(500).json({ message: "Error enabling user", error });
@@ -84,6 +88,7 @@ const disableUser = async (req, res) => {
       { disabled: true },
       { new: true }
     );
+    await logActivity(req, { action: "disable_user", targetType: "user", targetId: req.params.id });
     res.json({ message: "User disabled successfully", user });
   } catch (error) {
     res.status(500).json({ message: "Error disabling user", error });
@@ -104,6 +109,8 @@ const updateUser = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User not found" });
     }
+
+    await logActivity(req, { action: "update_user", targetType: "user", targetId: id, metadata: updateData });
 
     res.json({
       success: true,
@@ -136,6 +143,8 @@ const updateAdminOrSuperadmin = async (req, res) => {
         .json({ success: false, message: "Admin/Superadmin not found" });
     }
 
+    await logActivity(req, { action: "update_admin", targetType: "admin", targetId: id, metadata: updateData });
+
     res.json({
       success: true,
       message: "Admin/Superadmin updated successfully",
@@ -163,6 +172,8 @@ const cancelEvent = async (req, res) => {
 
     event.status = "cancelled";
     await event.save();
+
+    await logActivity(req, { action: "cancel_event", targetType: "event", targetId: eventId });
 
     res.json({ success: true, message: "Event cancelled successfully" });
   } catch (err) {

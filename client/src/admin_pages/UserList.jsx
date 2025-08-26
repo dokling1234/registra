@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../admin_components/Sidebar";
 import { AppContent } from "../context/AppContext";
-import { assets } from "../assets/assets";
 import axios from "axios";
 import Swal from "sweetalert2";
 
@@ -13,8 +12,6 @@ const UserList = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
-  const [editingUserId, setEditingUserId] = useState(null);
-  const [editedUser, setEditedUser] = useState({});
   const [totalUsers, setTotalUsers] = useState(0);
   const [showSuperadminModal, setShowSuperadminModal] = useState(false);
   const [newfullName, setNewfullName] = useState("");
@@ -29,13 +26,12 @@ const UserList = () => {
 
   const usersPerPage = 10;
 
-
   useEffect(() => {
-        if (!isAdmin) {
-          // Not an admin, redirect to home or another page
-          navigate("/admin");
-        }
-      }, [isAdmin, navigate]);
+    if (!isAdmin) {
+      // Not an admin, redirect to home or another page
+      navigate("/admin");
+    }
+  }, [isAdmin, navigate]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -65,34 +61,6 @@ const UserList = () => {
 
     fetchUsers();
   }, []);
-
-  const handleSave = async (userId) => {
-    try {
-      const userResponse = await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/superadmin/update/${userId}`,
-        editedUser,
-        { withCredentials: true }
-      );
-
-      if (userResponse.data.success) {
-        Swal.fire({
-          icon: "success",
-          title: "Success!",
-          text: "User updated successfully.",
-          timer: 1500,
-          showConfirmButton: false,
-        });
-        setUsers((prevUsers) =>
-          prevUsers.map((user) =>
-            user._id === userId ? userResponse.data.user : user
-          )
-        );
-        setEditingUserId(null);
-      }
-    } catch (error) {
-      console.error("Error updating user:", error.message);
-    }
-  };
 
   // --- Search and Pagination Logic ---
   const filteredUsers = users
@@ -356,96 +324,13 @@ const UserList = () => {
               <tbody>
                 {currentUsers.length > 0 ? (
                   currentUsers.map((user, index) => {
-                    const isEditing = user._id === editingUserId;
-                    const canEditType =
-                      user.userType === "student" ||
-                      user.userType === "professional";
-
                     return (
                       <tr key={index} className="border-b hover:bg-gray-50">
-                        <td className="p-3">
-                          {isEditing ? (
-                            <input
-                              value={editedUser.fullName}
-                              onChange={(e) =>
-                                setEditedUser({
-                                  ...editedUser,
-                                  fullName: e.target.value,
-                                })
-                              }
-                              className="border px-2 py-1 rounded w-full"
-                            />
-                          ) : (
-                            user.fullName
-                          )}
-                        </td>
-                        <td className="p-3">
-                          {isEditing && canEditType ? (
-                            <select
-                              value={editedUser.userType}
-                              onChange={(e) =>
-                                setEditedUser({
-                                  ...editedUser,
-                                  userType: e.target.value,
-                                })
-                              }
-                              className="border px-2 py-1 rounded w-full"
-                            >
-                              <option value="student">Student</option>
-                              <option value="professional">Professional</option>
-                            </select>
-                          ) : (
-                            user.userType
-                          )}
-                        </td>
-                        <td className="p-3">
-                          {isEditing ? (
-                            <input
-                              value={editedUser.email}
-                              onChange={(e) =>
-                                setEditedUser({
-                                  ...editedUser,
-                                  email: e.target.value,
-                                })
-                              }
-                              className="border px-2 py-1 rounded w-full"
-                            />
-                          ) : (
-                            user.email
-                          )}
-                        </td>
-                        <td className="p-3">
-                          {isEditing ? (
-                            <input
-                              value={editedUser.contactNumber}
-                              onChange={(e) =>
-                                setEditedUser({
-                                  ...editedUser,
-                                  contactNumber: e.target.value,
-                                })
-                              }
-                              className="border px-2 py-1 rounded w-full"
-                            />
-                          ) : (
-                            user.contactNumber
-                          )}
-                        </td>
-                        <td className="p-3">
-                          {isEditing ? (
-                            <input
-                              value={editedUser.icpepId}
-                              onChange={(e) =>
-                                setEditedUser({
-                                  ...editedUser,
-                                  icpepId: e.target.value,
-                                })
-                              }
-                              className="border px-2 py-1 rounded w-full"
-                            />
-                          ) : (
-                            user.icpepId
-                          )}
-                        </td>
+                        <td className="p-3">{user.fullName}</td>
+                        <td className="p-3">{user.userType}</td>
+                        <td className="p-3">{user.email}</td>
+                        <td className="p-3">{user.contactNumber}</td>
+                        <td className="p-3">{user.icpepId}</td>
                         <td className="p-3">
                           {/* Status column: checks if user.disabled is true or false */}
                           {user.disabled ? (
@@ -532,7 +417,11 @@ const UserList = () => {
                                   stroke="currentColor"
                                   className="w-5 h-5"
                                 >
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  />
                                 </svg>
                               ) : (
                                 <svg
@@ -553,79 +442,10 @@ const UserList = () => {
                             </button>
                           )}
 
-                          {user.userType === "superadmin" ? (
+                          {user.userType === "superadmin" && (
                             <span className="text-gray-500 italic">
                               Super Admin – Cannot Edit
                             </span>
-                          ) : editingUserId === user._id ? (
-                            <>
-                              <button
-                                onClick={() => handleSave(user._id)}
-                                className="text-green-600 hover:text-green-800 p-1 rounded-full hover:bg-gray-200 transition duration-150 ease-in-out"
-                                aria-label="Save changes"
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  strokeWidth={1.5}
-                                  stroke="currentColor"
-                                  className="w-5 h-5"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                  />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={() => setEditingUserId(null)}
-                                className="text-gray-600 hover:text-gray-800 p-1 rounded-full hover:bg-gray-200 transition duration-150 ease-in-out"
-                                aria-label="Cancel editing"
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  strokeWidth={1.5}
-                                  stroke="currentColor"
-                                  className="w-5 h-5"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M6 18L18 6M6 6l12 12"
-                                  />
-                                </svg>
-                              </button>
-                            </>
-                          ) : (
-                            canEditType && (
-                              <button
-                                onClick={() => {
-                                  setEditingUserId(user._id);
-                                  setEditedUser({ ...user });
-                                }}
-                                className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-gray-200 transition duration-150 ease-in-out"
-                                aria-label="Edit user"
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  strokeWidth={1.5}
-                                  stroke="currentColor"
-                                  className="w-5 h-5"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14.25v4.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 18V7.5a2.25 2.25 0 012.25-2.25H10.5"
-                                  />
-                                </svg>
-                              </button>
-                            )
                           )}
                         </td>
                       </tr>

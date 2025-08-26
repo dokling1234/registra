@@ -214,6 +214,21 @@ const Sidebar = () => {
               />
               Administrators
             </button>
+            <button
+              onClick={() => navigate("/superadmin/activity-logs")}
+              className={`text-left p-3 rounded-lg transition-colors ${
+                isActive("/superadmin/activity-logs")
+                  ? "bg-gray-700"
+                  : "hover:bg-gray-700"
+              } flex items-center gap-2`}
+            >
+              <img
+                src={assets.reports_icon}
+                alt="Logs Icon"
+                className="w-5 h-5"
+              />
+              Activity Logs
+            </button>
             {/* <button
               onClick={() => setShowChangeModal(true)}
               className="text-left hover:bg-gray-700 p-3 rounded-lg w-full transition-colors flex items-center gap-2"

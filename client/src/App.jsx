@@ -39,6 +39,8 @@ import SuperAdminReport from "./superAdmin_pages/Report";
 import SuperAdminReceipt from "./superAdmin_pages/Receipt";
 import SuperAdminReschedule from "./superAdmin_components/Reschedule";
 import SuperAdminAdminList from "./superAdmin_pages/AdminList";
+import AdminActivityLogs from "./admin_pages/ActivityLogs";
+import SuperAdminActivityLogs from "./superAdmin_pages/ActivityLogs";
 
 const App = () => {
   return (
@@ -66,6 +68,7 @@ const App = () => {
         <Route path="admin/report" element={<Report />} />
         <Route path="/admin/events" element={<Events />} />
         <Route path="adminevents/:id" element={<AdminEventDetail />} />
+        <Route path="/admin/activity-logs" element={<AdminActivityLogs />} />
         <Route path="/events/edit/:id" element={<EditEvent />} />
         <Route path="/userlist" element={<UserList />} />
         <Route path="feedback" element={<Feedback />} />
@@ -86,6 +89,7 @@ const App = () => {
         />
         <Route path="/superadmin/userlist" element={<SuperAdminUserList />} />
         <Route path="/superadmin/adminlist" element={<SuperAdminAdminList />} />
+        <Route path="/superadmin/activity-logs" element={<SuperAdminActivityLogs />} />
 
         <Route path="superadmin/feedback" element={<SuperAdminFeedback />} />
         <Route

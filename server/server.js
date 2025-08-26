@@ -10,6 +10,8 @@ const adminRouter = require("./routes/adminRoutes.js");
 const {feedbackRoutes, mobileFeedbackRoutes} = require("./routes/feedbackRoutes.js");
 const certificateRoutes = require("./routes/certificateRoutes.js");
 const superAdminRouter = require("./routes/superAdminRoutes.js");
+const activityLogRoutes = require("./routes/activityLogRoutes.js");
+
 const path = require("path");
 
 const app = express();
@@ -53,6 +55,7 @@ app.use("/api/admin", adminRouter);
 app.use("/api/certificate", certificateRoutes);
 app.use("/api/mobile-feedback", mobileFeedbackRoutes);
 app.use("/api/superadmin", superAdminRouter);
+app.use("/api/activity-logs", activityLogRoutes);
 
 // app.use((req, res, next) => {
 //   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
