@@ -47,6 +47,7 @@ const Report = () => {
   const [feedbackAnalytics, setFeedbackAnalytics] = useState(null);
   const [isAnalyzingFeedback, setIsAnalyzingFeedback] = useState(false);
   const [analyticsError, setAnalyticsError] = useState(null);
+  const [showEventReport, setShowEventReport] = useState(false);
 
   useEffect(() => {
         if (!isAdmin) {
@@ -87,6 +88,8 @@ const Report = () => {
     if (endDate) {
       filtered = filtered.filter((e) => new Date(e.date) <= new Date(endDate));
     }
+    // Only include past events; exclude ongoing/upcoming events
+    filtered = filtered.filter((e) => new Date(e.date) < new Date());
     setFilteredEvents(filtered);
   }, [events, selectedType, startDate, endDate]);
 
@@ -134,6 +137,36 @@ const Report = () => {
       setIsAnalyzingFeedback(false);
     }
   };
+
+  const getAnalyzableTextResponsesCount = (fbData) => {
+    try {
+      if (!fbData || !fbData.form || !fbData.answers) return 0;
+      let count = 0;
+      fbData.form.questions.forEach((question, questionIndex) => {
+        if (question.type === "Text") {
+          fbData.answers.forEach((ans) => {
+            const text = ans?.answers?.[questionIndex]?.answer?.trim();
+            if (text && text.replace(/\s+/g, " ").length > 3) count += 1;
+          });
+        }
+      });
+      return count;
+    } catch (_) {
+      return 0;
+    }
+  };
+
+  // Reset report and analytics when selecting a different event
+  useEffect(() => {
+    setGeneratedReport(null);
+    setFeedbackData(null);
+    setFeedbackAnalytics(null);
+    setAnalyticsError(null);
+    setIsAnalyzingFeedback(false);
+    setIsLoadingFeedback(false);
+    setEventSummary("");
+    setShowEventReport(false);
+  }, [selectedEventId]);
 
   // Process feedback data for charts - moved outside component for reuse
   const processQuestionData = (question, questionIndex, answers) => {
@@ -284,10 +317,32 @@ const Report = () => {
     }
 
     const { form, answers, totalResponses } = feedbackData;
+    const [activeTab, setActiveTab] = useState('summary');
 
     return (
       <div className="mt-8">
-        <h2 className="text-2xl font-bold mb-6">Feedback Report</h2>
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-4">
+          <h2 className="text-2xl font-bold">Feedback Report</h2>
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">Responses</span> ({totalResponses})
+            </div>
+            <div className="inline-flex rounded-md border border-gray-300 overflow-hidden">
+              <button
+                className={`px-3 py-1 text-sm ${activeTab === 'summary' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
+                onClick={() => setActiveTab('summary')}
+              >
+                Summary
+              </button>
+              <button
+                className={`px-3 py-1 text-sm ${activeTab === 'individual' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
+                onClick={() => setActiveTab('individual')}
+              >
+                Individual
+              </button>
+            </div>
+          </div>
+        </div>
         
         <div className="mb-6 p-4 bg-blue-50 rounded-lg">
           <h3 className="text-lg font-semibold mb-2">Feedback Summary</h3>
@@ -295,7 +350,7 @@ const Report = () => {
           <p><strong>Response Rate:</strong> {totalResponses > 0 ? `${((totalResponses / (selectedEvent?.registrations?.length || 1)) * 100).toFixed(1)}%` : '0%'}</p>
         </div>
 
-        {form.questions.map((question, index) => {
+        {activeTab === 'summary' && form.questions.map((question, index) => {
           const questionData = processQuestionData(question, index, answers);
           
           if (!questionData) return null;
@@ -320,6 +375,7 @@ const Report = () => {
                         responsive: true,
                         plugins: {
                           legend: { display: false },
+                          title: { display: true, text: question.text || `Question ${index + 1}` },
                         },
                         scales: {
                           y: {
@@ -361,6 +417,7 @@ const Report = () => {
                         responsive: true,
                         plugins: {
                           legend: { display: false },
+                          title: { display: true, text: question.text || `Question ${index + 1}` },
                         },
                         scales: {
                           y: {
@@ -396,6 +453,7 @@ const Report = () => {
                         responsive: true,
                         plugins: {
                           legend: { display: false },
+                          title: { display: true, text: question.text || `Question ${index + 1}` },
                         },
                         scales: {
                           y: {
@@ -424,7 +482,7 @@ const Report = () => {
                 <div>
                   <div className="mb-4">
                     <div className="text-lg font-semibold text-blue-600 mb-2">
-                      Text Responses ({questionData.responses.length})
+                      ({questionData.responses.length})  Responses
                     </div>
                   </div>
                   <div className="max-h-64 overflow-y-auto space-y-2">
@@ -439,6 +497,50 @@ const Report = () => {
             </div>
           );
         })}
+
+        {activeTab === 'individual' && (
+          <div className="mt-4 space-y-6">
+            {form.questions.map((question, qIndex) => (
+              <div key={qIndex} className="p-6 bg-white rounded-lg shadow">
+                <h4 className="text-lg font-semibold mb-3">{question.text || `Question ${qIndex + 1}`}</h4>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {answers.map((ans, aIndex) => {
+                    const a = ans?.answers?.[qIndex];
+                    if (!a) return null;
+                    if (question.type === 'Text') {
+                      if (!a.answer) return null;
+                      return (
+                        <div key={aIndex} className="p-2 bg-gray-50 rounded border-l-4 border-blue-500">
+                          <p className="text-sm text-gray-700">"{a.answer}"</p>
+                        </div>
+                      );
+                    }
+                    if (question.type === 'Choice' || question.type === 'Rating') {
+                      if (!a.answer) return null;
+                      return (
+                        <div key={aIndex} className="p-2 bg-gray-50 rounded border-l-4 border-green-500">
+                          <p className="text-sm text-gray-700">{String(a.answer)}</p>
+                        </div>
+                      );
+                    }
+                    if (question.type === 'Likert' && Array.isArray(a.answers)) {
+                      return (
+                        <div key={aIndex} className="p-2 bg-gray-50 rounded border-l-4 border-purple-500">
+                          <ul className="text-sm text-gray-700 list-disc ml-5">
+                            {a.answers.map((s, sIdx) => (
+                              <li key={sIdx}>{s.statement}: {s.value}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -897,7 +999,7 @@ const Report = () => {
             />
           </div>
           <button
-            className="bg-blue-600 text-white px-6 py-2 rounded shadow hover:bg-blue-700 transition mb-6"
+            className={`bg-blue-600 text-white px-6 py-2 rounded shadow transition mb-6 ${isLoadingFeedback ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'}`}
             onClick={() => {
               if (!selectedEvent) return;
               setGeneratedReport({
@@ -907,9 +1009,16 @@ const Report = () => {
               // Fetch feedback data when generating report
               fetchFeedbackData(selectedEvent._id);
             }}
-            disabled={!selectedEventId}
+            disabled={!selectedEventId || isLoadingFeedback}
           >
-            Generate Complete Report
+            {isLoadingFeedback ? (
+              <span className="flex items-center gap-2">
+                <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                Generating...
+              </span>
+            ) : (
+              'Generate Complete Report'
+            )}
           </button>
 
           {/* Loading indicator */}
@@ -940,7 +1049,7 @@ const Report = () => {
               <button
                 className="bg-purple-600 text-white px-6 py-2 rounded shadow hover:bg-purple-700 transition flex items-center gap-2"
                 onClick={() => analyzeFeedbackData(selectedEventId, selectedEvent?.title)}
-                disabled={isAnalyzingFeedback}
+                disabled={isAnalyzingFeedback || getAnalyzableTextResponsesCount(feedbackData) === 0}
               >
                 {isAnalyzingFeedback ? (
                   <>
@@ -957,11 +1066,25 @@ const Report = () => {
               <p className="text-sm text-gray-600 mt-1">
                 Analyze text responses using AI to extract themes, sentiment, and insights
               </p>
+              {getAnalyzableTextResponsesCount(feedbackData) === 0 && (
+                <p className="text-sm text-yellow-700 mt-1 bg-yellow-50 p-2 rounded border border-yellow-200">
+                  No sufficient text responses to analyze yet. Add at least one meaningful text response.
+                </p>
+              )}
             </div>
           )}
 
           {selectedEvent && generatedReport && (
             <div>
+              <div className="mb-4">
+                <button
+                  onClick={() => setShowEventReport((v) => !v)}
+                  className="border border-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-50 transition"
+                >
+                  {showEventReport ? 'Hide Event Report' : 'Show Event Report'}
+                </button>
+              </div>
+              {showEventReport && (
               <div
                 id="downloadableReport"
                 className="bg-white p-8 rounded shadow-md text-black max-w-4xl mx-auto"
@@ -1115,6 +1238,7 @@ const Report = () => {
                                     responsive: true,
                                     plugins: {
                                       legend: { display: false },
+                                      title: { display: true, text: question.text || `Question ${index + 1}` },
                                     },
                                     scales: {
                                       y: {
@@ -1156,6 +1280,7 @@ const Report = () => {
                                     responsive: true,
                                     plugins: {
                                       legend: { display: false },
+                                      title: { display: true, text: question.text || `Question ${index + 1}` },
                                     },
                                     scales: {
                                       y: {
@@ -1191,6 +1316,7 @@ const Report = () => {
                                     responsive: true,
                                     plugins: {
                                       legend: { display: false },
+                                      title: { display: true, text: question.text || `Question ${index + 1}` },
                                     },
                                     scales: {
                                       y: {
@@ -1219,7 +1345,7 @@ const Report = () => {
                             <div>
                               <div className="mb-3">
                                 <div className="text-md font-semibold text-blue-600 mb-2">
-                                  Text Responses ({questionData.responses.length})
+                                   ({questionData.responses.length}) Responses
                                 </div>
                               </div>
                               <div className="max-h-48 overflow-y-auto space-y-2">
@@ -1345,6 +1471,7 @@ const Report = () => {
                   </div>
                 )}
               </div>
+              )}
 
               <div className="flex justify-center mt-6 gap-4">
                 <button

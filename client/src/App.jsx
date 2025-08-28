@@ -41,13 +41,16 @@ import SuperAdminReschedule from "./superAdmin_components/Reschedule";
 import SuperAdminAdminList from "./superAdmin_pages/AdminList";
 import AdminActivityLogs from "./admin_pages/ActivityLogs";
 import SuperAdminActivityLogs from "./superAdmin_pages/ActivityLogs";
+import SplashScreen from "./components/SplashScreen";
 
 const App = () => {
   return (
     <AppContextProvider>
       <ToastContainer />
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<SplashScreen />} />
+        <Route path="/splash" element={<SplashScreen />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/home" element={<Home />} />
         <Route path="/email-verify" element={<EmailVerify />} />
         <Route path="/reset-password" element={<ResetPassword />} />

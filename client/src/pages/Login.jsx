@@ -5,10 +5,11 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { AppContent } from "../context/AppContext";
 import Swal from "sweetalert2";
+import SplashScreen from "../components/SplashScreen";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { backendUrl, setIsLoggedin, getUserData } = useContext(AppContent);
+  const { backendUrl, setIsLoggedin, getUserData, setIsAdmin } = useContext(AppContent);
 
   const [state, setState] = useState("Login");
   const [fullName, setName] = useState("");
@@ -192,10 +193,11 @@ const Login = () => {
             localStorage.removeItem("userPassword");
           }
 
+          setIsAdmin(false);
           setIsLoggedin(true);
           await getUserData();
-          navigate("/home");
           toast.success(data.message);
+          navigate("/splash?to=%2Fhome", { replace: true, state: { to: "/home" } });
         } else {
           toast.error(data.message);
         }
@@ -204,6 +206,17 @@ const Login = () => {
       toast.error(error.response?.data?.message || error.message);
     }
   };
+
+  const [showPreSplash, setShowPreSplash] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setShowPreSplash(false), 900);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (showPreSplash) {
+    return <SplashScreen duration={900} message="Loading login..." defaultTo={"/login"} />;
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen px-6 sm:px-0 bg-gradient-to-br from-blue-200 to-[#60B5FF]">

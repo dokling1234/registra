@@ -28,6 +28,63 @@ const EventDetail = () => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
+  const renderActionButtons = () => (
+    <div className="event-actions" role="group" aria-label="Event actions">
+      <button
+        onClick={() => {
+          if (isRegistered) {
+            Swal.fire({
+              icon: "info",
+              title: "You're already registered!",
+              text: "You have already booked this event.",
+              confirmButtonColor: "#2563EB",
+            });
+            return;
+          }
+          Swal.fire({
+            title: "Confirm Booking",
+            text: "Do you want to book this event?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#2563EB",
+            cancelButtonColor: "#9CA3AF",
+            confirmButtonText: "Yes, book it!",
+          }).then((result) => {
+            if (result.isConfirmed) {
+              Swal.fire({
+                title: "Booking Confirmed!",
+                text: "Redirecting to payment/receipt upload...",
+                icon: "success",
+                timer: 1500,
+                showConfirmButton: false,
+              });
+              setTimeout(() => {
+                navigate(`/uploadreceipt/${id}`);
+              }, 1500);
+            }
+          });
+        }}
+        className={`register-button ${
+          isRegistered ? "registered" : "not-registered"
+        }`}
+        aria-label={isRegistered ? "Already registered" : "Book now"}
+        disabled={isRegistered || isPastEvent}
+      >
+        {isRegistered ? "Already Registered" : isPastEvent ? "Event Ended" : "Book Now"}
+      </button>
+
+      {!isPastEvent && (
+        <button
+          onClick={() => window.open(createGoogleCalendarLink(event), "_blank")}
+          className="calendar-button"
+          aria-label="Add to Google Calendar"
+          type="button"
+        >
+          Add to Google Calendar
+        </button>
+      )}
+    </div>
+  );
   const createGoogleCalendarLink = (event) => {
     const startDate = new Date(event.date);
     const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // 2-hour duration
@@ -148,60 +205,7 @@ const EventDetail = () => {
             <div className="event-date-card">
               <p>{new Date(event.date).toDateString()}</p>
               <p>{event.time}</p>
-              {!isPastEvent && (
-                <>
-                  <button
-                    onClick={() => {
-                      if (isRegistered) {
-                        Swal.fire({
-                          icon: "info",
-                          title: "You're already registered!",
-                          text: "You have already booked this event.",
-                          confirmButtonColor: "#2563EB",
-                        });
-                      } else {
-                        Swal.fire({
-                          title: "Confirm Booking",
-                          text: "Do you want to book this event?",
-                          icon: "question",
-                          showCancelButton: true,
-                          confirmButtonColor: "#2563EB",
-                          cancelButtonColor: "#9CA3AF",
-                          confirmButtonText: "Yes, book it!",
-                        }).then((result) => {
-                          if (result.isConfirmed) {
-                            Swal.fire({
-                              title: "Booking Confirmed!",
-                              text: "Redirecting to payment/receipt upload...",
-                              icon: "success",
-                              timer: 1500,
-                              showConfirmButton: false,
-                            });
-                            setTimeout(() => {
-                              navigate(`/uploadreceipt/${id}`);
-                            }, 1500);
-                          }
-                        });
-                      }
-                    }}
-                    className={`register-button ${
-                      isRegistered ? "registered" : "not-registered"
-                    }`}
-                  >
-                    {isRegistered ? "Already Registered" : "Book Now"}
-                  </button>
-
-                  {/* Add to Google Calendar */}
-                  <button
-                    onClick={() =>
-                      window.open(createGoogleCalendarLink(event), "_blank")
-                    }
-                    className="calendar-button"
-                  >
-                    Add to Google Calendar
-                  </button>
-                </>
-              )}
+              {renderActionButtons()}
             </div>
             <div className="event-banner-text">
               <h1>{event.title}</h1>
@@ -218,10 +222,32 @@ const EventDetail = () => {
 
             <div className="event-location-card">
               <h2>Event Location</h2>
-              <div ref={mapContainerRef} className="event-map-container" />
+              <div ref={mapContainerRef} className="event-map-container">
+                {mapLoading && (
+                  <div className="map-loading" role="status" aria-live="polite">
+                    <div className="loading-spinner" />
+                    <p>Loading map…</p>
+                  </div>
+                )}
+                {mapError && (
+                  <div className="map-error" role="alert">
+                    <p>We couldn’t load the map right now.</p>
+                    {Array.isArray(event?.coordinates) && (
+                      <>
+                        <p className="map-fallback-text">Here are the coordinates you can use:</p>
+                        <p className="map-coordinates">{`${event.coordinates[1]}, ${event.coordinates[0]}`}</p>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
               <p>{event.location}</p>
             </div>
           </div>
+        </div>
+        {/* Mobile sticky action bar */}
+        <div className="mobile-action-bar" aria-hidden={false}>
+          {renderActionButtons()}
         </div>
         {/* Share This Event */}
         <div className="event-share-section">

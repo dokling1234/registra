@@ -43,13 +43,17 @@ const Report = () => {
   const [generatedReport, setGeneratedReport] = useState(null);
   const [feedbackData, setFeedbackData] = useState(null);
   const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
+  const [feedbackAnalytics, setFeedbackAnalytics] = useState(null);
+  const [isAnalyzingFeedback, setIsAnalyzingFeedback] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState(null);
+  const [showEventReport, setShowEventReport] = useState(false);
 
   useEffect(() => {
-    if (!isAdmin) {
-      // Not an admin, redirect to home or another page
-      navigate("/admin");
-    }
-  }, [isAdmin, navigate]);
+        if (!isAdmin) {
+          // Not an admin, redirect to home or another page
+          navigate("/admin");
+        }
+      }, [isAdmin, navigate]);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -83,6 +87,8 @@ const Report = () => {
     if (endDate) {
       filtered = filtered.filter((e) => new Date(e.date) <= new Date(endDate));
     }
+    // Only include past events; exclude ongoing/upcoming events
+    filtered = filtered.filter((e) => new Date(e.date) < new Date());
     setFilteredEvents(filtered);
   }, [events, selectedType, startDate, endDate]);
 
@@ -103,6 +109,63 @@ const Report = () => {
       setIsLoadingFeedback(false);
     }
   };
+
+  const analyzeFeedbackData = async (eventId, eventTitle) => {
+    if (!eventId) return;
+    
+    setIsAnalyzingFeedback(true);
+    setAnalyticsError(null);
+    setFeedbackAnalytics(null);
+    
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/feedback/analyzeFeedback/${eventId}`,
+        { eventTitle },
+        { withCredentials: false }
+      );
+      
+      if (response.data.success) {
+        setFeedbackAnalytics(response.data.analytics);
+      } else {
+        setAnalyticsError(response.data.message || "Analysis failed");
+      }
+    } catch (error) {
+      console.error("Error analyzing feedback data:", error);
+      setAnalyticsError(error.response?.data?.error || "Failed to analyze feedback data");
+    } finally {
+      setIsAnalyzingFeedback(false);
+    }
+  };
+
+  const getAnalyzableTextResponsesCount = (fbData) => {
+    try {
+      if (!fbData || !fbData.form || !fbData.answers) return 0;
+      let count = 0;
+      fbData.form.questions.forEach((question, questionIndex) => {
+        if (question.type === "Text") {
+          fbData.answers.forEach((ans) => {
+            const text = ans?.answers?.[questionIndex]?.answer?.trim();
+            if (text && text.replace(/\s+/g, " ").length > 3) count += 1;
+          });
+        }
+      });
+      return count;
+    } catch (_) {
+      return 0;
+    }
+  };
+
+  // Reset report and analytics when selecting a different event
+  useEffect(() => {
+    setGeneratedReport(null);
+    setFeedbackData(null);
+    setFeedbackAnalytics(null);
+    setAnalyticsError(null);
+    setIsAnalyzingFeedback(false);
+    setIsLoadingFeedback(false);
+    setEventSummary("");
+    setShowEventReport(false);
+  }, [selectedEventId]);
 
   // Process feedback data for charts - moved outside component for reuse
   const processQuestionData = (question, questionIndex, answers) => {
@@ -224,7 +287,6 @@ const Report = () => {
       },
       { student: 0, professional: 0, others: 0 }
     );
-    console.log("Attendee counts:", counts);
     const data = {
       labels: ["Student", "Professional", "Others"],
       datasets: [
@@ -254,10 +316,32 @@ const Report = () => {
     }
 
     const { form, answers, totalResponses } = feedbackData;
+    const [activeTab, setActiveTab] = useState('summary');
 
     return (
       <div className="mt-8">
-        <h2 className="text-2xl font-bold mb-6">Feedback Report</h2>
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-4">
+          <h2 className="text-2xl font-bold">Feedback Report</h2>
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">Responses</span> ({totalResponses})
+            </div>
+            <div className="inline-flex rounded-md border border-gray-300 overflow-hidden">
+              <button
+                className={`px-3 py-1 text-sm ${activeTab === 'summary' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
+                onClick={() => setActiveTab('summary')}
+              >
+                Summary
+              </button>
+              <button
+                className={`px-3 py-1 text-sm ${activeTab === 'individual' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
+                onClick={() => setActiveTab('individual')}
+              >
+                Individual
+              </button>
+            </div>
+          </div>
+        </div>
         
         <div className="mb-6 p-4 bg-blue-50 rounded-lg">
           <h3 className="text-lg font-semibold mb-2">Feedback Summary</h3>
@@ -265,7 +349,7 @@ const Report = () => {
           <p><strong>Response Rate:</strong> {totalResponses > 0 ? `${((totalResponses / (selectedEvent?.registrations?.length || 1)) * 100).toFixed(1)}%` : '0%'}</p>
         </div>
 
-        {form.questions.map((question, index) => {
+        {activeTab === 'summary' && form.questions.map((question, index) => {
           const questionData = processQuestionData(question, index, answers);
           
           if (!questionData) return null;
@@ -290,6 +374,7 @@ const Report = () => {
                         responsive: true,
                         plugins: {
                           legend: { display: false },
+                          title: { display: true, text: question.text || `Question ${index + 1}` },
                         },
                         scales: {
                           y: {
@@ -331,6 +416,7 @@ const Report = () => {
                         responsive: true,
                         plugins: {
                           legend: { display: false },
+                          title: { display: true, text: question.text || `Question ${index + 1}` },
                         },
                         scales: {
                           y: {
@@ -366,6 +452,7 @@ const Report = () => {
                         responsive: true,
                         plugins: {
                           legend: { display: false },
+                          title: { display: true, text: question.text || `Question ${index + 1}` },
                         },
                         scales: {
                           y: {
@@ -394,7 +481,7 @@ const Report = () => {
                 <div>
                   <div className="mb-4">
                     <div className="text-lg font-semibold text-blue-600 mb-2">
-                      Text Responses ({questionData.responses.length})
+                       ({questionData.responses.length}) Responses
                     </div>
                   </div>
                   <div className="max-h-64 overflow-y-auto space-y-2">
@@ -410,25 +497,231 @@ const Report = () => {
           );
         })}
 
-        {/* Feedback Insights Summary */}
-        {feedbackData && (
-          <div className="mt-6 p-4 bg-gray-50 rounded border">
-            <h3 className="text-lg font-semibold mb-3">Feedback Insights</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {activeTab === 'individual' && (
+          <div className="mt-4 space-y-6">
+            {form.questions.map((question, qIndex) => (
+              <div key={qIndex} className="p-6 bg-white rounded-lg shadow">
+                <h4 className="text-lg font-semibold mb-3">{question.text || `Question ${qIndex + 1}`}</h4>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {answers.map((ans, aIndex) => {
+                    const a = ans?.answers?.[qIndex];
+                    if (!a) return null;
+                    if (question.type === 'Text') {
+                      if (!a.answer) return null;
+                      return (
+                        <div key={aIndex} className="p-2 bg-gray-50 rounded border-l-4 border-blue-500">
+                          <p className="text-sm text-gray-700">"{a.answer}"</p>
+                        </div>
+                      );
+                    }
+                    if (question.type === 'Choice' || question.type === 'Rating') {
+                      if (!a.answer) return null;
+                      return (
+                        <div key={aIndex} className="p-2 bg-gray-50 rounded border-l-4 border-green-500">
+                          <p className="text-sm text-gray-700">{String(a.answer)}</p>
+                        </div>
+                      );
+                    }
+                    if (question.type === 'Likert' && Array.isArray(a.answers)) {
+                      return (
+                        <div key={aIndex} className="p-2 bg-gray-50 rounded border-l-4 border-purple-500">
+                          <ul className="text-sm text-gray-700 list-disc ml-5">
+                            {a.answers.map((s, sIdx) => (
+                              <li key={sIdx}>{s.statement}: {s.value}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const FeedbackAnalytics = ({ analytics, error, isLoading }) => {
+    if (isLoading) {
+      return (
+        <div className="mt-8 p-6 bg-white rounded-lg shadow">
+          <div className="flex items-center justify-center gap-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <span className="text-blue-600 font-medium">Analyzing feedback data...</span>
+          </div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="mt-8 p-6 bg-red-50 rounded-lg shadow border border-red-200">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-red-600 font-semibold">⚠️</span>
+            <h3 className="text-lg font-semibold text-red-800">Analysis Error</h3>
+          </div>
+          <p className="text-red-700">{error}</p>
+        </div>
+      );
+    }
+
+    if (!analytics) {
+      return null;
+    }
+
+    const getSentimentColor = (sentiment) => {
+      switch (sentiment.toLowerCase()) {
+        case 'positive': return 'text-green-600';
+        case 'negative': return 'text-red-600';
+        case 'neutral': return 'text-gray-600';
+        case 'mixed': return 'text-yellow-600';
+        default: return 'text-gray-600';
+      }
+    };
+
+    const getSentimentIcon = (sentiment) => {
+      switch (sentiment.toLowerCase()) {
+        case 'positive': return '😊';
+        case 'negative': return '😞';
+        case 'neutral': return '😐';
+        case 'mixed': return '😕';
+        default: return '😐';
+      }
+    };
+
+    const getQualityColor = (quality) => {
+      switch (quality.toLowerCase()) {
+        case 'high': return 'text-green-600';
+        case 'medium': return 'text-yellow-600';
+        case 'low': return 'text-red-600';
+        default: return 'text-gray-600';
+      }
+    };
+
+    return (
+      <div className="mt-8 p-6 bg-white rounded-lg shadow">
+        <h2 className="text-2xl font-bold mb-6">AI-Powered Feedback Analytics</h2>
+        
+        {/* Summary Section */}
+        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">Analysis Summary</h3>
+          <p className="text-gray-700 leading-relaxed">{analytics.summary}</p>
+        </div>
+
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-2xl">{getSentimentIcon(analytics.sentiment)}</span>
+              <h4 className="font-semibold text-blue-800">Sentiment</h4>
+            </div>
+            <p className={`text-lg font-bold ${getSentimentColor(analytics.sentiment)}`}>
+              {analytics.sentiment.charAt(0).toUpperCase() + analytics.sentiment.slice(1)}
+            </p>
+            <p className="text-sm text-gray-600">
+              Score: {(analytics.sentimentScore * 100).toFixed(0)}%
+            </p>
+          </div>
+
+          <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+            <h4 className="font-semibold text-green-800 mb-2">Response Quality</h4>
+            <p className={`text-lg font-bold ${getQualityColor(analytics.responseQuality)}`}>
+              {analytics.responseQuality.charAt(0).toUpperCase() + analytics.responseQuality.slice(1)}
+            </p>
+            <p className="text-sm text-gray-600">
+              {analytics.metadata?.textResponses || 0} text responses analyzed
+            </p>
+          </div>
+
+          <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+            <h4 className="font-semibold text-purple-800 mb-2">Analysis Date</h4>
+            <p className="text-lg font-bold text-purple-600">
+              {new Date(analytics.metadata?.analysisDate).toLocaleDateString()}
+            </p>
+            <p className="text-sm text-gray-600">
+              {new Date(analytics.metadata?.analysisDate).toLocaleTimeString()}
+            </p>
+          </div>
+        </div>
+
+        {/* Key Themes */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">Key Themes</h3>
+          <div className="flex flex-wrap gap-2">
+            {analytics.keyThemes.map((theme, index) => (
+              <span
+                key={index}
+                className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+              >
+                {theme}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Keywords */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">Frequently Mentioned Keywords</h3>
+          <div className="flex flex-wrap gap-2">
+            {analytics.keywords.map((keyword, index) => (
+              <span
+                key={index}
+                className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium"
+              >
+                {keyword}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Insights */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">Key Insights</h3>
+          <div className="space-y-2">
+            {analytics.insights.map((insight, index) => (
+              <div key={index} className="p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+                <p className="text-gray-700">💡 {insight}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Recommendations */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">Recommendations</h3>
+          <div className="space-y-2">
+            {analytics.recommendations.map((recommendation, index) => (
+              <div key={index} className="p-3 bg-indigo-50 rounded-lg border-l-4 border-indigo-400">
+                <p className="text-gray-700">🎯 {recommendation}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Metadata */}
+        {analytics.metadata && (
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <h4 className="font-semibold text-gray-800 mb-2">Analysis Metadata</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <h4 className="font-semibold text-blue-600 mb-2">Response Analysis</h4>
-                <p className="text-sm">
-                  • Total feedback responses: <strong>{feedbackData.totalResponses}</strong><br/>
-                  • Response rate: <strong>{feedbackData.totalResponses > 0 ? `${((feedbackData.totalResponses / (selectedEvent?.registrations?.length || 1)) * 100).toFixed(1)}%` : '0%'}</strong><br/>
-                  • Questions answered: <strong>{feedbackData.form.questions.length}</strong>
-                </p>
+                <span className="text-gray-600">Total Responses:</span>
+                <p className="font-semibold">{analytics.metadata.totalResponses}</p>
               </div>
               <div>
-                <h4 className="font-semibold text-green-600 mb-2">Key Takeaways</h4>
-                <p className="text-sm">
-                  • {feedbackData.totalResponses > 0 ? 'Feedback data available for analysis' : 'No feedback responses yet'}<br/>
-                  • {feedbackData.form.questions.filter(q => q.type === 'Rating' || q.type === 'Likert').length > 0 ? 'Quantitative feedback collected' : 'No quantitative questions'}<br/>
-                  • {feedbackData.form.questions.filter(q => q.type === 'Text').length > 0 ? 'Qualitative feedback available' : 'No text-based questions'}
+                <span className="text-gray-600">Text Responses:</span>
+                <p className="font-semibold">{analytics.metadata.textResponses}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Event:</span>
+                <p className="font-semibold">{analytics.metadata.eventTitle}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Analysis Date:</span>
+                <p className="font-semibold">
+                  {new Date(analytics.metadata.analysisDate).toLocaleDateString()}
                 </p>
               </div>
             </div>
@@ -473,10 +766,7 @@ const Report = () => {
         <div className="flex flex-col sm:flex-row gap-4 mb-6 w-full">
           {/* Filter Dropdown */}
           <div className="flex-1">
-            <label
-              htmlFor="eventType"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="eventType" className="block text-sm font-medium text-gray-700 mb-1">
               Filter by Event Type:
             </label>
             <select
@@ -490,40 +780,31 @@ const Report = () => {
               <option value="Seminar">Seminar</option>
               <option value="Webinar">Webinar</option>
               {/* Filter out All if it exists in fetched types, map others */}
-              {eventTypes
-                .filter(
-                  (type) =>
-                    type !== "All" && type !== "Seminar" && type !== "Webinar"
-                )
-                .map((type, idx) => (
-                  <option key={idx} value={type}>
-                    {type}
-                  </option>
-                ))}
+              {eventTypes.filter(type => type !== "All" && type !== "Seminar" && type !== "Webinar").map((type, idx) => (
+                <option key={idx} value={type}>
+                  {type}
+                </option>
+              ))}
             </select>
           </div>
 
           {/* Date Range Filter */}
           <div className="flex-1 flex gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Date
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
               <input
                 type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={e => setStartDate(e.target.value)}
                 className="border border-gray-300 rounded-md px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                End Date
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
               <input
                 type="date"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={e => setEndDate(e.target.value)}
                 className="border border-gray-300 rounded-md px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
@@ -717,7 +998,7 @@ const Report = () => {
             />
           </div>
           <button
-            className="bg-blue-600 text-white px-6 py-2 rounded shadow hover:bg-blue-700 transition mb-6"
+            className={`bg-blue-600 text-white px-6 py-2 rounded shadow transition mb-6 ${isLoadingFeedback ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'}`}
             onClick={() => {
               if (!selectedEvent) return;
               setGeneratedReport({
@@ -727,9 +1008,16 @@ const Report = () => {
               // Fetch feedback data when generating report
               fetchFeedbackData(selectedEvent._id);
             }}
-            disabled={!selectedEventId}
+            disabled={!selectedEventId || isLoadingFeedback}
           >
-            Generate Complete Report
+            {isLoadingFeedback ? (
+              <span className="flex items-center gap-2">
+                <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                Generating...
+              </span>
+            ) : (
+              'Generate Complete Report'
+            )}
           </button>
 
           {/* Loading indicator */}
@@ -754,21 +1042,51 @@ const Report = () => {
             </div>
           )}
 
+          {/* Analytics Button */}
+          {feedbackData && feedbackData.totalResponses > 0 && (
+            <div className="mb-4">
+              <button
+                className="bg-purple-600 text-white px-6 py-2 rounded shadow hover:bg-purple-700 transition flex items-center gap-2"
+                onClick={() => analyzeFeedbackData(selectedEventId, selectedEvent?.title)}
+                disabled={isAnalyzingFeedback || getAnalyzableTextResponsesCount(feedbackData) === 0}
+              >
+                {isAnalyzingFeedback ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <span>🤖</span>
+                    Run AI Analytics
+                  </>
+                )}
+              </button>
+              <p className="text-sm text-gray-600 mt-1">
+                Analyze text responses using AI to extract themes, sentiment, and insights
+              </p>
+              {getAnalyzableTextResponsesCount(feedbackData) === 0 && (
+                <p className="text-sm text-yellow-700 mt-1 bg-yellow-50 p-2 rounded border border-yellow-200">
+                  No sufficient text responses to analyze yet. Add at least one meaningful text response.
+                </p>
+              )}
+            </div>
+          )}
+
           {selectedEvent && generatedReport && (
             <div>
+              <div className="mb-4">
+                <button
+                  onClick={() => setShowEventReport((v) => !v)}
+                  className="border border-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-50 transition"
+                >
+                  {showEventReport ? 'Hide Event Report' : 'Show Event Report'}
+                </button>
+              </div>
+              {showEventReport && (
               <div
                 id="downloadableReport"
                 className="bg-white p-8 rounded shadow-md text-black max-w-4xl mx-auto"
-                style={{
-                  '@media print': {
-                    backgroundColor: 'white',
-                    color: 'black',
-                    padding: '20px',
-                    margin: '0',
-                    boxShadow: 'none',
-                    borderRadius: '0'
-                  }
-                }}
               >
                 <h1 className="text-2xl font-bold mb-4 text-center">
                   Event Report
@@ -919,6 +1237,7 @@ const Report = () => {
                                     responsive: true,
                                     plugins: {
                                       legend: { display: false },
+                                      title: { display: true, text: question.text || `Question ${index + 1}` },
                                     },
                                     scales: {
                                       y: {
@@ -960,6 +1279,7 @@ const Report = () => {
                                     responsive: true,
                                     plugins: {
                                       legend: { display: false },
+                                      title: { display: true, text: question.text || `Question ${index + 1}` },
                                     },
                                     scales: {
                                       y: {
@@ -995,6 +1315,7 @@ const Report = () => {
                                     responsive: true,
                                     plugins: {
                                       legend: { display: false },
+                                      title: { display: true, text: question.text || `Question ${index + 1}` },
                                     },
                                     scales: {
                                       y: {
@@ -1023,7 +1344,7 @@ const Report = () => {
                             <div>
                               <div className="mb-3">
                                 <div className="text-md font-semibold text-blue-600 mb-2">
-                                  Text Responses ({questionData.responses.length})
+                                   ({questionData.responses.length}) Responses
                                 </div>
                               </div>
                               <div className="max-h-48 overflow-y-auto space-y-2">
@@ -1041,37 +1362,115 @@ const Report = () => {
                   </div>
                 )}
 
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold mb-2">
-                    Summary & Insights
-                  </h2>
-                  <p>
-                    {generatedReport.eventSummary || "No summary available."}
-                  </p>
-                  <p className="mt-2">
-                    {(() => {
-                      const income = generatedReport.registrations?.reduce(
-                        (sum, reg) =>
-                          reg.paymentStatus === "paid"
-                            ? sum +
-                              (reg.price !== undefined
-                                ? Number(reg.price)
-                                : generatedReport.price || 0)
-                            : sum,
-                        0
-                      );
-                      const revenue = income - (generatedReport.cost || 0);
-                      if (revenue > 0)
-                        return `✅ The event was profitable, earning ₱${revenue.toLocaleString()}.`;
-                      if (revenue < 0)
-                        return `⚠️ The event incurred a loss of ₱${Math.abs(
-                          revenue
-                        ).toLocaleString()}.`;
-                      return `The event broke even.`;
-                    })()}
-                  </p>
-                </div>
+                {/* Feedback Insights Summary */}
+                {feedbackData && (
+                  <div className="mt-6 p-4 bg-gray-50 rounded border">
+                    <h3 className="text-lg font-semibold mb-3">Feedback Insights</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-semibold text-blue-600 mb-2">Response Analysis</h4>
+                        <p className="text-sm">
+                          • Total feedback responses: <strong>{feedbackData.totalResponses}</strong><br/>
+                          • Response rate: <strong>{feedbackData.totalResponses > 0 ? `${((feedbackData.totalResponses / (selectedEvent?.registrations?.length || 1)) * 100).toFixed(1)}%` : '0%'}</strong><br/>
+                          • Questions answered: <strong>{feedbackData.form.questions.length}</strong>
+                        </p>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-green-600 mb-2">Key Takeaways</h4>
+                        <p className="text-sm">
+                          • {feedbackData.totalResponses > 0 ? 'Feedback data available for analysis' : 'No feedback responses yet'}<br/>
+                          • {feedbackData.form.questions.filter(q => q.type === 'Rating' || q.type === 'Likert').length > 0 ? 'Quantitative feedback collected' : 'No quantitative questions'}<br/>
+                          • {feedbackData.form.questions.filter(q => q.type === 'Text').length > 0 ? 'Qualitative feedback available' : 'No text-based questions'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* AI Analytics Summary */}
+                {feedbackAnalytics && (
+                  <div className="mt-6 p-4 bg-purple-50 rounded border" style={{ pageBreakBefore: 'always' }}>
+                    <h3 className="text-lg font-semibold mb-3 text-purple-800">🤖 AI-Powered Analytics Summary</h3>
+                    
+                    <div className="mb-4">
+                      <h4 className="font-semibold text-purple-700 mb-2">Analysis Summary</h4>
+                      <p className="text-sm text-gray-700">{feedbackAnalytics.summary}</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div className="p-3 bg-white rounded border">
+                        <h5 className="font-semibold text-sm text-purple-700 mb-1">Sentiment</h5>
+                        <p className="text-lg font-bold text-purple-600">
+                          {feedbackAnalytics.sentiment.charAt(0).toUpperCase() + feedbackAnalytics.sentiment.slice(1)}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          Score: {(feedbackAnalytics.sentimentScore * 100).toFixed(0)}%
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 bg-white rounded border">
+                        <h5 className="font-semibold text-sm text-purple-700 mb-1">Response Quality</h5>
+                        <p className="text-lg font-bold text-purple-600">
+                          {feedbackAnalytics.responseQuality.charAt(0).toUpperCase() + feedbackAnalytics.responseQuality.slice(1)}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {feedbackAnalytics.metadata?.textResponses || 0} responses analyzed
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 bg-white rounded border">
+                        <h5 className="font-semibold text-sm text-purple-700 mb-1">Analysis Date</h5>
+                        <p className="text-lg font-bold text-purple-600">
+                          {new Date(feedbackAnalytics.metadata?.analysisDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-semibold text-purple-700 mb-2">Key Themes</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {feedbackAnalytics.keyThemes.slice(0, 5).map((theme, index) => (
+                            <span key={index} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                              {theme}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-semibold text-purple-700 mb-2">Top Keywords</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {feedbackAnalytics.keywords.slice(0, 5).map((keyword, index) => (
+                            <span key={index} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                              {keyword}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <h4 className="font-semibold text-purple-700 mb-2">Key Insights</h4>
+                      <ul className="space-y-1">
+                        {feedbackAnalytics.insights.slice(0, 3).map((insight, index) => (
+                          <li key={index} className="text-sm text-gray-700">• {insight}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="mt-4">
+                      <h4 className="font-semibold text-purple-700 mb-2">Recommendations</h4>
+                      <ul className="space-y-1">
+                        {feedbackAnalytics.recommendations.slice(0, 3).map((recommendation, index) => (
+                          <li key={index} className="text-sm text-gray-700">• {recommendation}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
               </div>
+              )}
 
               <div className="flex justify-center mt-6 gap-4">
                 <button
@@ -1105,6 +1504,15 @@ const Report = () => {
         {/* Feedback Report */}
         {selectedEvent && feedbackData && (
           <FeedbackReport feedbackData={feedbackData} />
+        )}
+
+        {/* AI Analytics Report */}
+        {selectedEvent && (
+          <FeedbackAnalytics 
+            analytics={feedbackAnalytics}
+            error={analyticsError}
+            isLoading={isAnalyzingFeedback}
+          />
         )}
       </main>
     </div>

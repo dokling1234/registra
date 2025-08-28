@@ -1,14 +1,15 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { assets } from "../assets/assets";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { AppContent } from "../context/AppContext";
 import Swal from "sweetalert2";
+import SplashScreen from "../components/SplashScreen";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const { backendUrl, setIsLoggedin, getUserData } = useContext(AppContent);
+  const { backendUrl, setIsLoggedin, getUserData, setIsAdmin } = useContext(AppContent);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,18 +41,18 @@ const AdminLogin = () => {
           return;
         }
 
+        setIsAdmin(true);
         setIsLoggedin(true);
-        await getUserData();
+        await getUserData(true);
         toast.success(data.message);
 
-        // 🔥 Redirect based on role
-        if (userType === "admin") {
-          navigate("/admin/dashboard");
-        } else if (userType === "superadmin") {
-          navigate("/superadmin/dashboard"); // ✅ Route for superadmin
-        } else {
+        // brief splash before dashboard
+        const to = userType === "admin" ? "/admin/dashboard" : userType === "superadmin" ? "/superadmin/dashboard" : null;
+        if (!to) {
           toast.error("Invalid user type.");
+          return;
         }
+        navigate("/splash?to=" + encodeURIComponent(to), { replace: true, state: { to } });
       } else {
         toast.error(data.message);
       }
@@ -98,6 +99,17 @@ const AdminLogin = () => {
       });
     }
   };
+
+  const [showPreSplash, setShowPreSplash] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setShowPreSplash(false), 900);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (showPreSplash) {
+    return <SplashScreen duration={900} message="Loading admin login..." defaultTo={"/admin"} />;
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen px-6 sm:px-0 bg-gradient-to-br from-blue-200 to-[#60B5FF]">
