@@ -5,8 +5,13 @@ let firebaseAdmin;
 
 try {
   // Load your Firebase service account key
-  const serviceAccount = require("./serviceAccountKey.json");
-
+if (process.env.GOOGLE_CREDENTIALS) {
+  // Running on Heroku
+  serviceAccount = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+} else {
+  // Running locally with JSON file
+  serviceAccount = require("./config/serviceAccountKey.json");
+}
   // Initialize Firebase Admin SDK only once
   if (!admin.apps.length) {
     firebaseAdmin = admin.initializeApp({
