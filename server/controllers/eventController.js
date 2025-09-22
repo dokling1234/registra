@@ -3,8 +3,10 @@ const eventModel = require("../models/eventModel.js");
 const userModel = require("../models/userModel.js");
 const { encryptData, decryptData } = require("../config/cryptoUtil.js");
 const QRCode = require("qrcode");
+const admin = require("../config/firebaseAdmin.js");
 const axios = require("axios");
 const e = require("express");
+const mongoose = require("mongoose");
 
 const formatTimeToAMPM = (time24) => {
   if (!time24 || !time24.includes(":")) return time24;
@@ -32,7 +34,7 @@ const createEvent = async (req, res) => {
     } = req.body;
 
     /*   const creator = req.user._id;
-     */ 
+     */
 
     const event = new eventModel({
       title,
@@ -49,15 +51,52 @@ const createEvent = async (req, res) => {
       image,
     });
 
-
     if (req.body.organizers) {
       event.organizers = req.body.organizers;
     }
 
     await event.save();
 
-    res
-      .status(201)
+    try {
+      const notificationData = {
+        notification: {
+          title: event.title, // Use event title as notification title
+          body: `${event.location} • ${event.date} • ${event.time}`,
+        },
+        data: {
+          //   // FCM data payload must be strings
+          //   eventId: String(event._id),
+          title: String(event.title || ""),
+
+          location: String(event.location || ""),
+          date: event.date ? new Date(event.date).toISOString() : "",
+          time: String(event.time || ""),
+          image: String(event.image || ""),
+          about: String(event.about || ""),
+          hostName: String(event.hostName || ""),
+          price: String(event.price || ""),
+          about: String(event.about || ""),
+        },
+
+        topic: "allUsers", // all users subscribed to this topic get the notification
+      };
+      console.log("notificationData", notificationData);
+
+      // Add image if available
+      if (event.image) {
+        notificationData.notification.imageUrl = event.image;
+        console.log("Adding image to notification:", event.image);
+      } else {
+        console.log("No image available for event:", event.title);
+      }
+
+      await admin.messaging().send(notificationData);
+      console.log("Notification sent for event:", event.title);
+    } catch (notifyErr) {
+      console.error("Error sending notification:", notifyErr);
+    }
+
+    res.status(201)
       .json({ success: true, message: "Event created successfully", event });
   } catch (err) {
     console.error("Error saving event:", err);
@@ -265,9 +304,10 @@ const geocodeAddress = async (req, res) => {
       )}&format=json`,
       {
         headers: {
-          'User-Agent': 'RegistraApp/1.0 (https://registra-b7181b9e50a0.herokuapp.com; carrel.golosinda@gmail.com)'
+          "User-Agent":
+            "RegistraApp/1.0 (https://registra-b7181b9e50a0.herokuapp.com; carrel.golosinda@gmail.com)",
         },
-        timeout: 10000 // 10 second timeout
+        timeout: 10000, // 10 second timeout
       }
     );
 
@@ -283,20 +323,21 @@ const geocodeAddress = async (req, res) => {
     }
   } catch (err) {
     console.error("Geocoding error:", err.message);
-    
+
     // Handle specific error cases
     if (err.response?.status === 403) {
-      return res.status(429).json({ 
-        message: "Geocoding service temporarily unavailable. Please try again later." 
+      return res.status(429).json({
+        message:
+          "Geocoding service temporarily unavailable. Please try again later.",
       });
     }
-    
-    if (err.code === 'ECONNABORTED') {
-      return res.status(408).json({ 
-        message: "Geocoding request timed out. Please try again." 
+
+    if (err.code === "ECONNABORTED") {
+      return res.status(408).json({
+        message: "Geocoding request timed out. Please try again.",
       });
     }
-    
+
     res.status(500).json({ message: "Geocoding failed" });
   }
 };
@@ -316,9 +357,10 @@ const reverseGeocode = async (req, res) => {
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
       {
         headers: {
-          'User-Agent': 'RegistraApp/1.0 (https://registra-b7181b9e50a0.herokuapp.com; carrel.golosinda@gmail.com)'
+          "User-Agent":
+            "RegistraApp/1.0 (https://registra-b7181b9e50a0.herokuapp.com; carrel.golosinda@gmail.com)",
         },
-        timeout: 10000 // 10 second timeout
+        timeout: 10000, // 10 second timeout
       }
     );
 
@@ -331,20 +373,21 @@ const reverseGeocode = async (req, res) => {
     }
   } catch (err) {
     console.error("Reverse geocoding error:", err.message);
-    
+
     // Handle specific error cases
     if (err.response?.status === 403) {
-      return res.status(429).json({ 
-        message: "Geocoding service temporarily unavailable. Please try again later." 
+      return res.status(429).json({
+        message:
+          "Geocoding service temporarily unavailable. Please try again later.",
       });
     }
-    
-    if (err.code === 'ECONNABORTED') {
-      return res.status(408).json({ 
-        message: "Geocoding request timed out. Please try again." 
+
+    if (err.code === "ECONNABORTED") {
+      return res.status(408).json({
+        message: "Geocoding request timed out. Please try again.",
       });
     }
-    
+
     res.status(500).json({ message: "Reverse geocoding failed" });
   }
 };
@@ -401,9 +444,8 @@ const updatePaymentStatus = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Registrant not found" });
     }
-    
-    if (paymentStatus === "paid") {
 
+    if (paymentStatus === "paid") {
       const qrData = {
         id: registrant._id.toString(),
         fullName: registrant.fullName,
@@ -600,15 +642,17 @@ const getRegisteredPastEvents = async (req, res) => {
 
     const now = new Date();
 
-    const events = await eventModel.find({
-      "registrations.userId": userId,
-      date: { $lt: now },
-    }).lean(); // Add .lean() for better performance
+    const events = await eventModel
+      .find({
+        "registrations.userId": userId,
+        date: { $lt: now },
+      })
+      .lean(); // Add .lean() for better performance
 
     // Add hasCertificate field to each event
-    const eventsWithCertificate = events.map(event => ({
+    const eventsWithCertificate = events.map((event) => ({
       ...event,
-      hasCertificate: false // or determine this based on your logic
+      hasCertificate: false, // or determine this based on your logic
     }));
 
     res.status(200).json(eventsWithCertificate);

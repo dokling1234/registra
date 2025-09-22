@@ -32,12 +32,26 @@ ChartJS.register(
 
 const Home = () => {
   const navigate = useNavigate();
+  const [attendanceData, setAttendanceData] = useState({
+    labels: [],
+    data: [],
+  });
   const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
   const [totalEvents, setTotalEvents] = useState(0);
   const [totalAdmins, setTotalAdmins] = useState(0);
   const [incomeData, setIncomeData] = useState({ labels: [], data: [] });
   const [registrationData, setRegistrationData] = useState({
+    labels: [],
+    data: [],
+    title: "", // add title here
+  });
+  const [participantData, setParticipantData] = useState({
+    labels: [],
+    data: [],
+    title: "", // for event name
+  });
+  const [popularEventsData, setPopularEventsData] = useState({
     labels: [],
     data: [],
   });
@@ -50,6 +64,80 @@ const Home = () => {
       navigate("/admin");
     }
   }, [isAdmin, navigate]);
+
+  useEffect(() => {
+    const fetchPopularEvents = async () => {
+      try {
+        const res = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/admin/events/analytics`,
+          { withCredentials: true }
+        );
+
+        if (res.data && res.data.popularEvents.length > 0) {
+          const labels = res.data.popularEvents.map((e) => e.title);
+          const data = res.data.popularEvents.map((e) => e.attendees);
+          setPopularEventsData({ labels, data });
+        }
+      } catch (err) {
+        console.error("Error fetching popular events:", err);
+      }
+    };
+
+    fetchPopularEvents();
+  }, []);
+
+  useEffect(() => {
+    const fetchParticipantBreakdown = async () => {
+      try {
+        const res = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/admin/events/analytics`,
+          { withCredentials: true }
+        );
+
+        if (res.data && res.data.participantBreakdown.length > 0) {
+          // Map aggregation to chart format
+          const labels = res.data.participantBreakdown.map((p) => p._id);
+          const data = res.data.participantBreakdown.map((p) => p.count);
+
+          // Assuming you want this for the first event for now
+          setParticipantData({
+            labels,
+            data,
+            title: "Participant Breakdown", // or event title if available
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching participant breakdown:", err);
+      }
+    };
+
+    fetchParticipantBreakdown();
+  }, []);
+
+  useEffect(() => {
+    const fetchAttendanceStats = async () => {
+      try {
+        const res = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/admin/events/analytics`,
+          { withCredentials: true }
+        );
+
+        if (res.data && res.data.attendanceStats.length > 0) {
+          // Take first event’s attendance stats for now
+          const firstEvent = res.data.attendanceStats[0];
+          setAttendanceData({
+            labels: ["Attended", "No-show"],
+            data: [firstEvent.attended, firstEvent.noShow],
+            title: firstEvent.title, // set the event title
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching attendance stats:", err);
+      }
+    };
+
+    fetchAttendanceStats();
+  }, []);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -203,6 +291,127 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h2 className="text-xl font-bold mb-4">
+                {participantData.title}
+              </h2>
+              <div className="h-[300px]">
+                <Pie
+                  data={{
+                    labels: participantData.labels,
+                    datasets: [
+                      {
+                        data: participantData.data,
+                        backgroundColor: [
+                          "rgba(255, 99, 132, 0.5)",
+                          "rgba(54, 162, 235, 0.5)",
+                          "rgba(255, 206, 86, 0.5)",
+                          "rgba(75, 192, 192, 0.5)",
+                          "rgba(153, 102, 255, 0.5)",
+                        ],
+                        borderWidth: 1,
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { position: "right" },
+                      tooltip: {
+                        callbacks: {
+                          label: function (context) {
+                            return `${context.label}: ${context.raw}`;
+                          },
+                        },
+                      },
+                    },
+                  }}
+                />
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h2 className="text-xl font-bold mb-4">
+                Popular Events (Attendance)
+              </h2>
+              <div className="h-[300px]">
+                <Bar
+                  data={{
+                    labels: popularEventsData.labels,
+                    datasets: [
+                      {
+                        label: "Attendees",
+                        data: popularEventsData.data,
+                        backgroundColor: "rgba(75, 192, 192, 0.8)",
+                        borderColor: "rgba(75, 192, 192, 1)",
+                        borderWidth: 1,
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { display: false },
+                      tooltip: {
+                        callbacks: {
+                          label: (context) => `Attendees: ${context.raw}`,
+                        },
+                      },
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        title: { display: true, text: "Attendees" },
+                      },
+                      x: { ticks: { maxRotation: 45, minRotation: 45 } },
+                    },
+                  }}
+                />
+              </div>
+            </div>
+            {/* Attendance vs No-shows */}
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h2 className="text-xl font-bold mb-4">
+                {attendanceData.title || "Attendance vs No-shows"}
+              </h2>
+              <div className="h-[300px]">
+                <Pie
+                  data={{
+                    labels: attendanceData.labels,
+                    datasets: [
+                      {
+                        data: attendanceData.data,
+                        backgroundColor: [
+                          "rgba(54, 162, 235, 0.6)",
+                          "rgba(255, 99, 132, 0.6)",
+                        ],
+                        borderColor: [
+                          "rgba(54, 162, 235, 1)",
+                          "rgba(255, 99, 132, 1)",
+                        ],
+                        borderWidth: 1,
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { position: "bottom" },
+                      tooltip: {
+                        callbacks: {
+                          label: function (context) {
+                            return `${context.label}: ${context.raw}`;
+                          },
+                        },
+                      },
+                    },
+                  }}
+                />
+              </div>
+            </div>
+
             {/* Card 1 */}
             <div className="bg-white p-6 rounded-lg shadow">
               <p className="text-gray-500 mb-2">Total Users</p>

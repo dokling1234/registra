@@ -1,15 +1,17 @@
+const PDFDocument = require("pdfkit");
+const puppeteer = require("puppeteer");
+const { ChartJSNodeCanvas } = require("chartjs-node-canvas");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/adminModel.js");
 const Event = require("../models/eventModel.js");
-const transporter = require("../config/nodemailer"); 
+const transporter = require("../config/nodemailer");
 mongoose = require("mongoose");
 const crypto = require("crypto");
 const { logActivity } = require("../services/activityLogService.js");
 
 // Admin Login
 const adminLogin = async (req, res) => {
-
   const { email, password, userType } = req.body;
 
   if (!email || !password || !userType) {
@@ -35,7 +37,10 @@ const adminLogin = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
-      await logActivity(req, { action: "login_failed", metadata: { email, userType } });
+      await logActivity(req, {
+        action: "login_failed",
+        metadata: { email, userType },
+      });
       return res.json({ success: false, message: "Invalid password" });
     }
 
@@ -57,7 +62,12 @@ const adminLogin = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    await logActivity(req, { action: "login_success", targetType: "admin", targetId: admin._id, metadata: { email, userType } });
+    await logActivity(req, {
+      action: "login_success",
+      targetType: "admin",
+      targetId: admin._id,
+      metadata: { email, userType },
+    });
 
     return res.json({
       success: true,
@@ -88,7 +98,11 @@ const getAdminData = async (req, res) => {
       return res.json({ success: false, message: "Admin not found" });
     }
 
-    await logActivity(req, { action: "get_admin_data", targetType: "admin", targetId: admin._id });
+    await logActivity(req, {
+      action: "get_admin_data",
+      targetType: "admin",
+      targetId: admin._id,
+    });
 
     res.json({
       success: true,
@@ -148,7 +162,12 @@ const createAdmin = async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
-    await logActivity(req, { action: "create_admin", targetType: "admin", targetId: newAdmin._id, metadata: { email, fullName } });
+    await logActivity(req, {
+      action: "create_admin",
+      targetType: "admin",
+      targetId: newAdmin._id,
+      metadata: { email, fullName },
+    });
 
     res.json({
       success: true,
@@ -162,7 +181,7 @@ const createAdmin = async (req, res) => {
 
 const getAllUsers = async (req, res) => {
   try {
-    const admins = await Admin.find({}); 
+    const admins = await Admin.find({});
 
     if (admins.length === 0) {
       return res
@@ -170,7 +189,11 @@ const getAllUsers = async (req, res) => {
         .json({ success: false, message: "No users found." });
     }
 
-    await logActivity(req, { action: "list_admins", targetType: "admin", metadata: { count: admins.length } });
+    await logActivity(req, {
+      action: "list_admins",
+      targetType: "admin",
+      metadata: { count: admins.length },
+    });
 
     res.json({ success: true, admins, count: admins.length });
   } catch (error) {
@@ -218,7 +241,11 @@ const getEvents = async (req, res) => {
     pipeline.push({ $match: match });
 
     const events = await Event.aggregate(pipeline);
-    await logActivity(req, { action: "list_events", targetType: "event", metadata: { count: events.length } });
+    await logActivity(req, {
+      action: "list_events",
+      targetType: "event",
+      metadata: { count: events.length },
+    });
     res.status(200).json(events);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -227,11 +254,11 @@ const getEvents = async (req, res) => {
 
 const registerForEvent = async (req, res) => {
   const { id } = req.params;
-  const { eventId, userId, email, paymentStatus, ticketQR, receipt, fullName } = req.body;
+  const { eventId, userId, email, paymentStatus, ticketQR, receipt, fullName } =
+    req.body;
   try {
     const event = await Event.findById(id);
     if (!event) {
-
       return res.status(404).json({ message: "Event not found" });
     }
 
@@ -244,11 +271,15 @@ const registerForEvent = async (req, res) => {
       receipt,
     };
 
-
     event.registrations.push(registrations);
     await event.save();
 
-    await logActivity(req, { action: "register_for_event", targetType: "event", targetId: id, metadata: { userId, email, paymentStatus } });
+    await logActivity(req, {
+      action: "register_for_event",
+      targetType: "event",
+      targetId: id,
+      metadata: { userId, email, paymentStatus },
+    });
 
     res.status(200).json({ message: "Registration successful!" });
   } catch (err) {
@@ -284,7 +315,12 @@ const QRchecker = async (req, res) => {
     registration.attended = true;
     await event.save();
 
-    await logActivity(req, { action: "attendance_update", targetType: "event_registration", targetId: objectId, metadata: { eventId: event._id } });
+    await logActivity(req, {
+      action: "attendance_update",
+      targetType: "event_registration",
+      targetId: objectId,
+      metadata: { eventId: event._id },
+    });
 
     return res.json({ message: "Attendance updated successfully" });
   } catch (error) {
@@ -316,7 +352,11 @@ const pdfCertificate = async (req, res) => {
     );
     fs.writeFileSync(outputPath, modifiedPdfBytes);
 
-    await logActivity(req, { action: "upload_certificate_template", targetType: "certificate_template", metadata: { originalName: req.file.originalname, outputPath } });
+    await logActivity(req, {
+      action: "upload_certificate_template",
+      targetType: "certificate_template",
+      metadata: { originalName: req.file.originalname, outputPath },
+    });
 
     res.json({
       success: true,
@@ -343,7 +383,11 @@ const changeAdminPassword = async (req, res) => {
       passwordChangeRequired: false,
     });
 
-    await logActivity(req, { action: "change_password", targetType: "admin", targetId: adminId });
+    await logActivity(req, {
+      action: "change_password",
+      targetType: "admin",
+      targetId: adminId,
+    });
 
     res.json({
       success: true,
@@ -351,6 +395,200 @@ const changeAdminPassword = async (req, res) => {
     });
   } catch (error) {
     res.json({ success: false, message: "Server error: " + error.message });
+  }
+};
+
+// --- Event Analytics ---
+const getEventAnalyticsReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Attendance vs No-shows
+    const attendanceStats = await Event.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(id) } },
+      { $unwind: "$registrations" },
+      {
+        $group: {
+          _id: "$_id",
+          title: { $first: "$title" },
+          date: { $first: "$date" },
+          eventType: { $first: "$eventType" },
+          totalRegistered: { $sum: 1 },
+          attended: { $sum: { $cond: ["$registrations.attended", 1, 0] } },
+        },
+      },
+      {
+        $addFields: {
+          noShow: { $subtract: ["$totalRegistered", "$attended"] },
+          attendanceRate: {
+            $cond: [
+              { $eq: ["$totalRegistered", 0] },
+              0,
+              { $divide: ["$attended", "$totalRegistered"] },
+            ],
+          },
+        },
+      },
+    ]);
+
+    if (!attendanceStats.length) {
+      return res.status(404).json({ message: "No data for this event" });
+    }
+
+    const stats = attendanceStats[0];
+
+    // 2. Participant breakdown
+    const participantBreakdown = await Event.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(id) } },
+      { $unwind: "$registrations" },
+      {
+        $lookup: {
+          from: "users",
+          localField: "registrations.userId",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: "$user" },
+      {
+        $match: { "user.userType": { $in: ["student", "professional"] } },
+      },
+      {
+        $group: { _id: "$user.userType", count: { $sum: 1 } },
+      },
+    ]);
+
+    // ----------------------------
+    // Build HTML (with charts via Chart.js CDN)
+    // ----------------------------
+    const htmlContent = `
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Event Report</title>
+          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1, h2 { text-align: center; }
+            .chart-container { width: 300px; margin: 20px auto; }
+            .summary { margin: 20px auto; max-width: 500px; }
+          </style>
+        </head>
+        <body>
+          <h1>📊 Event Analytics Report</h1>
+          <h2>${stats.title}</h2>
+          <p style="text-align:center;">Date: ${new Date(stats.date).toLocaleDateString()}<br/>
+          Type: ${stats.eventType}</p>
+
+          <div class="summary">
+            <p><b>Total Registered:</b> ${stats.totalRegistered}</p>
+            <p><b>Attended:</b> ${stats.attended}</p>
+            <p><b>No-shows:</b> ${stats.noShow}</p>
+            <p><b>Attendance Rate:</b> ${(stats.attendanceRate * 100).toFixed(1)}%</p>
+          </div>
+
+          <div class="chart-container">
+            <canvas id="attendanceChart"></canvas>
+          </div>
+          <div class="chart-container">
+            <canvas id="participantChart"></canvas>
+          </div>
+
+          <script>
+            // Attendance Chart
+            new Chart(document.getElementById('attendanceChart'), {
+              type: 'pie',
+              data: {
+                labels: ['Attended', 'No-show'],
+                datasets: [{
+                  data: [${stats.attended}, ${stats.noShow}],
+                  backgroundColor: ['#36A2EB', '#FF6384']
+                }]
+              }
+            });
+
+            // Participant Breakdown
+            new Chart(document.getElementById('participantChart'), {
+              type: 'pie',
+              data: {
+                labels: ${JSON.stringify(participantBreakdown.map(p => p._id))},
+                datasets: [{
+                  data: ${JSON.stringify(participantBreakdown.map(p => p.count))},
+                  backgroundColor: ['#4CAF50', '#FF9800']
+                }]
+              }
+            });
+          </script>
+        </body>
+      </html>
+    `;
+
+    // ----------------------------
+    // Generate PDF with Puppeteer
+    // ----------------------------
+    const browser = await puppeteer.launch({ headless: "new" });
+    const page = await browser.newPage();
+    await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "40px", bottom: "40px", left: "30px", right: "30px" },
+    });
+    await browser.close();
+
+    // ----------------------------
+    // Send as response
+    // ----------------------------
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=event-report-${stats.title}.pdf`
+    );
+    res.setHeader("Content-Type", "application/pdf");
+    res.status(200).send(Buffer.from(pdfBuffer));
+  } catch (error) {
+    console.error("Analytics report error:", error);
+    res.status(500).json({ message: "Error generating report" });
+  }
+};
+
+const samplePdf = async (req, res) => {
+  try {
+    // 1. Minimal HTML content
+    const html = `
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Sample PDF</title>
+          <style>
+            body { font-family: Arial, sans-serif; text-align: center; margin-top: 100px; }
+            h1 { color: #36A2EB; }
+          </style>
+        </head>
+        <body>
+          <h1>📄 Sample PDF</h1>
+          <p>This is a test PDF generated with Puppeteer.</p>
+        </body>
+      </html>
+    `;
+
+    // 2. Launch Puppeteer and generate PDF
+    const browser = await puppeteer.launch({ headless: "true" });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "40px", bottom: "40px", left: "30px", right: "30px" },
+    });
+    await browser.close();
+
+    // 3. Send PDF buffer
+    res.setHeader("Content-Disposition", "attachment; filename=sample.pdf");
+    res.setHeader("Content-Type", "application/pdf");
+    res.status(200).send(Buffer.from(pdfBuffer));
+  } catch (err) {
+    console.error("PDF generation error:", err);
+    res.status(500).send("Failed to generate PDF");
   }
 };
 
@@ -364,4 +602,6 @@ module.exports = {
   QRchecker,
   pdfCertificate,
   changeAdminPassword,
+  getEventAnalyticsReport,
+  samplePdf
 };

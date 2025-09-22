@@ -38,8 +38,11 @@ export const AppContextProvider = (props) => {
 
             if (data.success) {
                 setIsLoggedin(true);
-                setIsAdmin(data.isAdmin || false);
-                await getUserData(data.isAdmin || false);
+                const derivedIsAdmin = typeof data.isAdmin === "boolean"
+                    ? data.isAdmin
+                    : (data.user?.userType === "admin" || data.user?.userType === "superadmin");
+                setIsAdmin(derivedIsAdmin);
+                await getUserData(derivedIsAdmin);
             } else {
                 setIsLoggedin(false);
                 setIsAdmin(false);
@@ -80,6 +83,7 @@ export const AppContextProvider = (props) => {
         isLoggedin,
         setIsLoggedin,
         isAdmin,
+        setIsAdmin,
         userData,
         setUserData,
         getUserData,

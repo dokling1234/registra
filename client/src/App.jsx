@@ -39,8 +39,6 @@ import SuperAdminReport from "./superAdmin_pages/Report";
 import SuperAdminReceipt from "./superAdmin_pages/Receipt";
 import SuperAdminReschedule from "./superAdmin_components/Reschedule";
 import SuperAdminAdminList from "./superAdmin_pages/AdminList";
-import AdminActivityLogs from "./admin_pages/ActivityLogs";
-import SuperAdminActivityLogs from "./superAdmin_pages/ActivityLogs";
 import SplashScreen from "./components/SplashScreen";
 
 const App = () => {
@@ -66,12 +64,11 @@ const App = () => {
         <Route path="/about" element={<AboutUs />} />
         <Route path="/map" element={<Map />} />
         <Route path="/admin" element={<AdminLogin />} />
-        <Route path="admin/dashboard" element={<AdminDashboard />} />
-        <Route path="admin/receipt" element={<Receipt />} />
-        <Route path="admin/report" element={<Report />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/receipt" element={<Receipt />} />
+        <Route path="/admin/report" element={<Report />} />
         <Route path="/admin/events" element={<Events />} />
         <Route path="adminevents/:id" element={<AdminEventDetail />} />
-        <Route path="/admin/activity-logs" element={<AdminActivityLogs />} />
         <Route path="/events/edit/:id" element={<EditEvent />} />
         <Route path="/userlist" element={<UserList />} />
         <Route path="feedback" element={<Feedback />} />
@@ -80,10 +77,10 @@ const App = () => {
         <Route path="/uploadreceipt/:id" element={<UploadReceipt />} />
         <Route path="/report" element={<SuperAdminReport />} />
         <Route path="/receipt" element={<SuperAdminReceipt />} />
-        <Route path="superadmin/dashboard" element={<SuperAdminDashboard />} />
+        <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
         <Route path="/superadmin/events" element={<SuperAdminEvents />} />
         <Route
-          path="superadmin/events/:id"
+          path="/superadmin/events/:id"
           element={<SuperAdminEventDetail />}
         />
         <Route
@@ -92,9 +89,8 @@ const App = () => {
         />
         <Route path="/superadmin/userlist" element={<SuperAdminUserList />} />
         <Route path="/superadmin/adminlist" element={<SuperAdminAdminList />} />
-        <Route path="/superadmin/activity-logs" element={<SuperAdminActivityLogs />} />
 
-        <Route path="superadmin/feedback" element={<SuperAdminFeedback />} />
+        <Route path="/superadmin/feedback" element={<SuperAdminFeedback />} />
         <Route
           path="/superadmin/feedback/Builder"
           element={<SuperAdminFeedbackBuilder />}
