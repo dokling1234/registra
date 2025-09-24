@@ -2,21 +2,19 @@
 const admin = require("firebase-admin");
 
 let firebaseAdmin;
+let serviceAccount;
 
 try {
   // Load your Firebase service account key
 if (process.env.GOOGLE_CREDENTIALS) {
-    serviceAccount = JSON.parse(process.env.GOOGLE_CREDENTIALS);
-    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-
-  console.log("using google credentials")
-  console.log(process.env.GOOGLE_CREDENTIALS)
-  // Running on Heroku
+  console.log("using google credentials");
   serviceAccount = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+
+  // 👇 convert literal \n into actual newlines
+  serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
 } else {
-  // Running locally with JSON file
-  serviceAccount = require("./config/serviceAccountKey.json");
-  console.log("using service account key")
+  console.log("using local serviceAccountKey.json");
+  serviceAccount = require("./serviceAccountKey.json");
 }
   // Initialize Firebase Admin SDK only once
   if (!admin.apps.length) {
