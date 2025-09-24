@@ -9,10 +9,14 @@ try {
 if (process.env.GOOGLE_CREDENTIALS) {
   console.log("using google credentials");
   serviceAccount = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+console.log("First 1000 chars of private key:", serviceAccount.private_key.substring(0, 100));
 
   // 👇 convert literal \n into actual newlines
-  serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-} else {
+  if (serviceAccount.private_key) {
+    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    console.log("First 100 chars of private key:", serviceAccount.private_key.substring(0, 100));
+
+  }} else {
   console.log("using local serviceAccountKey.json");
   serviceAccount = require("./serviceAccountKey.json");
 }
