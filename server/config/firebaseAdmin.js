@@ -7,6 +7,7 @@ try {
   // Load your Firebase service account key
 if (process.env.GOOGLE_CREDENTIALS) {
   console.log("using google credentials")
+  (console.log(process.env.GOOGLE_CREDENTIALS))
   // Running on Heroku
   serviceAccount = JSON.parse(process.env.GOOGLE_CREDENTIALS);
 } else {
