@@ -33,9 +33,6 @@ const createEvent = async (req, res) => {
       image,
     } = req.body;
 
-    /*   const creator = req.user._id;
-     */
-
     const event = new eventModel({
       title,
       date,
@@ -57,6 +54,7 @@ const createEvent = async (req, res) => {
 
     await event.save();
 
+    // ✅ Send push notification to all users
     try {
       const notificationData = {
         notification: {
@@ -64,27 +62,41 @@ const createEvent = async (req, res) => {
           body: `${event.location} • ${event.date} • ${event.time}`,
         },
         data: {
-          //   // FCM data payload must be strings
-          //   eventId: String(event._id),
+          // FCM data payload must be strings
+          eventId: String(event._id),
           title: String(event.title || ""),
-
           location: String(event.location || ""),
           date: event.date ? new Date(event.date).toISOString() : "",
           time: String(event.time || ""),
           image: String(event.image || ""),
           about: String(event.about || ""),
           hostName: String(event.hostName || ""),
-          price: String(event.price || ""),
-          about: String(event.about || ""),
+          price: String(event.price ?? ""),
         },
-
+        android: {
+          priority: 'high',
+          notification: {
+            channelId: 'default',
+            sound: 'default',
+          },
+        },
+        apns: {
+          headers: {
+            'apns-push-type': 'alert',
+            'apns-priority': '10',
+          },
+          payload: {
+            aps: { sound: 'default' },
+          },
+        },
         topic: "allUsers", // all users subscribed to this topic get the notification
       };
       console.log("notificationData", notificationData);
-
+      
       // Add image if available
       if (event.image) {
-        notificationData.notification.imageUrl = event.image;
+        // Use 'image' property for FCM v1 / Admin SDK support
+        notificationData.notification.image = event.image;
         console.log("Adding image to notification:", event.image);
       } else {
         console.log("No image available for event:", event.title);
@@ -96,7 +108,19 @@ const createEvent = async (req, res) => {
       console.error("Error sending notification:", notifyErr);
     }
 
-    res.status(201)
+    // Log activity for event creation (admin/superadmin)
+    try {
+      const { logActivity } = require("../services/activityLogService.js");
+      await logActivity(req, {
+        action: "create_event",
+        targetType: "event",
+        targetId: event._id,
+        metadata: { title },
+      });
+    } catch (_) {}
+
+    res
+      .status(201)
       .json({ success: true, message: "Event created successfully", event });
   } catch (err) {
     console.error("Error saving event:", err);

@@ -6,6 +6,9 @@ let firebaseAdmin;
 try {
   // Load your Firebase service account key
 if (process.env.GOOGLE_CREDENTIALS) {
+    serviceAccount = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+
   console.log("using google credentials")
   console.log(process.env.GOOGLE_CREDENTIALS)
   // Running on Heroku
