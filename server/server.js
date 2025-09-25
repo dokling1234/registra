@@ -5,10 +5,13 @@ require("dotenv/config");
 const cookieParser = require("cookie-parser");
 const connectDB = require("./config/mongodb.js");
 const authRouter = require("./routes/authRoutes.js");
-const {userRouter, mobileUserRouter} = require("./routes/userRoutes.js");
-const {eventRouter, mobileEventRouter} = require("./routes/eventRoutes.js");
+const { userRouter, mobileUserRouter } = require("./routes/userRoutes.js");
+const { eventRouter, mobileEventRouter } = require("./routes/eventRoutes.js");
 const adminRouter = require("./routes/adminRoutes.js");
-const {feedbackRoutes, mobileFeedbackRoutes} = require("./routes/feedbackRoutes.js");
+const {
+  feedbackRoutes,
+  mobileFeedbackRoutes,
+} = require("./routes/feedbackRoutes.js");
 const certificateRoutes = require("./routes/certificateRoutes.js");
 const superAdminRouter = require("./routes/superAdminRoutes.js");
 const activityLogRoutes = require("./routes/activityLogRoutes.js");
@@ -24,7 +27,7 @@ const allowedOrigins = [
   "http://localhost:5174",
   "http://192.168.1.212:4000",
   "http://192.168.1.212:3000",
-  "https://registra-b7181b9e50a0.herokuapp.com"
+  "https://registra-b7181b9e50a0.herokuapp.com",
 ]; // allowed to add to frontend
 
 app.use(helmet());
@@ -33,12 +36,22 @@ app.use(
     useDefaults: true,
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https://cdn.jsdelivr.net", "https://www.googletagmanager.com"],
+      scriptSrc: [
+        "'self'",
+        "https://cdn.jsdelivr.net",
+        "https://www.googletagmanager.com",
+      ],
       styleSrc: ["'self'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https://www.google-analytics.com"],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https://www.google-analytics.com",
+        "https://res.cloudinary.com",
+        "https://*.cloudinary.com",
+      ],
       connectSrc: ["'self'", "https://registra-b7181b9e50a0.herokuapp.com"],
-      frameAncestors: ["'self'"]
+      frameAncestors: ["'self'"],
     },
   })
 );
@@ -53,16 +66,18 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
 
 // Serve static files from uploads directory
 
@@ -73,9 +88,9 @@ app.use(cors({
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/auth", authRouter); // auth routes
 app.use("/api/user", userRouter); // user routes
-app.use("/api/mobile-user", mobileUserRouter); 
+app.use("/api/mobile-user", mobileUserRouter);
 app.use("/api/events", eventRouter);
-app.use("/api/mobile-events", mobileEventRouter); 
+app.use("/api/mobile-events", mobileEventRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/certificate", certificateRoutes);
 app.use("/api/mobile-feedback", mobileFeedbackRoutes);
@@ -95,6 +110,4 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-app.listen(port, () =>
-  console.log(`Server is running on port ${port}`)
-);
+app.listen(port, () => console.log(`Server is running on port ${port}`));
