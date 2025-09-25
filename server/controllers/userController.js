@@ -293,7 +293,7 @@ const mobileLogin = async (req, res, next) => {
     } else {
       const otp = generateOTP();
       otpStorage[email] = { code: otp, timestamp: Date.now() };
-      sendOTP(email, otp);
+      sendResetOTP(email, otp);
 
       return res.status(200).json({
         _id: user._id,
