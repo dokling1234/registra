@@ -14,7 +14,7 @@ class UserService {
     membership,
     aboutMe = "",
     profileImage = "",
-    dIsabled = false,
+    disabled = false,
   ) {
     try {
       const createUser = new userModel({
