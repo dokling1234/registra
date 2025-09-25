@@ -487,6 +487,7 @@ const mobileRegister = async (req, res, next) => {
       membership,
       aboutMe = "",
       profileImage = "default-profile.png",
+      disabled = false,
     } = req.body;
     console.log("mobileRegister", req.body);
     // Check individual fields and return specific errors
@@ -561,7 +562,8 @@ const mobileRegister = async (req, res, next) => {
         userType,
         membership,
         aboutMe,
-        profileImage
+        profileImage,
+        disabled
       );
 
       res.json({ status: true, success: "User Registered Successfully" });

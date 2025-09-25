@@ -14,7 +14,7 @@ class UserService {
     membership,
     aboutMe = "",
     profileImage = "",
-    isDIsabled,
+    dIsabled = false,
   ) {
     try {
       const createUser = new userModel({
@@ -28,7 +28,7 @@ class UserService {
         membership,
         aboutMe,
         profileImage,
-        isDisabled
+        disabled
       });
       return await createUser.save();
     } catch (err) {
