@@ -41,15 +41,16 @@ app.use(
         "https://cdn.jsdelivr.net",
         "https://www.googletagmanager.com",
       ],
-      styleSrc: ["'self'", "https://fonts.googleapis.com"],
+      styleSrc: ["'self'", "https://fonts.googleapis.com", "'unsafe-inline'"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: [
         "'self'",
         "data:",
-        "https://www.google-analytics.com",
         "https://res.cloudinary.com",
         "https://*.cloudinary.com",
         "https://cdn.pixabay.com",
+        "https://www.icpepncr.org",
+        "https://www.google-analytics.com",
       ],
       connectSrc: [
         "'self'",
@@ -58,6 +59,7 @@ app.use(
         "https://api.maptiler.com",
       ],
       frameAncestors: ["'self'"],
+      workerSrc: ["'self'", "blob:"],
     },
   })
 );
