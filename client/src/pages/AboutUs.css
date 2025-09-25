@@ -4,7 +4,12 @@
   --text-color: #333;
   --light-bg: #f8f9fa;
   --card-bg: #ffffff;
-  --body-bg: #E3F4F4;
+  --body-bg: #e3f4f4;
+
+  --transition-speed: 0.3s;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* General Body Styles */
@@ -14,11 +19,14 @@ body {
   color: var(--text-color);
   line-height: 1.6;
   background-color: var(--body-bg);
+  margin: 0;
+  padding: 0;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: "Poppins", serif;
   font-weight: 600;
+  color: var(--primary-color);
 }
 
 /* Navbar */
@@ -29,7 +37,7 @@ h1, h2, h3, h4, h5, h6 {
   width: 100%;
   z-index: 1000;
   background-color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   height: 7rem;
   display: flex;
   align-items: center;
@@ -39,29 +47,43 @@ h1, h2, h3, h4, h5, h6 {
 /* Buttons */
 .btn-primary {
   background-color: var(--primary-color);
-  border-color: var(--primary-color);
+  border: none;
+  color: white;
   font-weight: 500;
   letter-spacing: 0.5px;
-  transition: all 0.3s ease;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  transition: all var(--transition-speed) ease;
+  text-decoration: none;
+  display: inline-block;
 }
 
 .btn-primary:hover {
   background-color: var(--secondary-color);
-  border-color: var(--secondary-color);
   transform: translateY(-2px);
+}
+
+/* Hero button */
+.hero-btn {
+  margin-top: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.hero-btn:hover {
+  box-shadow: var(--shadow-md);
 }
 
 /* Full-width Container */
 .container {
   width: 100%;
-  max-width: 100%; /* No limit */
-  padding: 0 1.5rem; /* Minimal side padding */
-  
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
 }
 
 /* Space under Navbar */
 .main-content {
-  margin-top: 1rem;
+  margin-top: 8rem;
 }
 
 /* Hero Section */
@@ -77,39 +99,46 @@ h1, h2, h3, h4, h5, h6 {
   color: white;
   text-align: center;
   text-shadow: 0px 0px 10px rgba(0, 0, 0, 0.6);
+  padding: 0 1rem;
 }
 
 .hero h1 {
-  font-size: clamp(3rem, 6vw, 6rem); /* Responsive big heading */
+  font-size: clamp(3rem, 6vw, 6rem);
   font-weight: bold;
+  margin: 0.5rem 0;
+  color: white; /* keep white text */
+  text-shadow: 0px 0px 12px rgba(255, 255, 255, 0.8),
+               0px 0px 24px rgba(0, 0, 0, 0.6);
 }
 
 .hero .lead {
-  font-size: clamp(1.5rem, 3vw, 3rem); /* Responsive subtitle */
+  font-size: clamp(1.5rem, 3vw, 3rem);
   font-weight: 600;
+  margin-bottom: 1rem;
 }
 
-/* Cards - full width on large screens */
+/* Cards */
 .card {
   border: none;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-speed) ease;
+  border-radius: 12px;
   background-color: var(--card-bg);
-  margin-bottom: 1rem;
+  margin-bottom: 2rem;
   width: 100%;
+  overflow: hidden;
 }
 
 .card-body {
   padding: 2rem;
-  font-size: clamp(1rem, 1.2vw, 1.5rem); /* Bigger text in cards */
-  margin-bottom: 5rem;
+  font-size: clamp(1rem, 1.1vw, 1.2rem);
+  line-height: 1.7;
 }
 
 .card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-  background-color: #f9f9f9;
+  box-shadow: var(--shadow-md);
+  background-color: #fdfdfd;
 }
 
 /* Section Headings */
@@ -120,7 +149,8 @@ h1, h2, h3, h4, h5, h6 {
   position: relative;
   display: inline-block;
   padding-bottom: 0.5rem;
-  font-size: clamp(2rem, 4vw, 3rem); /* Bigger heading */
+  font-size: clamp(2rem, 4vw, 3rem);
+  margin: 0 auto 2rem;
 }
 
 .section-heading::after {
@@ -134,3 +164,93 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--secondary-color);
   border-radius: 2px;
 }
+
+/* Officers & Past Presidents */
+.officers-card ul,
+.presidents-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.officers-card ul li,
+.presidents-card ul li {
+  margin-bottom: 0.75rem;
+  padding-left: 1.2rem;
+  position: relative;
+  font-size: clamp(1rem, 1.1vw, 1.2rem);
+}
+
+.officers-card ul li::before,
+.presidents-card ul li::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: var(--secondary-color);
+}
+
+.officers-card h5,
+.presidents-card h5 {
+  font-size: clamp(1.3rem, 2.2vw, 1.8rem);
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+/* History Subheadings */
+#history .card h5 {
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  margin-bottom: 0.75rem;
+  color: var(--secondary-color);
+}
+
+/* Footer link */
+.footer-link {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.footer-link a {
+  color: var(--secondary-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.footer-link a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .navbar {
+    height: auto;
+    padding: 1rem;
+  }
+
+  .hero {
+    height: 70vh;
+  }
+
+  .card-body {
+    padding: 1.5rem;
+  }
+
+  .section-heading {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero .lead {
+    font-size: 1.2rem;
+  }
+
+  .card-body {
+    font-size: 0.95rem;
+  }
+}
+  
