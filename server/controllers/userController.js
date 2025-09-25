@@ -489,41 +489,64 @@ const mobileRegister = async (req, res, next) => {
       profileImage = "default-profile.png",
     } = req.body;
     console.log("mobileRegister", req.body);
-    if (
-      !fullName ||
-      !contactNumber ||
-      !email ||
-      !password ||
-      !confirmPassword ||
-      !userType ||
-      !membership
-    ) {
+    // Check individual fields and return specific errors
+    if (!fullName || fullName.trim() === '') {
       return res
         .status(400)
-        .json({ status: false, message: "All fields are required" });
+        .json({ status: false, message: "Full name is required", field: "fullName" });
+    }
+    if (!email || email.trim() === '') {
+      return res
+        .status(400)
+        .json({ status: false, message: "Email is required", field: "email" });
+    }
+    if (!contactNumber || contactNumber.trim() === '') {
+      return res
+        .status(400)
+        .json({ status: false, message: "Contact number is required", field: "contactNumber" });
+    }
+    if (!password || password.trim() === '') {
+      return res
+        .status(400)
+        .json({ status: false, message: "Password is required", field: "password" });
+    }
+    if (!confirmPassword || confirmPassword.trim() === '') {
+      return res
+        .status(400)
+        .json({ status: false, message: "Confirm password is required", field: "confirmPassword" });
+    }
+    if (!userType || userType.trim() === '') {
+      return res
+        .status(400)
+        .json({ status: false, message: "User type is required", field: "userType" });
+    }
+    if (!membership || membership.trim() === '') {
+      return res
+        .status(400)
+        .json({ status: false, message: "Membership is required", field: "membership" });
     }
     // Check if member has valid ICPEP ID
     if (membership === "member" && (!icpepId || icpepId.trim() === '' || icpepId === 'null' || icpepId === 'undefined')) {
       console.log("_____________________membership");
       return res
         .status(400)
-        .json({ status: false, message: "ICPEP ID is required for Members" });
+        .json({ status: false, message: "ICPEP ID is required for Members", field: "icpepId" });
     }
     if (password.trim() !== confirmPassword.trim()) {
       return res
         .status(400)
-        .json({ status: false, message: "Passwords do not match" });
+        .json({ status: false, message: "Passwords do not match", field: "confirmPassword" });
     }
 
     if (!["student", "professional"].includes(userType)) {
       return res
         .status(400)
-        .json({ status: false, message: "Invalid user type" });
+        .json({ status: false, message: "Invalid user type", field: "userType" });
     }
     if (!["member", "non-member"].includes(membership)) {
       return res
         .status(400)
-        .json({ status: false, message: "Invalid membership type" });
+        .json({ status: false, message: "Invalid membership type", field: "membership" });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -549,17 +572,20 @@ const mobileRegister = async (req, res, next) => {
         if (serviceError.keyPattern && serviceError.keyPattern.email) {
           return res.status(400).json({ 
             status: false, 
-            message: "Email already exists" 
+            message: "Email already exists",
+            field: "email"
           });
         } else if (serviceError.keyPattern && serviceError.keyPattern.icpepId) {
           return res.status(400).json({ 
             status: false, 
-            message: "ICPEP ID already exists" 
+            message: "ICPEP ID already exists",
+            field: "icpepId"
           });
         } else {
           return res.status(400).json({ 
             status: false, 
-            message: "Duplicate entry found" 
+            message: "Duplicate entry found",
+            field: "general"
           });
         }
       }
