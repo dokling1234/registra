@@ -74,25 +74,25 @@ const createEvent = async (req, res) => {
           price: String(event.price ?? ""),
         },
         android: {
-          priority: 'high',
+          priority: "high",
           notification: {
-            channelId: 'default',
-            sound: 'default',
+            channelId: "default",
+            sound: "default",
           },
         },
         apns: {
           headers: {
-            'apns-push-type': 'alert',
-            'apns-priority': '10',
+            "apns-push-type": "alert",
+            "apns-priority": "10",
           },
           payload: {
-            aps: { sound: 'default' },
+            aps: { sound: "default" },
           },
         },
         topic: "allUsers", // all users subscribed to this topic get the notification
       };
       console.log("notificationData", notificationData);
-      
+
       // Add image if available
       if (event.image) {
         // Use 'image' property for FCM v1 / Admin SDK support
@@ -582,12 +582,58 @@ const getEventByTitle = async (req, res) => {
 };
 
 const mobileRegisterForEvent = async (req, res) => {
-  const { eventId, userId, email, paymentStatus, ticketQR, fullName, receipt } =
-    req.body;
+  const {
+    eventId,
+    userId,
+    email,
+    paymentStatus,
+    ticketQR,
+    fullName,
+    receipt,
+    registrationId,
+  } = req.body;
 
   try {
-    const event = await eventModel.findById(eventId);
+    let event = null;
+    if (eventId) {
+      event = await eventModel.findById(eventId);
+    }
+    // Fallback: locate event by existing registration when eventId missing
+    if (!event && registrationId) {
+      event = await eventModel.findOne({ "registrations._id": registrationId });
+    }
+
     if (!event) return res.status(404).json({ message: "Event not found" });
+
+    // If resubmitting for an existing registration
+    if (registrationId) {
+      const reg = event.registrations.id(registrationId);
+      if (!reg) {
+        return res.status(404).json({ message: "Registration not found" });
+      }
+      // Update receipt and reset status to pending; clear QR until re-approved
+      reg.receipt = receipt;
+      reg.receipt;
+      reg.paymentStatus = "pending";
+      reg.ticketQR = "";
+      await event.save();
+      return res.status(200).json({ message: "Receipt resubmitted!" });
+    }
+
+    // Prevent duplicates: if user already registered, update receipt instead
+    const existing = event.registrations.find(
+      (r) => r.userId?.toString() === String(userId)
+    );
+    if (existing) {
+      existing.receipt = receipt;
+      existing.receipt;
+      existing.paymentStatus = "pending";
+      existing.ticketQR = "";
+      await event.save();
+      return res
+        .status(200)
+        .json({ message: "Existing registration updated with new receipt." });
+    }
 
     const registrations = {
       fullName,
