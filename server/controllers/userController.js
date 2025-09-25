@@ -160,7 +160,7 @@ const sendOTPHandler = async (req, res, next) => {
 
     const otp = generateOTP();
     otpStorage[email] = { code: otp, timestamp: Date.now() };
-    await sendOTP(email, otp);
+    await sendResetOTP(email, otp);
 
     res.status(200).json({ status: true, message: "OTP sent to your email" });
   } catch (error) {
