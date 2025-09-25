@@ -42,6 +42,15 @@ app.use(
     },
   })
 );
+
+app.use((req, res, next) => {
+  res.setHeader(
+    "Permissions-Policy",
+    "geolocation=(self), camera=(self), microphone=()"
+  );
+  next();
+});
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
