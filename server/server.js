@@ -49,8 +49,14 @@ app.use(
         "https://www.google-analytics.com",
         "https://res.cloudinary.com",
         "https://*.cloudinary.com",
+        "https://cdn.pixabay.com",
       ],
-      connectSrc: ["'self'", "https://registra-b7181b9e50a0.herokuapp.com"],
+      connectSrc: [
+        "'self'",
+        "https://registra-b7181b9e50a0.herokuapp.com",
+        "https://*.tile.openstreetmap.org",
+        "https://api.maptiler.com",
+      ],
       frameAncestors: ["'self'"],
     },
   })
