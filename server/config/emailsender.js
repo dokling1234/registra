@@ -26,7 +26,33 @@ function generateOTP() {
 
 }
 
-async function sendOTP(email, otp, template = PASSWORD_RESET_TEMPLATE, subject = "OTP Verification") {
+async function sendOTP(email, otp, template = EMAIL_VERIFY_TEMPLATE, subject = "OTP Verification") {
+  console.log(email+"emailsender"+otp);
+  if (!canResendOTP(email)) {
+    console.log(email);
+    throw new Error("You can only request a new OTP every 5 minutes.");
+  }
+  otpStorage[email] = otp;
+  const mailOptions = {
+    from: "pernida12345@gmail.com",
+    to: email,
+    subject: subject,
+    html: template.replace("{{otp}}", otp).replace(
+      "{{email}}",
+      email
+    ),
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`OTP sent to ${email}`);
+  } catch (error) {
+    console.error("Error sending email:", error.message, error.stack);
+    throw new Error("Failed to send OTP");
+  }
+}
+
+async function sendResetOTP(email, otp, template = PASSWORD_RESET_TEMPLATE, subject = "OTP Verification") {
   console.log(email+"emailsender"+otp);
   if (!canResendOTP(email)) {
     console.log(email);
@@ -65,6 +91,7 @@ module.exports = {
   generateOTP,
   sendOTP,
   canResendOTP,
+  sendResetOTP,
   otpStorage,
   transporter,
   otpTimestamps,

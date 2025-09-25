@@ -3,7 +3,7 @@ const userModel = require("../models/userModel.js");
 const adminModel = require("../models/adminModel.js");
 const UserService = require("../services/user.services.js");
 const { otpStorage } = require("../config/emailsender.js");
-const { generateOTP, sendOTP } = require("../config/emailsender.js");
+const { generateOTP, sendOTP, sendResetOTP } = require("../config/emailsender.js");
 
 const MAX_OTP_AGE = 1 * 60 * 1000;
 
@@ -474,7 +474,6 @@ const checkEmail = async (req, res) => {
 };
 
 const mobileRegister = async (req, res, next) => {
-  console.log("ssssssssssssssssssssssssssss");
   try {
     const {
       fullName,
@@ -489,7 +488,6 @@ const mobileRegister = async (req, res, next) => {
       profileImage = "default-profile.png",
       disabled = false,
     } = req.body;
-    console.log("mobileRegister", req.body);
     // Check individual fields and return specific errors
     if (!fullName || fullName.trim() === '') {
       return res

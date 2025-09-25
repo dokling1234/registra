@@ -1,3 +1,4 @@
+const helmet = require("helmet");
 const express = require("express");
 const cors = require("cors");
 require("dotenv/config");
@@ -26,6 +27,21 @@ const allowedOrigins = [
   "https://registra-b7181b9e50a0.herokuapp.com"
 ]; // allowed to add to frontend
 
+app.use(helmet());
+app.use(
+  helmet.contentSecurityPolicy({
+    useDefaults: true,
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://cdn.jsdelivr.net", "https://www.googletagmanager.com"],
+      styleSrc: ["'self'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https://www.google-analytics.com"],
+      connectSrc: ["'self'", "https://registra-b7181b9e50a0.herokuapp.com"],
+      frameAncestors: ["'self'"]
+    },
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
