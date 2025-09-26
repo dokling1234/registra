@@ -467,7 +467,7 @@ const Login = () => {
 
         <div className="mt-6 text-center">
           <a
-            href="https://github.com/dokling1234/registra/releases/download/v0.01/app-release1.apk"
+            href="https://github.com/dokling1234/registra/releases/download/v0.01/Registra-release.apk"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors text-sm"
