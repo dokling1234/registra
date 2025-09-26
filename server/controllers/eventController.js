@@ -697,7 +697,11 @@ const getTicketQR = async (req, res) => {
       return res.status(404).json({ message: "Registration not found." });
     }
 
-    return res.status(200).json({ ticketQR: registration.ticketQR });
+    return res.status(200).json({ 
+      ticketQR: registration.ticketQR,
+      attended: !!registration.attended,
+      paymentStatus: registration.paymentStatus || undefined
+    });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
