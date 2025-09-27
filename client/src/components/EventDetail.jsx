@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState, useContext } from "react";
 import {
-  Navigate,
   useNavigate,
   useParams,
   useLocation,
@@ -28,6 +27,7 @@ const EventDetail = () => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
+
   const renderActionButtons = () => (
     <div className="event-actions" role="group" aria-label="Event actions">
       <button
@@ -53,7 +53,7 @@ const EventDetail = () => {
             if (result.isConfirmed) {
               Swal.fire({
                 title: "Booking Confirmed!",
-                text: "Redirecting to payment/receipt upload...",
+                text: "Redirecting to receipt upload...",
                 icon: "success",
                 timer: 1500,
                 showConfirmButton: false,
@@ -85,6 +85,7 @@ const EventDetail = () => {
       )}
     </div>
   );
+
   const createGoogleCalendarLink = (event) => {
     const startDate = new Date(event.date);
     const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // 2-hour duration
@@ -101,6 +102,7 @@ const EventDetail = () => {
       endDate
     )}&details=${details}&location=${location}&sf=true&output=xml`;
   };
+
   useEffect(() => {
     const fetchEvent = async () => {
       try {
@@ -144,13 +146,12 @@ const EventDetail = () => {
           "https://api.maptiler.com/maps/streets-v2/style.json?key=cyT8CBxXMzVIORtIP1Pj",
         center: [lng, lat],
         zoom: 16,
-        attributionControl: false, // Disable attribution for cleaner look
+        attributionControl: false,
       });
 
       mapRef.current.on("load", () => {
         setMapLoading(false);
 
-        // Add marker after map loads
         const marker = new maplibregl.Marker({ color: "#FF0000" })
           .setLngLat([lng, lat])
           .setPopup(
@@ -172,7 +173,6 @@ const EventDetail = () => {
       setMapLoading(false);
     }
 
-    // Cleanup function
     return () => {
       if (mapRef.current) {
         mapRef.current.remove();
@@ -245,10 +245,12 @@ const EventDetail = () => {
             </div>
           </div>
         </div>
+
         {/* Mobile sticky action bar */}
         <div className="mobile-action-bar" aria-hidden={false}>
           {renderActionButtons()}
         </div>
+
         {/* Share This Event */}
         <div className="event-share-section">
           <h2>Share This Event</h2>
@@ -285,20 +287,15 @@ const EventDetail = () => {
               }
             />
 
-            {/* Copy Link + Details */}
+            {/* Copy Link (URL only) */}
             <FaLink
               className="share-icon copy"
               onClick={() => {
-                const eventSummary = `${event.title}\n${
-                  event.about
-                }\nDate: ${new Date(event.date).toDateString()}\n${
-                  window.location.href
-                }`;
-                navigator.clipboard.writeText(eventSummary);
+                navigator.clipboard.writeText(window.location.href);
                 Swal.fire({
                   icon: "success",
-                  title: "Details copied!",
-                  text: "Event details and link have been copied to your clipboard.",
+                  title: "Link copied!",
+                  text: "The event link has been copied to your clipboard.",
                   showConfirmButton: false,
                   timer: 1500,
                 });
