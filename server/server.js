@@ -17,6 +17,8 @@ const superAdminRouter = require("./routes/superAdminRoutes.js");
 const activityLogRoutes = require("./routes/activityLogRoutes.js");
 
 const path = require("path");
+const fs = require("fs");
+const axios = require("axios");
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -90,15 +92,10 @@ app.use(
   })
 );
 
-// Serve static files from uploads directory
-
 // API ENDPOINTS
-// app.get("/", (req, res) => {
-//   res.send("API is running");
-// });
 app.use("/api/feedback", feedbackRoutes);
-app.use("/api/auth", authRouter); // auth routes
-app.use("/api/user", userRouter); // user routes
+app.use("/api/auth", authRouter);
+app.use("/api/user", userRouter);
 app.use("/api/mobile-user", mobileUserRouter);
 app.use("/api/events", eventRouter);
 app.use("/api/mobile-events", mobileEventRouter);
@@ -108,17 +105,52 @@ app.use("/api/mobile-feedback", mobileFeedbackRoutes);
 app.use("/api/superadmin", superAdminRouter);
 app.use("/api/activity-logs", activityLogRoutes);
 
-// app.use((req, res, next) => {
-//   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-//   console.log(`Request from IP: ${ip}, Method: ${req.method}, URL: ${req.url}`);
-//   next();
-// });
-
+// -------------------- PRODUCTION BUILD --------------------
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../client/build")));
+
+  // ✅ Dynamic OG tags for event pages
+  app.get("/events/:id", async (req, res) => {
+    try {
+      const eventId = req.params.id;
+
+      // Fetch event from your backend API
+      const response = await axios.get(
+        `${process.env.BASE_URL || "http://localhost:4000"}/api/events/${eventId}`
+      );
+      const event = response.data.event;
+
+      // Load React index.html
+      const indexFile = path.resolve(__dirname, "../client/build/index.html");
+      let html = fs.readFileSync(indexFile, "utf8");
+
+      // Build Open Graph meta tags
+      const metaTags = `
+        <title>${event.title}</title>
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="${req.protocol}://${req.get("host")}${req.originalUrl}" />
+        <meta property="og:title" content="${event.title}" />
+        <meta property="og:description" content="${event.about}" />
+        <meta property="og:image" content="${event.image}" />
+        <meta property="og:site_name" content="Registra" />
+        <meta property="og:locale" content="en_US" />
+      `;
+
+      // Inject OG tags into <head>
+      html = html.replace("<head>", `<head>${metaTags}`);
+
+      res.send(html);
+    } catch (err) {
+      console.error("Error generating OG tags:", err.message);
+      res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
+    }
+  });
+
+  // Fallback: all other routes → React app
   app.get("*", (req, res) => {
     res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
   });
 }
+// ----------------------------------------------------------
 
 app.listen(port, () => console.log(`Server is running on port ${port}`));
