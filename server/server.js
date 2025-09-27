@@ -110,41 +110,49 @@ if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../client/build")));
 
   // ✅ Dynamic OG tags for event pages
-  app.get("/events/:id", async (req, res) => {
-    try {
-      const eventId = req.params.id;
+  // ✅ Dynamic OG tags for event pages (Bot-aware)
+app.get("/events/:id", async (req, res) => {
+  try {
+    const userAgent = req.headers["user-agent"] || "";
+    const isBot = /facebookexternalhit|facebot|twitterbot|linkedinbot|whatsapp|discord/i.test(userAgent);
 
-      // Fetch event from your backend API
-      const response = await axios.get(
-        `${process.env.BASE_URL || "http://localhost:4000"}/api/events/${eventId}`
-      );
-      const event = response.data.event;
+    const eventId = req.params.id;
+    const response = await axios.get(
+      `${process.env.BASE_URL || "http://localhost:4000"}/api/events/${eventId}`
+    );
+    const event = response.data.event;
 
-      // Load React index.html
-      const indexFile = path.resolve(__dirname, "../client/build/index.html");
-      let html = fs.readFileSync(indexFile, "utf8");
-
-      // Build Open Graph meta tags
-      const metaTags = `
-        <title>${event.title}</title>
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="${req.protocol}://${req.get("host")}${req.originalUrl}" />
-        <meta property="og:title" content="${event.title}" />
-        <meta property="og:description" content="${event.about}" />
-        <meta property="og:image" content="${event.image}" />
-        <meta property="og:site_name" content="Registra" />
-        <meta property="og:locale" content="en_US" />
-      `;
-
-      // Inject OG tags into <head>
-      html = html.replace("<head>", `<head>${metaTags}`);
-
-      res.send(html);
-    } catch (err) {
-      console.error("Error generating OG tags:", err.message);
-      res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
+    // If it's a bot — send a minimal OG response
+    if (isBot) {
+      return res.send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8" />
+            <title>${event.title}</title>
+            <meta property="og:type" content="website" />
+            <meta property="og:url" content="${req.protocol}://${req.get("host")}${req.originalUrl}" />
+            <meta property="og:title" content="${event.title}" />
+            <meta property="og:description" content="${event.about}" />
+            <meta property="og:image" content="${event.image}" />
+            <meta property="og:site_name" content="Registra" />
+            <meta property="og:locale" content="en_US" />
+          </head>
+          <body>
+            <script>window.location.href = "${req.originalUrl}";</script>
+          </body>
+        </html>
+      `);
     }
-  });
+
+    // ✅ Otherwise — normal users get React frontend
+    res.sendFile(path.resolve(__dirname, "../client/build/index.html"));
+  } catch (err) {
+    console.error("Error generating OG tags:", err.message);
+    res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
+  }
+});
+
 
   // Fallback: all other routes → React app
   app.get("*", (req, res) => {
