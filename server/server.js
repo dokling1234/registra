@@ -46,6 +46,7 @@ app.use(
       imgSrc: [
         "'self'",
         "data:",
+        "blob:",
         "https://res.cloudinary.com",
         "https://*.cloudinary.com",
         "https://cdn.pixabay.com",
