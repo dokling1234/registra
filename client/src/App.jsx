@@ -104,10 +104,15 @@ const App = () => {
           path="/superadmin/events/reschedule/:id"
           element={<SuperAdminReschedule />}
         />
+        <Route
+          path="/events"
+          element={
+            <Suspense fallback={<div>Loading Events...</div>}>
+              <EventList />
+            </Suspense>
+          }
+        />
       </Routes>
-      <Suspense fallback={<div>Loading...</div>}>
-        <Route path="/events" element={<EventList />} />
-      </Suspense>
     </AppContextProvider>
   );
 };
