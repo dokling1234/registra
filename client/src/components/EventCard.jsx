@@ -57,9 +57,10 @@ const EventCard = ({ event }) => {
           <img
             src={event.image || placeholderImage}
             alt={event.title}
-            loading="lazy" 
+            loading="lazy"
             decoding="async"
             className="event-card-image"
+            style={{ objectFit: "cover", maxHeight: "200px", width: "100%" }} 
           />
           <span className="event-card-price-badge">
             ₱{event.price?.toLocaleString() || "Free"}
