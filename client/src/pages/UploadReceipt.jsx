@@ -27,7 +27,7 @@ const UploadReceipt = () => {
       navigate("/");
     }
   }, [isAdmin, navigate]);
-  
+
   useEffect(() => {
     if (userData) {
       console.log(userData);
@@ -129,7 +129,7 @@ const UploadReceipt = () => {
             <input
               type="text"
               className="account-name"
-              value="Mr. Yoso"
+              value={accountName || "Not Set"}
               readOnly
             />
 
@@ -137,7 +137,7 @@ const UploadReceipt = () => {
             <input
               type="text"
               className="mobile-number"
-              value="09123456789"
+              value={mobileNumber || "not set"}
               readOnly
             />
 
