@@ -1,4 +1,4 @@
-import React, { useEffect, useContext } from "react";
+import React, { useEffect, useContext, Suspense, lazy } from "react";
 import { ToastContainer } from "react-toastify";
 import { AppContent } from "./context/AppContext";
 import { AppContextProvider } from "./context/AppContext";
@@ -8,7 +8,7 @@ import Login from "./pages/Login";
 import Home from "./pages/Home";
 import EmailVerify from "./pages/EmailVerify";
 import ResetPassword from "./pages/ResetPassword";
-import EventList from "./pages/EventList";
+const EventList = lazy(() => import("./pages/EventList"));
 import EventDetail from "./components/EventDetail";
 import RegisteredEvents from "./pages/RegisteredEvents";
 import RegisteredEventDetail from "./components/RegisteredEventDetail";
@@ -52,7 +52,6 @@ const App = () => {
         <Route path="/home" element={<Home />} />
         <Route path="/email-verify" element={<EmailVerify />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/events" element={<EventList />} />
         <Route path="events/:id" element={<EventDetail />} />
         <Route path="events/register" element={<EventDetail />} />
         <Route path="/events/registered" element={<RegisteredEvents />} />
@@ -106,6 +105,9 @@ const App = () => {
           element={<SuperAdminReschedule />}
         />
       </Routes>
+      <Suspense fallback={<div>Loading...</div>}>
+        <Route path="/events" element={<EventList />} />
+      </Suspense>
     </AppContextProvider>
   );
 };
