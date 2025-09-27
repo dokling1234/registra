@@ -50,6 +50,7 @@ app.use(
         "https://*.cloudinary.com",
         "https://cdn.pixabay.com",
         "https://www.icpepncr.org",
+        "https://logos-world.net",
         "https://www.google-analytics.com",
       ],
       connectSrc: [
@@ -57,7 +58,7 @@ app.use(
         "https://registra-b7181b9e50a0.herokuapp.com",
         "https://*.tile.openstreetmap.org",
         "https://api.maptiler.com",
-        "https://api.cloudinary.com", 
+        "https://api.cloudinary.com",
       ],
       frameAncestors: ["'self'"],
       workerSrc: ["'self'", "blob:"],
