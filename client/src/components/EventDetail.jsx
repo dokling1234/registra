@@ -263,11 +263,11 @@ const EventDetail = () => {
             <FaFacebook
               className="share-icon facebook"
               onClick={() => {
-                const shareUrl = `${window.location.origin}/events/${event._id}`; // ✅ Direct backend URL
+                const shareUrl = `${window.location.origin}/events/${event._id}`; 
                 const shareText = `${event.title} - ${
                   event.about
                 }\nDate: ${new Date(event.date).toDateString()}`;
-
+                print(event.title + " " + event.about + " " +event._id +  " ")
                 window.open(
                   `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
                     shareUrl
