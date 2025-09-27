@@ -265,7 +265,6 @@ const EventDetail = () => {
                       event.date
                     ).toDateString()}`
                   )}`,
-                  console.log(event),
                   "_blank"
                 )
               }
