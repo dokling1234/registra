@@ -7,28 +7,32 @@ import Footer from "../components/Footer";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import "./EventList.css";
+// EventList.jsx
+// ...imports stay the same
 
-const EventList = ({ filters }) => {
+const EventList = ({ filters, pageSize = 3 }) => {
   const { userData, backendUrl } = useContext(AppContent);
   const location = useLocation();
 
   const [events, setEvents] = useState([]);
   const [pastEvents, setPastEvents] = useState([]);
-  const [visibleUpcoming, setVisibleUpcoming] = useState(3);
-  const [visiblePast, setVisiblePast] = useState(3);
+
+  // use pageSize everywhere instead of magic "3"
+  const [visibleUpcoming, setVisibleUpcoming] = useState(pageSize);
+  const [visiblePast, setVisiblePast] = useState(pageSize);
 
   const upcomingRef = useRef(null);
   const pastRef = useRef(null);
   const upcomingLastCardRef = useRef(null);
   const pastLastCardRef = useRef(null);
 
-  const defaultFilters = {
-    eventType: '',
-    location: '',
-    date: ''
-  };
-
+  const defaultFilters = { eventType: "", location: "", date: "" };
   const appliedFilters = filters || defaultFilters;
+
+  useEffect(() => {
+    setVisibleUpcoming(pageSize);
+    setVisiblePast(pageSize);
+  }, [pageSize, appliedFilters]);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -45,19 +49,27 @@ const EventList = ({ filters }) => {
         let filtered = [...targetFiltered];
         if (appliedFilters.eventType) {
           filtered = filtered.filter(
-            (e) => e.eventType?.toLowerCase() === appliedFilters.eventType.toLowerCase()
+            (e) =>
+              e.eventType?.toLowerCase() ===
+              appliedFilters.eventType.toLowerCase()
           );
         }
         if (appliedFilters.location) {
-          filtered = filtered.filter(
-            (e) => e.location?.toLowerCase().includes(appliedFilters.location.toLowerCase())
+          filtered = filtered.filter((e) =>
+            e.location
+              ?.toLowerCase()
+              .includes(appliedFilters.location.toLowerCase())
           );
         }
         if (appliedFilters.startDate || appliedFilters.endDate) {
           filtered = filtered.filter((e) => {
             const eventDate = new Date(e.date);
-            const start = appliedFilters.startDate ? new Date(appliedFilters.startDate) : null;
-            const end = appliedFilters.endDate ? new Date(appliedFilters.endDate) : null;
+            const start = appliedFilters.startDate
+              ? new Date(appliedFilters.startDate)
+              : null;
+            const end = appliedFilters.endDate
+              ? new Date(appliedFilters.endDate)
+              : null;
 
             if (start && end) return eventDate >= start && eventDate <= end;
             if (start) return eventDate >= start;
@@ -66,38 +78,25 @@ const EventList = ({ filters }) => {
           });
         }
 
-        const currentDate = new Date();
-        const upcoming = filtered.filter(event => new Date(event.date) >= currentDate);
-        const past = filtered.filter(event => new Date(event.date) < currentDate);
-
-        setEvents(upcoming);
-        setPastEvents(past);
+        const now = new Date();
+        setEvents(filtered.filter((e) => new Date(e.date) >= now));
+        setPastEvents(filtered.filter((e) => new Date(e.date) < now));
       } catch (err) {
         console.error("Error fetching events:", err.response?.data || err.message);
       }
     };
 
-    if (userData?.userType) {
-      fetchEvents();
-    }
-  }, [userData, appliedFilters]);
+    if (userData?.userType) fetchEvents();
+  }, [userData, appliedFilters, backendUrl]);
 
   const handleScroll = (type, ref, cardRef = null) => {
     const offset = 100;
-
     if (type === "less" && ref?.current) {
-      window.scrollTo({
-        top: ref.current.offsetTop - offset,
-        behavior: "smooth"
-      });
+      window.scrollTo({ top: ref.current.offsetTop - offset, behavior: "smooth" });
     } else if (type === "more" && cardRef?.current) {
       const rect = cardRef.current.getBoundingClientRect();
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const targetTop = rect.top + scrollTop - offset;
-      window.scrollTo({
-        top: targetTop,
-        behavior: "smooth"
-      });
+      window.scrollTo({ top: rect.top + scrollTop - offset, behavior: "smooth" });
     }
   };
 
@@ -109,6 +108,7 @@ const EventList = ({ filters }) => {
           <h2 className="section-heading" ref={upcomingRef}>
             Upcoming <span className="highlight">Events</span>
           </h2>
+
           <div className="event-grid">
             <AnimatePresence>
               {events.slice(0, visibleUpcoming).map((event, idx) => {
@@ -128,15 +128,16 @@ const EventList = ({ filters }) => {
               })}
             </AnimatePresence>
           </div>
-          {events.length > 3 && (
+
+          {events.length > pageSize && (
             <div className="event-button-group">
               {visibleUpcoming < events.length ? (
                 <button
                   onClick={() => {
-                    setVisibleUpcoming(prev => {
-                      const newCount = prev + 3;
+                    setVisibleUpcoming((prev) => {
+                      const next = Math.min(prev + pageSize, events.length);
                       setTimeout(() => handleScroll("more", null, upcomingLastCardRef), 300);
-                      return newCount;
+                      return next;
                     });
                   }}
                   className="event-toggle-btn"
@@ -146,7 +147,7 @@ const EventList = ({ filters }) => {
               ) : (
                 <button
                   onClick={() => {
-                    setVisibleUpcoming(3);
+                    setVisibleUpcoming(pageSize);
                     setTimeout(() => handleScroll("less", upcomingRef), 300);
                   }}
                   className="event-toggle-btn"
@@ -160,6 +161,7 @@ const EventList = ({ filters }) => {
           <h2 className="section-heading past-events-heading" ref={pastRef}>
             Past <span className="highlight">Events</span>
           </h2>
+
           <div className="event-grid">
             <AnimatePresence>
               {pastEvents.slice(0, visiblePast).map((event, idx) => {
@@ -179,15 +181,16 @@ const EventList = ({ filters }) => {
               })}
             </AnimatePresence>
           </div>
-          {pastEvents.length > 3 && (
+
+          {pastEvents.length > pageSize && (
             <div className="event-button-group">
               {visiblePast < pastEvents.length ? (
                 <button
                   onClick={() => {
-                    setVisiblePast(prev => {
-                      const newCount = prev + 3;
+                    setVisiblePast((prev) => {
+                      const next = Math.min(prev + pageSize, pastEvents.length);
                       setTimeout(() => handleScroll("more", null, pastLastCardRef), 300);
-                      return newCount;
+                      return next;
                     });
                   }}
                   className="event-toggle-btn"
@@ -197,7 +200,7 @@ const EventList = ({ filters }) => {
               ) : (
                 <button
                   onClick={() => {
-                    setVisiblePast(3);
+                    setVisiblePast(pageSize);
                     setTimeout(() => handleScroll("less", pastRef), 300);
                   }}
                   className="event-toggle-btn"
