@@ -176,6 +176,7 @@ const getEvents = async (req, res) => {
       maxDistance,
       userType,
       membership,
+      date,
     } = req.query;
     const match = {};
 
@@ -215,7 +216,25 @@ const getEvents = async (req, res) => {
       });
       match.monthName = month;
     }
+    
+    if (date) {
+      const selectedDate = new Date(date);
+      const startOfDay = new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate()
+      );
+      const endOfDay = new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate() + 1
+      );
 
+      match.date = {
+        $gte: startOfDay,
+        $lt: endOfDay,
+      };
+    }
     pipeline.push({ $match: match });
 
     const events = await eventModel.aggregate(pipeline);
@@ -697,10 +716,10 @@ const getTicketQR = async (req, res) => {
       return res.status(404).json({ message: "Registration not found." });
     }
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       ticketQR: registration.ticketQR,
       attended: !!registration.attended,
-      paymentStatus: registration.paymentStatus || undefined
+      paymentStatus: registration.paymentStatus || undefined,
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });
