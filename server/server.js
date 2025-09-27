@@ -22,16 +22,20 @@ const axios = require("axios");
 
 const app = express();
 const port = process.env.PORT || 4000;
+
+// connect to Mongo
 connectDB();
 
+// allowed origins
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
   "http://192.168.1.212:4000",
   "http://192.168.1.212:3000",
   "https://registra-b7181b9e50a0.herokuapp.com",
-]; // allowed to add to frontend
+];
 
+// helmet + CSP
 app.use(helmet());
 app.use(
   helmet.contentSecurityPolicy({
@@ -69,6 +73,7 @@ app.use(
   })
 );
 
+// permissions policy
 app.use((req, res, next) => {
   res.setHeader(
     "Permissions-Policy",
@@ -92,7 +97,7 @@ app.use(
   })
 );
 
-// API ENDPOINTS
+// -------------------- API routes --------------------
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
@@ -109,56 +114,56 @@ app.use("/api/activity-logs", activityLogRoutes);
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../client/build")));
 
-  // ✅ Dynamic OG tags for event pages
-  // ✅ Dynamic OG tags for event pages (Bot-aware)
-app.get("/events/:id", async (req, res) => {
-  try {
-    const userAgent = req.headers["user-agent"] || "";
-    const isBot = /facebookexternalhit|facebot|twitterbot|linkedinbot|whatsapp|discord/i.test(userAgent);
-
+  // ✅ Dynamic OG tags for event detail pages
+  app.get("/events/:id", async (req, res) => {
     const eventId = req.params.id;
-    const response = await axios.get(
-      `${process.env.BASE_URL || "http://localhost:4000"}/api/events/${eventId}`
-    );
-    const event = response.data.event;
+    console.log("OG request for event:", eventId);
 
-    // If it's a bot — send a minimal OG response
-    if (isBot) {
-      return res.send(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="UTF-8" />
-            <title>${event.title}</title>
-            <meta property="og:type" content="website" />
-            <meta property="og:url" content="${req.protocol}://${req.get("host")}${req.originalUrl}" />
-            <meta property="og:title" content="${event.title}" />
-            <meta property="og:description" content="${event.about}" />
-            <meta property="og:image" content="${event.image}" />
-            <meta property="og:site_name" content="Registra" />
-            <meta property="og:locale" content="en_US" />
-          </head>
-          <body>
-            <script>window.location.href = "${req.originalUrl}";</script>
-          </body>
-        </html>
-      `);
+    try {
+      // fetch event data from API
+      const response = await axios.get(
+        `${process.env.BASE_URL || "http://localhost:4000"}/api/events/${eventId}`
+      );
+      const event = response.data.event;
+
+      // load CRA index.html
+      const indexFile = path.resolve(__dirname, "../client/build/index.html");
+      let html = fs.readFileSync(indexFile, "utf8");
+
+      // build meta tags
+      const metaTags = `
+        <title>${event.title}</title>
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="${req.protocol}://${req.get("host")}${req.originalUrl}" />
+        <meta property="og:title" content="${event.title}" />
+        <meta property="og:description" content="${event.about} | Date: ${new Date(
+        event.date
+      ).toDateString()} | Location: ${event.location}" />
+        <meta property="og:image" content="${event.image}" />
+        <meta property="og:site_name" content="Registra" />
+        <meta property="og:locale" content="en_US" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="${event.title}" />
+        <meta name="twitter:description" content="${event.about}" />
+        <meta name="twitter:image" content="${event.image}" />
+      `;
+
+      // ✅ safer inject into <head>
+      html = html.replace(/<head[^>]*>/, `<head>${metaTags}`);
+      res.send(html);
+    } catch (err) {
+      console.error("Error generating OG tags:", err.message);
+      res.sendFile(path.resolve(__dirname, "../client/build/index.html"));
     }
+  });
 
-    // ✅ Otherwise — normal users get React frontend
-    res.sendFile(path.resolve(__dirname, "../client/build/index.html"));
-  } catch (err) {
-    console.error("Error generating OG tags:", err.message);
-    res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
-  }
-});
-
-
-  // Fallback: all other routes → React app
+  // fallback for all other routes
   app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
+    res.sendFile(path.resolve(__dirname, "../client/build/index.html"));
   });
 }
-// ----------------------------------------------------------
 
-app.listen(port, () => console.log(`Server is running on port ${port}`));
+// -------------------- START SERVER --------------------
+app.listen(port, () =>
+  console.log(`✅ Server is running on http://localhost:${port}`)
+);

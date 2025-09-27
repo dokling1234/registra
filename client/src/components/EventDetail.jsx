@@ -70,11 +70,7 @@ const EventDetail = () => {
         aria-label={isRegistered ? "Already registered" : "Book now"}
         disabled={isRegistered || isPastEvent}
       >
-        {isRegistered
-          ? "Already Registered"
-          : isPastEvent
-          ? "Event Ended"
-          : "Book Now"}
+        {isRegistered ? "Already Registered" : isPastEvent ? "Event Ended" : "Book Now"}
       </button>
 
       {!isPastEvent && (
@@ -238,9 +234,7 @@ const EventDetail = () => {
                     <p>We couldn’t load the map right now.</p>
                     {Array.isArray(event?.coordinates) && (
                       <>
-                        <p className="map-fallback-text">
-                          Here are the coordinates you can use:
-                        </p>
+                        <p className="map-fallback-text">Here are the coordinates you can use:</p>
                         <p className="map-coordinates">{`${event.coordinates[1]}, ${event.coordinates[0]}`}</p>
                       </>
                     )}
@@ -262,19 +256,18 @@ const EventDetail = () => {
             {/* Facebook */}
             <FaFacebook
               className="share-icon facebook"
-              onClick={() => {
-                const shareUrl = `${window.location.origin}/events/${event._id}`; 
-                const shareText = `${event.title} - ${
-                  event.about
-                }\nDate: ${new Date(event.date).toDateString()}`;
-                print(event.title + " " + event.about + " " +event._id +  " ")
+              onClick={() =>
                 window.open(
                   `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                    shareUrl
-                  )}&quote=${encodeURIComponent(shareText)}`,
+                    window.location.href
+                  )}&quote=${encodeURIComponent(
+                    `${event.title} - ${event.about}\nDate: ${new Date(
+                      event.date
+                    ).toDateString()}`
+                  )}`,
                   "_blank"
-                );
-              }}
+                )
+              }
             />
 
             {/* Twitter */}
