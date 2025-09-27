@@ -1,4 +1,4 @@
-//const helmet = require("helmet");
+const helmet = require("helmet");
 const express = require("express");
 const cors = require("cors");
 require("dotenv/config");
@@ -30,50 +30,50 @@ const allowedOrigins = [
   "https://registra-b7181b9e50a0.herokuapp.com",
 ]; // allowed to add to frontend
 
-// app.use(helmet());
-// app.use(
-//   helmet.contentSecurityPolicy({
-//     useDefaults: true,
-//     directives: {
-//       defaultSrc: ["'self'"],
-//       scriptSrc: [
-//         "'self'",
-//         "https://cdn.jsdelivr.net",
-//         "https://www.googletagmanager.com",
-//       ],
-//       styleSrc: ["'self'", "https://fonts.googleapis.com", "'unsafe-inline'"],
-//       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-//       imgSrc: [
-//         "'self'",
-//         "data:",
-//         "blob:",
-//         "https://res.cloudinary.com",
-//         "https://*.cloudinary.com",
-//         "https://cdn.pixabay.com",
-//         "https://www.icpepncr.org",
-//         "https://logos-world.net",
-//         "https://www.google-analytics.com",
-//       ],
-//       connectSrc: [
-//         "'self'",
-//         "https://registra-b7181b9e50a0.herokuapp.com",
-//         "https://*.tile.openstreetmap.org",
-//         "https://api.maptiler.com",
-//         "https://api.cloudinary.com",
-//       ],
-//       frameAncestors: ["'self'"],
-//       workerSrc: ["'self'", "blob:"],
-//     },
-//   })
-// );
+app.use(helmet());
+app.use(
+  helmet.contentSecurityPolicy({
+    useDefaults: true,
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "https://cdn.jsdelivr.net",
+        "https://www.googletagmanager.com",
+      ],
+      styleSrc: ["'self'", "https://fonts.googleapis.com", "'unsafe-inline'"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "blob:",
+        "https://res.cloudinary.com",
+        "https://*.cloudinary.com",
+        "https://cdn.pixabay.com",
+        "https://www.icpepncr.org",
+        "https://logos-world.net",
+        "https://www.google-analytics.com",
+      ],
+      connectSrc: [
+        "'self'",
+        "https://registra-b7181b9e50a0.herokuapp.com",
+        "https://*.tile.openstreetmap.org",
+        "https://api.maptiler.com",
+        "https://api.cloudinary.com",
+      ],
+      frameAncestors: ["'self'"],
+      workerSrc: ["'self'", "blob:"],
+    },
+  })
+);
 
-// app.use((req, res, next) => {
-//   res.setHeader(
-//     "Permissions-Policy",
-//     "geolocation=(self), camera=(self), microphone=()"
-//   );
-//   next();
-// });
+app.use((req, res, next) => {
+  res.setHeader(
+    "Permissions-Policy",
+    "geolocation=(self), camera=(self), microphone=()"
+  );
+  next();
+});
 
 app.use(express.json());
 app.use(cookieParser());
