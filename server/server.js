@@ -57,6 +57,7 @@ app.use(
         "https://registra-b7181b9e50a0.herokuapp.com",
         "https://*.tile.openstreetmap.org",
         "https://api.maptiler.com",
+        "https://api.cloudinary.com", 
       ],
       frameAncestors: ["'self'"],
       workerSrc: ["'self'", "blob:"],
