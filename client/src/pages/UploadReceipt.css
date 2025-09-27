@@ -116,15 +116,23 @@ input[type="text"]:hover {
 .receipt-preview {
   margin-top: 1rem;
   text-align: center;
+  max-height: 250px; /* prevent expanding too much */
+  overflow: hidden; /* hide overflow */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 12px;
+  background: #f9f9f9;
+  padding: 0.5rem;
 }
 
 .receipt-preview img {
   max-width: 100%;
-  height: auto;
-  border-radius: 12px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  max-height: 230px; /* keep it inside preview box */
+  object-fit: contain; /* scale image nicely */
+  border-radius: 8px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
 }
-
 /* Action buttons */
 .action-buttons {
   display: flex;

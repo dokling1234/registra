@@ -19,15 +19,15 @@ const UploadReceipt = () => {
   const [receipt, setReceipt] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const navigate = useNavigate();
-  // Set userData to form fields when component mounts
 
+  // Redirect if admin
   useEffect(() => {
     if (isAdmin) {
-      // Not an admin, redirect to home or another page
       navigate("/");
     }
   }, [isAdmin, navigate]);
 
+  // Prefill user data
   useEffect(() => {
     if (userData) {
       console.log(userData);
@@ -51,29 +51,39 @@ const UploadReceipt = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
 
+    // Check if receipt is uploaded
+    if (!receipt) {
+      Swal.fire({
+        icon: "error",
+        title: "No Receipt Uploaded",
+        text: "Please upload your receipt before registering.",
+      });
+      return;
+    }
+
     let imageUrl = "";
 
     try {
       // Upload to Cloudinary
-      if (receipt) {
-        const formData = new FormData();
-        formData.append("file", receipt);
-        formData.append("upload_preset", "event_preset"); // your cloudinary preset
+      const formData = new FormData();
+      formData.append("file", receipt);
+      formData.append("upload_preset", "event_preset"); // your cloudinary preset
 
-        const uploadRes = await axios.post(
-          "https://api.cloudinary.com/v1_1/dqbnc38or/image/upload",
-          formData,
-          {
-            withCredentials: false,
-          }
-        );
+      const uploadRes = await axios.post(
+        "https://api.cloudinary.com/v1_1/dqbnc38or/image/upload",
+        formData,
+        { withCredentials: false }
+      );
 
-        imageUrl = uploadRes.data.secure_url;
-        console.log("Cloudinary upload success:", imageUrl);
-      }
+      imageUrl = uploadRes.data.secure_url;
+      console.log("Cloudinary upload success:", imageUrl);
     } catch (err) {
       console.error("Cloudinary upload error:", err);
-      // toast.error("Image upload failed. Please check your network or try a smaller image.");
+      Swal.fire({
+        icon: "error",
+        title: "Upload Failed",
+        text: "Image upload failed. Please check your network or try a smaller image.",
+      });
       return;
     }
 
@@ -129,7 +139,7 @@ const UploadReceipt = () => {
             <input
               type="text"
               className="account-name"
-              value={accountName || "Not Set"}
+              value={accountName || "None"}
               readOnly
             />
 
@@ -137,7 +147,7 @@ const UploadReceipt = () => {
             <input
               type="text"
               className="mobile-number"
-              value={mobileNumber || "not set"}
+              value={mobileNumber || "None"}
               readOnly
             />
 
@@ -147,7 +157,6 @@ const UploadReceipt = () => {
               style={{ display: "none" }}
               onChange={handleFileChange}
               accept="image/*"
-              required
             />
 
             <button
