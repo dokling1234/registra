@@ -59,11 +59,33 @@ const submitFeedback = async (req, res) => {
     const { formId } = req.params;
     const { answers } = req.body;
     const { userId } = req.user;
+
+
+    // Likert conversion map
+    const likertScale = {
+      "Very Unsatisfied": 1,
+      "Unsatisfied": 2,
+      "Neutral": 3,
+      "Satisfied": 4,
+      "Very Satisfied": 5
+    };
+
+    // Convert answers (especially Likert ones)
+    const processedAnswers = answers.map((ans) => {
+      if (ans.type === "Likert" && Array.isArray(ans.answers)) {
+        ans.answers = ans.answers.map((item) => ({
+          statement: item.statement,
+          value: likertScale[item.value] || Number(item.value) || 0 // Fallback to numeric or 0
+        }));
+      }
+      return ans;
+    });
+
     // Create new feedback answer with the correct structure
     const newAnswer = new FeedbackAnswer({
       feedbackFormId: formId,
-      respondentId: userId, // Use userId from auth middleware
-      answers,
+      respondentId: userId,
+      answers: processedAnswers,
       submittedAt: new Date(),
     });
 
@@ -82,6 +104,7 @@ const submitFeedback = async (req, res) => {
     });
   }
 };
+
 
 const checkSubmission = async (req, res) => {
   try {

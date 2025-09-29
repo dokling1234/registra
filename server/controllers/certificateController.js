@@ -116,10 +116,8 @@ const saveTemplate = async (req, res) => {
 };
 
 const   getTemplate = async (req, res) => {
-  console.log("Template");
   try {
     const { eventId } = req.params;
-    console.log(eventId);
     const template = await CertificateTemplate.findOne({ eventId });
     if (!template) {
       return res.status(404).json({

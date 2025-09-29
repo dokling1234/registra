@@ -54,26 +54,13 @@ const EventCard = ({ event }) => {
     <Link to={`/events/${event._id}`} className="event-card-link">
       <div className="event-card">
         <div className="event-card-image-container">
-          <picture>
-            {/* WebP Source First */}
-            <source
-              srcSet={
-                (event.image &&
-                  event.image.replace(/\.(jpg|jpeg|png)$/i, ".webp")) ||
-                "/placeholder.webp"
-              }
-              type="image/webp"
-            />
-            {/* Fallback to Original Format */}
-            <img
-              src={event.image || placeholderImage}
-              alt={event.title}
-              className="event-card-image"
-              loading="lazy" // ✅ Critical for FCP improvement
-            />
-          </picture>
+          <img
+            src={event.image || placeholderImage}
+            alt={event.title}
+            className="event-card-image"
+          />
           <span className="event-card-price-badge">
-            ₱{event.price?.toLocaleString() || "Free"}
+            ₱{event.price?.toLocaleString() || 'Free'}
           </span>
         </div>
         <div className="event-card-content">

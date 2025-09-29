@@ -14,7 +14,9 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 const Certificate = ({ templateUrl, userName }) => {
   // Convert PDF URL to PNG preview URL
   let pngUrl = templateUrl
-    ? templateUrl.replace(/\.pdf$/, ".png").replace("/upload/", "/upload/w_1056,h_816/")
+    ? templateUrl
+        .replace(/\.pdf$/, ".png")
+        .replace("/upload/", "/upload/w_1056,h_816/")
     : "";
 
   const certRef = useRef(null);
@@ -34,7 +36,10 @@ const Certificate = ({ templateUrl, userName }) => {
           img.onerror = resolve;
         });
       }
-      const canvas = await html2canvas(certRef.current, { useCORS: true, scale: 2 });
+      const canvas = await html2canvas(certRef.current, {
+        useCORS: true,
+        scale: 2,
+      });
       setFinalPng(canvas.toDataURL("image/png"));
     };
     renderToPng();
@@ -43,40 +48,42 @@ const Certificate = ({ templateUrl, userName }) => {
 
   // Download as PDF using the templateUrl
   const handleDownloadPDF = async () => {
-  if (!templateUrl) return;
+    if (!templateUrl) return;
 
-  // Fetch the original PDF as ArrayBuffer
-  const existingPdfBytes = await fetch(templateUrl).then(res => res.arrayBuffer());
+    // Fetch the original PDF as ArrayBuffer
+    const existingPdfBytes = await fetch(templateUrl).then((res) =>
+      res.arrayBuffer()
+    );
 
-  // Load a PDFDocument from the existing PDF bytes
-  const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    // Load a PDFDocument from the existing PDF bytes
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
 
-  // Get the first page
-  const pages = pdfDoc.getPages();
-  const firstPage = pages[0];
+    // Get the first page
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
 
-  // Draw the user's name (adjust position and font size as needed)
-  const { width, height } = firstPage.getSize();
-  const font = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
-  const fontSize = 48;
-  firstPage.drawText(userName, {
-    x: width / 2 - (userName.length * fontSize * 0.25), // Centered, adjust as needed
-    y: height * 0.66, // Adjust Y as needed
-    size: fontSize,
-    font,
-    color: rgb(0, 0, 0),
-  });
+    // Draw the user's name (adjust position and font size as needed)
+    const { width, height } = firstPage.getSize();
+    const font = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+    const fontSize = 48;
+    firstPage.drawText(userName, {
+      x: width / 2 - userName.length * fontSize * 0.25, // Centered, adjust as needed
+      y: height * 0.66, // Adjust Y as needed
+      size: fontSize,
+      font,
+      color: rgb(0, 0, 0),
+    });
 
-  // Serialize the PDFDocument to bytes (a Uint8Array)
-  const pdfBytes = await pdfDoc.save();
+    // Serialize the PDFDocument to bytes (a Uint8Array)
+    const pdfBytes = await pdfDoc.save();
 
-  // Trigger download
-  const blob = new Blob([pdfBytes], { type: "application/pdf" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "certificate.pdf";
-  link.click();
-};
+    // Trigger download
+    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "certificate.pdf";
+    link.click();
+  };
 
   return (
     <div className="certificate-container">
@@ -97,7 +104,9 @@ const Certificate = ({ templateUrl, userName }) => {
             position: "relative",
             width: 1056,
             height: 816,
-            background: pngUrl ? `url('${pngUrl}') center center / cover no-repeat` : "#fff",
+            background: pngUrl
+              ? `url('${pngUrl}') center center / cover no-repeat`
+              : "#fff",
             borderRadius: "1rem",
             overflow: "hidden",
           }}
@@ -205,7 +214,6 @@ const RegisteredEventDetail = () => {
             `${backendUrl}/api/feedback/getFeedback/${fetchedEvent._id}`
           );
           setFeedbackForm(feedbackRes.data || null);
-
           // Check if user has submitted feedback
           const submissionRes = await axios.get(
             `${backendUrl}/api/feedback/checkSubmission/${fetchedEvent._id}`
@@ -218,7 +226,6 @@ const RegisteredEventDetail = () => {
               const templateRes = await axios.get(
                 `${backendUrl}/api/certificate/template/${fetchedEvent._id}`
               );
-              console.log("Template response:", templateRes.data); // Debug log
               if (templateRes.data.success) {
                 setCertificateTemplate(templateRes.data.template);
               }
@@ -417,7 +424,105 @@ const RegisteredEventDetail = () => {
                     className="feedback-form"
                     onSubmit={handleFeedbackSubmit}
                   >
-                    {/* ...feedback form rendering... */}
+                    {feedbackForm.questions.map((q, index) => (
+                      <div key={index} className="feedback-question mb-4">
+                        <label className="block font-semibold mb-2">
+                          {q.text}
+                        </label>
+
+                        {/* Choice - Radio Buttons */}
+                        {q.type === "Choice" && q.options?.length > 0 && (
+                          <div>
+                            {q.options.map((option, i) => (
+                              <label
+                                key={i}
+                                className="flex items-center gap-2 mb-1"
+                              >
+                                <input
+                                  type="radio"
+                                  name={q.text}
+                                  value={option}
+                                  required
+                                />{" "}
+                                {option}
+                              </label>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Text Input */}
+                        {q.type === "Text" && (
+                          <textarea
+                            name={q.text}
+                            className="border p-2 w-full"
+                            placeholder="Your answer..."
+                            required
+                          />
+                        )}
+
+                        {/* Rating (1–5) */}
+                        {q.type === "Rating" && (
+                          <div className="flex gap-2">
+                            {[1, 2, 3, 4, 5].map((n) => (
+                              <label
+                                key={n}
+                                className="flex items-center gap-1"
+                              >
+                                <input
+                                  type="radio"
+                                  name={q.text}
+                                  value={n}
+                                  required
+                                />{" "}
+                                {n}
+                              </label>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Likert (Matrix Scale) */}
+                        {q.type === "Likert" &&
+                          q.statements?.length > 0 &&
+                          q.options?.length > 0 && (
+                            <table className="w-full mb-4 border">
+                              <thead>
+                                <tr>
+                                  <th></th>
+                                  {q.options.map((opt, i) => (
+                                    <th key={i} className="text-center px-2">
+                                      {opt}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {q.statements.map((stmt, sIdx) => (
+                                  <tr key={sIdx}>
+                                    <td className="px-2">{stmt}</td>
+                                    {q.options.map((opt, oIdx) => (
+                                      <td key={oIdx} className="text-center">
+                                        <input
+                                          type="radio"
+                                          name={`${q.text}-${sIdx}`}
+                                          value={opt}
+                                          required
+                                        />
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+                      </div>
+                    ))}
+
+                    <button
+                      type="submit"
+                      className="bg-blue-600 text-white px-4 py-2 rounded mt-4"
+                    >
+                      Submit Feedback
+                    </button>
                   </form>
                 ) : (
                   <p>No feedback form available for this event.</p>
