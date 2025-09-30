@@ -735,22 +735,44 @@ const getRegisteredPastEvents = async (req, res) => {
 
     const now = new Date();
 
+    // Return only past events where this user's registration is paid and attended
     const events = await eventModel
       .find({
-        "registrations.userId": userId,
         date: { $lt: now },
+        registrations: {
+          $elemMatch: {
+            userId: userId,
+            paymentStatus: "paid",
+            attended: true,
+          },
+        },
       })
       .lean(); // Add .lean() for better performance
 
     // Add hasCertificate field to each event
-    const eventsWithCertificate = events.map((event) => ({
+    const eventsWithCertificate = events.map(event => ({
       ...event,
-      hasCertificate: false, // or determine this based on your logic
+      hasCertificate: false // or determine this based on your logic
     }));
 
     res.status(200).json(eventsWithCertificate);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+const getEventDetailsById = async (req, res) => {
+  try {
+    const event = await eventModel.findById(req.params.id);
+
+    if (!event) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Event not found" });
+    }
+
+    res.status(200).json({ success: true, event });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
