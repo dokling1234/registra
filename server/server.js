@@ -111,12 +111,7 @@ app.use("/api/superadmin", superAdminRouter);
 app.use("/api/activity-logs", activityLogRoutes);
 
 // -------------------- PRODUCTION BUILD --------------------
-if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../client/build")));
-
-  app.get(["*.js", "*.css", "/assets/*"], (req, res) => {
-    res.sendFile(path.join(buildPath, req.path));
-  });
 
   // ✅ Dynamic OG tags for event detail pages
   app.get("/events/:id", async (req, res) => {
@@ -126,9 +121,7 @@ if (process.env.NODE_ENV === "production") {
     try {
       // fetch event data from API
       const response = await axios.get(
-        `${
-          process.env.BASE_URL || "http://localhost:4000"
-        }/api/events/${eventId}`
+        `${process.env.BASE_URL || "http://localhost:4000"}/api/events/${eventId}`
       );
       const event = response.data.event;
 
@@ -140,15 +133,11 @@ if (process.env.NODE_ENV === "production") {
       const metaTags = `
         <title>${event.title}</title>
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="${req.protocol}://${req.get("host")}${
-        req.originalUrl
-      }" />
+        <meta property="og:url" content="${req.protocol}://${req.get("host")}${req.originalUrl}" />
         <meta property="og:title" content="${event.title}" />
-        <meta property="og:description" content="${
-          event.about
-        } | Date: ${new Date(event.date).toDateString()} | Location: ${
-        event.location
-      }" />
+        <meta property="og:description" content="${event.about} | Date: ${new Date(
+        event.date
+      ).toDateString()} | Location: ${event.location}" />
         <meta property="og:image" content="${event.image}" />
         <meta property="og:site_name" content="Registra" />
         <meta property="og:locale" content="en_US" />
@@ -171,7 +160,7 @@ if (process.env.NODE_ENV === "production") {
   app.get("*", (req, res) => {
     res.sendFile(path.resolve(__dirname, "../client/build/index.html"));
   });
-}
+
 
 // -------------------- START SERVER --------------------
 app.listen(port, () =>
