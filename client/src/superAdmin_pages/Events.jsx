@@ -104,6 +104,8 @@ const Events = () => {
         image: imageUrl,
         cost: eventData.cost,
         coordinates: lngLat,
+        webinarLink:
+          eventData.eventType === "Webinar" ? eventData.webinarLink : undefined,
       };
 
       const { data } = await axios.post(
@@ -166,7 +168,20 @@ const Events = () => {
   // }, [userData, navigate, getUserData]);
 
   useEffect(() => {
-    if (mapContainer.current && showAddForm) {
+    if (
+      mapContainer.current &&
+      showAddForm &&
+      eventData.eventType !== "Webinar"
+    ) {
+      // ✅ Safely remove the previous map instance before creating a new one
+      if (mapRef.current && mapRef.current.remove) {
+        try {
+          mapRef.current.remove();
+        } catch (err) {
+          console.warn("Map removal skipped:", err);
+        }
+      }
+
       const map = new maplibregl.Map({
         container: mapContainer.current,
         style:
@@ -193,26 +208,30 @@ const Events = () => {
         try {
           const res = await axios.post(
             `${backendUrl}/api/events/location/reverse-geocode`,
-            {
-              lat,
-              lon: lng,
-            }
+            { lat, lon: lng }
           );
-          const { display_name } = res.data;
-          setPlaceName(display_name);
-
-          setEventData((prevData) => ({
-            ...prevData,
-            location: display_name,
+          setPlaceName(res.data.display_name);
+          setEventData((prev) => ({
+            ...prev,
+            location: res.data.display_name,
           }));
         } catch (err) {
           console.error("Reverse geocoding failed", err);
         }
       });
 
-      return () => map.remove();
+      return () => {
+        // ✅ Safe cleanup
+        if (mapRef.current && mapRef.current.remove) {
+          try {
+            mapRef.current.remove();
+          } catch (err) {
+            console.warn("Cleanup skipped:", err);
+          }
+        }
+      };
     }
-  }, [showAddForm]);
+  }, [showAddForm, eventData.eventType]);
 
   if (!userData) {
     return <div className="text-center mt-10 text-gray-600">Loading...</div>;
@@ -371,97 +390,102 @@ const Events = () => {
                 <option value="Other">Other</option>
               </select>
             </div>
-
-            <div className="flex flex-col">
-              <label className="mb-1 font-semibold">Participant</label>
-              <select
-                name="eventTarget"
-                value={eventData.eventTarget}
-                onChange={handleChange}
-                className="border border-gray-300 rounded-md px-4 py-2"
-                required
-              >
-                <option value="">Select participant</option>
-                <option value="Student">Student</option>
-                <option value="Professional">Professional</option>
-                <option value="Both">Both</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col">
-              <label className="mb-1 font-semibold">Search Location</label>
-              <div className="flex gap-2">
+            {eventData.eventType === "Webinar" && (
+              <div className="flex flex-col">
+                <label className="mb-1 font-semibold">Webinar Link</label>
                 <input
-                  type="text"
-                  name="location"
-                  value={eventData.location}
+                  type="url"
+                  name="webinarLink"
+                  value={eventData.webinarLink || ""}
                   onChange={handleChange}
-                  className="flex-1 border border-gray-300 rounded-md px-4 py-2"
-                  placeholder="Ex: SM Megamall, etc"
+                  className="border border-gray-300 rounded-md px-4 py-2"
+                  placeholder="https://zoom.us/..."
+                  required
                 />
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (!eventData.location) return;
-
-                    try {
-                      const res = await fetch(
-                        `https://api.maptiler.com/geocoding/${encodeURIComponent(
-                          eventData.location
-                        )}.json?key=cyT8CBxXMzVIORtIP1Pj`
-                      );
-                      const data = await res.json();
-                      const feature = data.features[0];
-                      if (feature) {
-                        const [lng, lat] = feature.center;
-                        setLngLat([lng, lat]);
-                        setPlaceName(feature.place_name);
-                        setEventData((prev) => ({
-                          ...prev,
-                          location: feature.place_name,
-                        }));
-                        if (markerRef.current) markerRef.current.remove();
-
-                        const newMarker = new maplibregl.Marker()
-                          .setLngLat([lng, lat])
-                          .addTo(mapRef.current);
-
-                        markerRef.current = newMarker;
-                        mapRef.current.flyTo({ center: [lng, lat], zoom: 15 });
-                      } else {
-                        toast.error("No location found.");
-                      }
-                    } catch (err) {
-                      console.error(err);
-                      toast.error("Search failed.");
-                    }
-                  }}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-                >
-                  Search
-                </button>
               </div>
-            </div>
+            )}
+            {eventData.eventType !== "Webinar" && (
+              <>
+                <div className="flex flex-col">
+                  <label className="mb-1 font-semibold">Search Location</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      name="location"
+                      value={eventData.location}
+                      onChange={handleChange}
+                      className="flex-1 border border-gray-300 rounded-md px-4 py-2"
+                      placeholder="Ex: SM Megamall, etc"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!eventData.location) return;
 
-            <div className="flex flex-col">
-              <label className="mb-1 font-semibold">Pick Location (Map)</label>
-              <div
-                ref={mapContainer}
-                className="h-64 rounded border border-gray-300 mb-2"
-              />
-              <p className="text-sm text-gray-500">
-                {placeName
-                  ? `Selected: ${placeName}`
-                  : "Click on the map to select a location"}
-              </p>
-              {lngLat && (
-                <p className="text-xs text-green-600 mt-1">
-                  ✓ Coordinates selected: {lngLat[1]?.toFixed(6)},{" "}
-                  {lngLat[0]?.toFixed(6)}
-                </p>
-              )}
-            </div>
+                        try {
+                          const res = await fetch(
+                            `https://api.maptiler.com/geocoding/${encodeURIComponent(
+                              eventData.location
+                            )}.json?key=cyT8CBxXMzVIORtIP1Pj`
+                          );
+                          const data = await res.json();
+                          const feature = data.features[0];
+                          if (feature) {
+                            const [lng, lat] = feature.center;
+                            setLngLat([lng, lat]);
+                            setPlaceName(feature.place_name);
+                            setEventData((prev) => ({
+                              ...prev,
+                              location: feature.place_name,
+                            }));
+                            if (markerRef.current) markerRef.current.remove();
 
+                            const newMarker = new maplibregl.Marker()
+                              .setLngLat([lng, lat])
+                              .addTo(mapRef.current);
+
+                            markerRef.current = newMarker;
+                            mapRef.current.flyTo({
+                              center: [lng, lat],
+                              zoom: 15,
+                            });
+                          } else {
+                            toast.error("No location found.");
+                          }
+                        } catch (err) {
+                          console.error(err);
+                          toast.error("Search failed.");
+                        }
+                      }}
+                      className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+                    >
+                      Search
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="mb-1 font-semibold">
+                    Pick Location (Map)
+                  </label>
+                  <div
+                    ref={mapContainer}
+                    className="h-64 rounded border border-gray-300 mb-2"
+                  />
+                  <p className="text-sm text-gray-500">
+                    {placeName
+                      ? `Selected: ${placeName}`
+                      : "Click on the map to select a location"}
+                  </p>
+                  {lngLat && (
+                    <p className="text-xs text-green-600 mt-1">
+                      ✓ Coordinates selected: {lngLat[1]?.toFixed(6)},{" "}
+                      {lngLat[0]?.toFixed(6)}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
             <div className="flex flex-col">
               <label className="mb-1 font-medium">Event Image</label>
               <input

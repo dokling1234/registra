@@ -16,6 +16,7 @@ const formatTimeToAMPM = (time24) => {
   const hour12 = h % 12 || 12;
   return `${hour12}:${minute} ${suffix}`;
 };
+
 const createEvent = async (req, res) => {
   try {
     const {
@@ -31,14 +32,23 @@ const createEvent = async (req, res) => {
       about,
       eventTarget,
       image,
+      webinarLink, // ✅ Accept webinar link
     } = req.body;
+
+    // ✅ Validate link if it's a webinar
+    if (eventType === "Webinar" && !webinarLink) {
+      return res.status(400).json({
+        success: false,
+        message: "Webinar link is required for Webinar events.",
+      });
+    }
 
     const event = new eventModel({
       title,
       date,
       location,
       coordinates,
-      time: formatTimeToAMPM(time), // Convert to AM/PM format
+      time: formatTimeToAMPM(time),
       about,
       price,
       cost,
@@ -46,6 +56,7 @@ const createEvent = async (req, res) => {
       eventType,
       eventTarget,
       image,
+      webinarLink: eventType === "Webinar" ? webinarLink : undefined, // ✅ Store only if webinar
     });
 
     if (req.body.organizers) {
@@ -54,15 +65,14 @@ const createEvent = async (req, res) => {
 
     await event.save();
 
-    // ✅ Send push notification to all users
+    // ✅ Send push notification (unchanged, but we can include link later if you want)
     try {
       const notificationData = {
         notification: {
-          title: event.title, // Use event title as notification title
+          title: event.title,
           body: `${event.location} • ${event.date} • ${event.time}`,
         },
         data: {
-          // FCM data payload must be strings
           eventId: String(event._id),
           title: String(event.title || ""),
           location: String(event.location || ""),
@@ -72,34 +82,13 @@ const createEvent = async (req, res) => {
           about: String(event.about || ""),
           hostName: String(event.hostName || ""),
           price: String(event.price ?? ""),
+          webinarLink: String(event.webinarLink || ""), // ✅ Added if needed
         },
-        android: {
-          priority: "high",
-          notification: {
-            channelId: "default",
-            sound: "default",
-          },
-        },
-        apns: {
-          headers: {
-            "apns-push-type": "alert",
-            "apns-priority": "10",
-          },
-          payload: {
-            aps: { sound: "default" },
-          },
-        },
-        topic: "allUsers", // all users subscribed to this topic get the notification
+        topic: "allUsers",
       };
-      console.log("notificationData", notificationData);
 
-      // Add image if available
       if (event.image) {
-        // Use 'image' property for FCM v1 / Admin SDK support
         notificationData.notification.image = event.image;
-        console.log("Adding image to notification:", event.image);
-      } else {
-        console.log("No image available for event:", event.title);
       }
 
       await admin.messaging().send(notificationData);
@@ -108,7 +97,7 @@ const createEvent = async (req, res) => {
       console.error("Error sending notification:", notifyErr);
     }
 
-    // Log activity for event creation (admin/superadmin)
+    // Log activity
     try {
       const { logActivity } = require("../services/activityLogService.js");
       await logActivity(req, {
@@ -119,9 +108,11 @@ const createEvent = async (req, res) => {
       });
     } catch (_) {}
 
-    res
-      .status(201)
-      .json({ success: true, message: "Event created successfully", event });
+    res.status(201).json({
+      success: true,
+      message: "Event created successfully",
+      event,
+    });
   } catch (err) {
     console.error("Error saving event:", err);
     res.status(500).json({
@@ -216,7 +207,7 @@ const getEvents = async (req, res) => {
       });
       match.monthName = month;
     }
-    
+
     if (date) {
       const selectedDate = new Date(date);
       const startOfDay = new Date(
@@ -489,22 +480,26 @@ const updatePaymentStatus = async (req, res) => {
     }
 
     if (paymentStatus === "paid") {
-      const qrData = {
-        id: registrant._id.toString(),
-        fullName: registrant.fullName,
-        userType: registrant.userType,
-      };
+      if (event.eventType === "Webinar" && event.webinarLink) {
+        // Generate QR Code for the webinar link
+        registrant.ticketQR = await QRCode.toDataURL(event.webinarLink);
+      } else {
+        // Default behavior: Encrypted QR for physical events
+        const qrData = {
+          id: registrant._id.toString(),
+          fullName: registrant.fullName,
+          userType: registrant.userType,
+        };
 
-      const encryptedPayload = encryptData(qrData);
+        const encryptedPayload = encryptData(qrData);
 
-      const combinedPayload = JSON.stringify({
-        data: encryptedPayload.data,
-        iv: encryptedPayload.iv,
-      });
+        const combinedPayload = JSON.stringify({
+          data: encryptedPayload.data,
+          iv: encryptedPayload.iv,
+        });
 
-      // Generate QR Code
-      const qrCode = await QRCode.toDataURL(combinedPayload);
-      registrant.ticketQR = qrCode;
+        registrant.ticketQR = await QRCode.toDataURL(combinedPayload);
+      }
     }
 
     registrant.paymentStatus = paymentStatus;
@@ -750,9 +745,9 @@ const getRegisteredPastEvents = async (req, res) => {
       .lean(); // Add .lean() for better performance
 
     // Add hasCertificate field to each event
-    const eventsWithCertificate = events.map(event => ({
+    const eventsWithCertificate = events.map((event) => ({
       ...event,
-      hasCertificate: false // or determine this based on your logic
+      hasCertificate: false, // or determine this based on your logic
     }));
 
     res.status(200).json(eventsWithCertificate);

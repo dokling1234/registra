@@ -22,6 +22,7 @@ const eventSchema = new mongoose.Schema({
   isPastEvent: { type: Boolean, default: false },
   eventTarget: { type: String },
   image: { type: String },
+  webinarLink: { type: String },
   
   registrations: [
     {

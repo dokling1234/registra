@@ -608,16 +608,16 @@ const RegisteredEventDetail = () => {
             )}
           </div>
         ) : (
-          <div className="event-registration-info">
-            <p className="registered-message">
+          <div className="event-registration-info text-center mt-4">
+            <p className="registered-message text-lg font-medium mb-2">
               You are registered for this event.
             </p>
             {event.ticketUrl && (
-              <div className="ticket-container">
+              <div className="flex justify-center items-center mt-4">
                 <img
                   src={event.ticketUrl}
-                  alt="Your Ticket"
-                  className="ticket-image"
+                  alt="Your Ticket / QR Code"
+                  className="w-48 h-48 object-contain shadow-md rounded-lg"
                 />
               </div>
             )}
