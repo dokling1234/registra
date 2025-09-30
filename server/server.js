@@ -33,6 +33,8 @@ const allowedOrigins = [
   "http://192.168.1.212:4000",
   "http://192.168.1.212:3000",
   "https://registra-b7181b9e50a0.herokuapp.com",
+  "https://www.icpepncrregistra.com",
+  "https://icpepncrregistra.com",
 ];
 
 // helmet + CSP
@@ -111,6 +113,7 @@ app.use("/api/superadmin", superAdminRouter);
 app.use("/api/activity-logs", activityLogRoutes);
 
 // -------------------- PRODUCTION BUILD --------------------
+if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../client/build")));
 
   // ✅ Dynamic OG tags for event detail pages
@@ -121,7 +124,9 @@ app.use("/api/activity-logs", activityLogRoutes);
     try {
       // fetch event data from API
       const response = await axios.get(
-        `${process.env.BASE_URL || "http://localhost:4000"}/api/events/${eventId}`
+        `${
+          process.env.BASE_URL || "http://localhost:4000"
+        }/api/events/${eventId}`
       );
       const event = response.data.event;
 
@@ -133,11 +138,15 @@ app.use("/api/activity-logs", activityLogRoutes);
       const metaTags = `
         <title>${event.title}</title>
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="${req.protocol}://${req.get("host")}${req.originalUrl}" />
+        <meta property="og:url" content="${req.protocol}://${req.get("host")}${
+        req.originalUrl
+      }" />
         <meta property="og:title" content="${event.title}" />
-        <meta property="og:description" content="${event.about} | Date: ${new Date(
-        event.date
-      ).toDateString()} | Location: ${event.location}" />
+        <meta property="og:description" content="${
+          event.about
+        } | Date: ${new Date(event.date).toDateString()} | Location: ${
+        event.location
+      }" />
         <meta property="og:image" content="${event.image}" />
         <meta property="og:site_name" content="Registra" />
         <meta property="og:locale" content="en_US" />
@@ -160,7 +169,7 @@ app.use("/api/activity-logs", activityLogRoutes);
   app.get("*", (req, res) => {
     res.sendFile(path.resolve(__dirname, "../client/build/index.html"));
   });
-
+}
 
 // -------------------- START SERVER --------------------
 app.listen(port, () =>
