@@ -114,26 +114,41 @@ app.use("/api/activity-logs", activityLogRoutes);
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../client/build")));
 
+  app.get(["*.js", "*.css", "/assets/*"], (req, res) => {
+    res.sendFile(path.join(buildPath, req.path));
+  });
+
+  // ✅ Dynamic OG tags for event detail pages
   app.get("/events/:id", async (req, res) => {
     const eventId = req.params.id;
     console.log("OG request for event:", eventId);
 
     try {
+      // fetch event data from API
       const response = await axios.get(
-        `${process.env.BASE_URL || "http://localhost:4000"}/api/events/${eventId}`
+        `${
+          process.env.BASE_URL || "http://localhost:4000"
+        }/api/events/${eventId}`
       );
       const event = response.data.event;
 
-      // load index.html
+      // load CRA index.html
       const indexFile = path.resolve(__dirname, "../client/build/index.html");
       let html = fs.readFileSync(indexFile, "utf8");
 
+      // build meta tags
       const metaTags = `
         <title>${event.title}</title>
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="${req.protocol}://${req.get("host")}${req.originalUrl}" />
+        <meta property="og:url" content="${req.protocol}://${req.get("host")}${
+        req.originalUrl
+      }" />
         <meta property="og:title" content="${event.title}" />
-        <meta property="og:description" content="${event.about} | Date: ${new Date(event.date).toDateString()} | Location: ${event.location}" />
+        <meta property="og:description" content="${
+          event.about
+        } | Date: ${new Date(event.date).toDateString()} | Location: ${
+        event.location
+      }" />
         <meta property="og:image" content="${event.image}" />
         <meta property="og:site_name" content="Registra" />
         <meta property="og:locale" content="en_US" />
@@ -143,20 +158,20 @@ if (process.env.NODE_ENV === "production") {
         <meta name="twitter:image" content="${event.image}" />
       `;
 
+      // ✅ safer inject into <head>
       html = html.replace(/<head[^>]*>/, `<head>${metaTags}`);
-      return res.send(html);
+      res.send(html);
     } catch (err) {
       console.error("Error generating OG tags:", err.message);
-      return res.sendFile(path.resolve(__dirname, "../client/build/index.html"));
+      res.sendFile(path.resolve(__dirname, "../client/build/index.html"));
     }
   });
 
-  // ✅ Fallback for any other route
+  // fallback for all other routes
   app.get("*", (req, res) => {
     res.sendFile(path.resolve(__dirname, "../client/build/index.html"));
   });
 }
-
 
 // -------------------- START SERVER --------------------
 app.listen(port, () =>
