@@ -253,8 +253,9 @@ const getEvents = async (req, res) => {
 };
 
 const registerForEvent = async (req, res) => {
-  const { id } = req.params;
-  const { userId, email, paymentStatus, ticketQR, receipt, fullName } = req.body;
+  const { id } = req.params; // Event ID
+  const { userId, email, paymentStatus, ticketQR, receipt, fullName } =
+    req.body;
 
   try {
     const event = await Event.findById(id);
@@ -262,34 +263,35 @@ const registerForEvent = async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    // Ensure both IDs are strings for comparison
-    const existingRegistration = event.registrations.find(
-      (reg) => reg.userId.toString() === String(userId)
+    // ✅ Check if user already registered
+    const existingReg = event.registrations.find(
+      (reg) => reg.userId.toString() === userId.toString()
     );
 
-    if (existingRegistration) {
-      console.log("Updating existing registration...");
+    if (existingReg) {
+      // ✅ If user exists — just update receipt & reset payment status
+      existingReg.receipt = receipt || existingReg.receipt;
+      existingReg.paymentStatus = "pending"; // Set for re-evaluation
+      existingReg.ticketQR = ticketQR || existingReg.ticketQR;
 
-      existingRegistration.paymentStatus = paymentStatus || existingRegistration.paymentStatus;
-      existingRegistration.ticketQR = ticketQR || existingRegistration.ticketQR;
-      existingRegistration.receipt = receipt || existingRegistration.receipt;
-      existingRegistration.fullName = fullName || existingRegistration.fullName;
-      existingRegistration.registeredAt = new Date();
+      await event.save();
 
-      // ✅ Force mongoose to recognize subdocument as modified
-      event.markModified("registrations");
-    } else {
-      console.log("Adding new registration...");
-      event.registrations.push({
-        userId,
-        fullName,
-        registeredAt: new Date(),
-        paymentStatus,
-        ticketQR,
-        receipt,
+      return res.status(200).json({
+        message: "Receipt re-uploaded. Awaiting approval.",
       });
     }
 
+    // ✅ If user is NOT registered — proceed as NEW registration
+    const newRegistration = {
+      userId,
+      registeredAt: new Date(),
+      paymentStatus,
+      ticketQR,
+      fullName,
+      receipt,
+    };
+
+    event.registrations.push(newRegistration);
     await event.save();
 
     await logActivity(req, {
@@ -299,14 +301,12 @@ const registerForEvent = async (req, res) => {
       metadata: { userId, email, paymentStatus },
     });
 
-    res.status(200).json({ message: "Registration updated successfully!" });
+    return res.status(200).json({ message: "Registration successful!" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
-
-
 
 const QRchecker = async (req, res) => {
   const { userId } = req.body;
@@ -497,14 +497,18 @@ const getEventAnalyticsReport = async (req, res) => {
         <body>
           <h1>📊 Event Analytics Report</h1>
           <h2>${stats.title}</h2>
-          <p style="text-align:center;">Date: ${new Date(stats.date).toLocaleDateString()}<br/>
+          <p style="text-align:center;">Date: ${new Date(
+            stats.date
+          ).toLocaleDateString()}<br/>
           Type: ${stats.eventType}</p>
 
           <div class="summary">
             <p><b>Total Registered:</b> ${stats.totalRegistered}</p>
             <p><b>Attended:</b> ${stats.attended}</p>
             <p><b>No-shows:</b> ${stats.noShow}</p>
-            <p><b>Attendance Rate:</b> ${(stats.attendanceRate * 100).toFixed(1)}%</p>
+            <p><b>Attendance Rate:</b> ${(stats.attendanceRate * 100).toFixed(
+              1
+            )}%</p>
           </div>
 
           <div class="chart-container">
@@ -531,9 +535,13 @@ const getEventAnalyticsReport = async (req, res) => {
             new Chart(document.getElementById('participantChart'), {
               type: 'pie',
               data: {
-                labels: ${JSON.stringify(participantBreakdown.map(p => p._id))},
+                labels: ${JSON.stringify(
+                  participantBreakdown.map((p) => p._id)
+                )},
                 datasets: [{
-                  data: ${JSON.stringify(participantBreakdown.map(p => p.count))},
+                  data: ${JSON.stringify(
+                    participantBreakdown.map((p) => p.count)
+                  )},
                   backgroundColor: ['#4CAF50', '#FF9800']
                 }]
               }
@@ -623,5 +631,5 @@ module.exports = {
   pdfCertificate,
   changeAdminPassword,
   getEventAnalyticsReport,
-  samplePdf
+  samplePdf,
 };
