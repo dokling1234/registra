@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import Sidebar from "../superadmin_components/Sidebar";
+import Sidebar from "../superAdmin_components/Sidebar";
 import { assets } from "../assets/assets";
 import { Link } from "react-router-dom";
 
