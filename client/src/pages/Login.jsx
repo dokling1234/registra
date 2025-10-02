@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import { AppContent } from "../context/AppContext";
 import Swal from "sweetalert2";
 import SplashScreen from "../components/SplashScreen";
-
+import { motion } from "framer-motion";
 const Login = () => {
   const navigate = useNavigate();
   const { backendUrl, setIsLoggedin, getUserData, setIsAdmin } =
@@ -58,6 +58,18 @@ const Login = () => {
   const clearError = (fieldName) => {
     setErrors((prev) => ({ ...prev, [fieldName]: "" }));
   };
+  const [passwordStrength, setPasswordStrength] = useState("");
+
+  // Helper: Evaluate password strength
+  const getPasswordStrength = (password) => {
+    if (!password) return "";
+    const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+    const mediumRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+
+    if (strongRegex.test(password)) return "strong";
+    if (mediumRegex.test(password)) return "medium";
+    return "weak";
+  };
 
   // Validate form fields
   const validateForm = () => {
@@ -97,15 +109,25 @@ const Login = () => {
     // Validate email
     if (!email.trim()) {
       newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = "Please enter a valid email address";
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        newErrors.email = "Please enter a valid email address";
+      }
     }
 
-    // Validate password
+    // ✅ Strong Password Validation
     if (!password.trim()) {
       newErrors.password = "Password is required";
-    } else if (state === "Sign Up" && password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+    } else if (state === "Sign Up") {
+      // Password must be at least 8 characters, include uppercase, lowercase, number, and special char
+      const strongPasswordRegex =
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+      if (!strongPasswordRegex.test(password)) {
+        newErrors.password =
+          "Password must be at least 8 characters and include uppercase, lowercase, number, and special character";
+      }
     }
 
     setErrors(newErrors);
@@ -114,7 +136,13 @@ const Login = () => {
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
-
+    if (!validateForm()) {
+      // Only show generic toast, email already shows inline
+      if (!errors.email) {
+        toast.error("Please fill in all required fields correctly");
+      }
+      return;
+    }
     // Validate form before submission
     if (!validateForm()) {
       toast.error("Please fill in all required fields correctly");
@@ -232,392 +260,474 @@ const Login = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen px-6 sm:px-0 bg-gradient-to-br from-blue-200 to-[#60B5FF]">
-      <img
-        onClick={() => navigate("/")}
-        src={assets.logo}
-        alt=""
-        className="absolute left-5 sm:left-20 top-5 w-28 sm:w-32 cursor-pointer"
-      />
-      <div className="bg-slate-900 p-10 rounded-lg shadow-lg w-full sm:w-96 text-indigo-300 text-sm">
-        <h2 className="text-3xl font-semibold text-white mb-3 text-center">
-          {state === "Sign Up" ? "Create your account" : "Login"}
-        </h2>
-
-        <form onSubmit={onSubmitHandler}>
-          {state === "Sign Up" && (
-            <>
-              <div className="mb-4">
-                <div
-                  className={`flex items-center gap-3 w-full px-5 py-2.5 rounded-full ${
-                    errors.fullName
-                      ? "bg-red-900/20 border border-red-500"
-                      : "bg-[#333A5C]"
-                  }`}
-                >
-                  <img src={assets.person_icon} alt="" />
-                  <input
-                    onChange={(e) => {
-                      setName(e.target.value);
-                      clearError("fullName");
-                    }}
-                    value={fullName}
-                    className="bg-transparent outline-none w-full text-white"
-                    placeholder="Full Name"
-                    required
-                  />
+      <div className="flex flex-row w-full max-w-5xl bg-slate-900 rounded-2xl shadow-xl overflow-hidden">
+        {/* Left side – Logo / Illustration */}
+        <div className="hidden md:flex flex-col items-center justify-center w-1/2 bg-gradient-to-br from-blue-300 to-blue-500 p-8">
+          <img src={assets.logo} alt="Logo" className="w-40 mb-6" />
+          <h2 className="text-3xl font-bold text-white text-center">
+            Welcome to Registra
+          </h2>
+          <p className="text-white/80 mt-4 text-center">
+            Sign in or create an account to continue
+          </p>
+        </div>
+        <motion.div
+          layout
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3 }}
+          className="w-full md:w-1/2 p-8"
+        >
+          <h2 className="text-2xl font-bold text-white mb-6 text-center">
+            {state === "Sign Up" ? "Create your account" : "Login"}
+          </h2>
+          <div className="flex-1 pr-2"></div>
+          <form onSubmit={onSubmitHandler}>
+            {state === "Sign Up" && (
+              <>
+                {/* Full Name */}
+                <div className="mb-4">
+                  <div
+                    className={`flex items-center gap-3 w-full px-4 py-1.5 rounded-full ${
+                      errors.fullName
+                        ? "bg-red-900/20 border border-red-500"
+                        : "bg-[#333A5C]"
+                    }`}
+                  >
+                    <img src={assets.person_icon} alt="" />
+                    <input
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        clearError("fullName");
+                      }}
+                      value={fullName}
+                      className="bg-transparent outline-none w-full text-white"
+                      placeholder="Full Name"
+                      required
+                    />
+                  </div>
+                  {errors.fullName && (
+                    <p className="text-red-400 text-xs mt-1 ml-5">
+                      {errors.fullName}
+                    </p>
+                  )}
                 </div>
-                {errors.fullName && (
-                  <p className="text-red-400 text-xs mt-1 ml-5">
-                    {errors.fullName}
-                  </p>
-                )}
-              </div>
 
-              <div className="mb-4">
-                <div
-                  className={`flex items-center gap-3 w-full px-5 py-2.5 rounded-full ${
-                    errors.contactNumber
-                      ? "bg-red-900/20 border border-red-500"
-                      : "bg-[#333A5C]"
-                  }`}
-                >
-                  <img src={assets.phone_icon} width="16" height="18" alt="" />
-                  <input
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "");
-                      if (value.length <= 11) {
-                        if (value === "" || value.startsWith("0")) {
-                          setContactNumber(value);
-                          clearError("contactNumber");
+                {/* Contact Number */}
+                <div className="mb-4">
+                  <div
+                    className={`flex items-center gap-3 w-full px-4 py-1.5 rounded-full ${
+                      errors.contactNumber
+                        ? "bg-red-900/20 border border-red-500"
+                        : "bg-[#333A5C]"
+                    }`}
+                  >
+                    <img
+                      src={assets.phone_icon}
+                      width="16"
+                      height="18"
+                      alt=""
+                    />
+                    <input
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "");
+                        if (value.length <= 11) {
+                          if (value === "" || value.startsWith("0")) {
+                            setContactNumber(value);
+                            clearError("contactNumber");
+                          }
                         }
-                      }
-                    }}
-                    value={contactNumber}
-                    className="bg-transparent outline-none w-full text-white"
-                    type="tel"
-                    placeholder="Contact Number (e.g. 09XXXXXXXXX)"
-                    required
-                  />
-                </div>
-                {errors.contactNumber && (
-                  <p className="text-red-400 text-xs mt-1 ml-5">
-                    {errors.contactNumber}
-                  </p>
-                )}
-              </div>
-
-              <div className="mb-4">
-                <div
-                  className={`flex items-center gap-3 w-full px-5 py-2.5 rounded-full ${"bg-[#333A5C]"} text-white relative`}
-                >
-                  <img src={assets.person_icon} alt="" />
-                  <select
-                    value={userType}
-                    onChange={(e) => setuserType(e.target.value)}
-                    className="appearance-none bg-transparent outline-none w-full text-white pr-8"
-                    required
-                  >
-                    <option
-                      style={{ backgroundColor: "#333A5C", color: "white" }}
-                      value="student"
-                    >
-                      Student
-                    </option>
-                    <option
-                      style={{ backgroundColor: "#333A5C", color: "white" }}
-                      value="professional"
-                    >
-                      Professional
-                    </option>
-                  </select>
-                  {/* custom arrow to match input styling */}
-                  <svg
-                    className="pointer-events-none absolute right-4 w-4 h-4 text-indigo-300"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
-                      clipRule="evenodd"
+                      }}
+                      value={contactNumber}
+                      className="bg-transparent outline-none w-full text-white"
+                      type="tel"
+                      placeholder="Contact Number (e.g. 09XXXXXXXXX)"
+                      required
                     />
-                  </svg>
+                  </div>
+                  {errors.contactNumber && (
+                    <p className="text-red-400 text-xs mt-1 ml-5">
+                      {errors.contactNumber}
+                    </p>
+                  )}
                 </div>
-              </div>
 
-              <div className="mb-4">
-                <div
-                  className={`flex items-center gap-3 w-full px-5 py-2.5 rounded-full ${
-                    errors.icpepId
-                      ? "bg-red-900/20 border border-red-500"
-                      : "bg-[#333A5C]"
-                  } text-white relative`}
-                >
-                  <img src={assets.id_icon} width="16" height="18" alt="" />
-                  <select
-                    value={membership}
-                    onChange={(e) => handleMembershipChange(e.target.value)}
-                    className="appearance-none bg-transparent outline-none w-full text-white pr-8"
-                    required
+                {/* User Type + Membership (Side by Side, Same Height as Name Field) */}
+                <div className="mb-4 flex gap-3">
+                  {/* User Type */}
+                  <div
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-full flex-1 ${"bg-[#333A5C]"} text-white relative`}
                   >
-                    <option
-                      style={{ backgroundColor: "#333A5C", color: "white" }}
-                      value="member"
+                    <img src={assets.person_icon} alt="" className="w-5 h-5" />
+                    <select
+                      value={userType}
+                      onChange={(e) => setuserType(e.target.value)}
+                      className="appearance-none bg-transparent outline-none w-full text-white text-base pr-6"
+                      required
                     >
-                      Member
-                    </option>
-                    <option
-                      style={{ backgroundColor: "#333A5C", color: "white" }}
-                      value="non-member"
+                      <option
+                        style={{ backgroundColor: "#333A5C", color: "white" }}
+                        value="student"
+                      >
+                        Student
+                      </option>
+                      <option
+                        style={{ backgroundColor: "#333A5C", color: "white" }}
+                        value="professional"
+                      >
+                        Professional
+                      </option>
+                    </select>
+                    <svg
+                      className="pointer-events-none absolute right-3 w-4 h-4 text-indigo-300"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
                     >
-                      Non-Member
-                    </option>
-                  </select>
-                  <svg
-                    className="pointer-events-none absolute right-4 w-4 h-4 text-indigo-300"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
+                      <path
+                        fillRule="evenodd"
+                        d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+
+                  {/* Membership */}
+                  <div
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-full flex-1 ${
+                      errors.icpepId
+                        ? "bg-red-900/20 border border-red-500"
+                        : "bg-[#333A5C]"
+                    } text-white relative`}
                   >
-                    <path
-                      fillRule="evenodd"
-                      d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                    <img src={assets.id_icon} alt="" className="w-5 h-5" />
+                    <select
+                      value={membership}
+                      onChange={(e) => handleMembershipChange(e.target.value)}
+                      className="appearance-none bg-transparent outline-none w-full text-white text-base pr-6"
+                      required
+                    >
+                      <option
+                        style={{ backgroundColor: "#333A5C", color: "white" }}
+                        value="member"
+                      >
+                        Member
+                      </option>
+                      <option
+                        style={{ backgroundColor: "#333A5C", color: "white" }}
+                        value="non-member"
+                      >
+                        Non-Member
+                      </option>
+                    </select>
+                    <svg
+                      className="pointer-events-none absolute right-3 w-4 h-4 text-indigo-300"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
                 </div>
-              </div>
-              <div
-                className={`transition-all duration-300 ease-in-out ${
-                  membership === "member"
-                    ? "opacity-100 max-h-40 mb-4"
-                    : "opacity-0 max-h-0 mb-0 overflow-hidden"
-                }`}
-              >
+
+                {/* ICPEP ID (only if member) */}
                 <div
-                  className={`flex items-center gap-3 w-full px-5 py-2.5 rounded-full ${
-                    errors.icpepId
-                      ? "bg-red-900/20 border border-red-500"
-                      : "bg-[#333A5C]"
+                  className={`transition-all duration-300 ease-in-out ${
+                    membership === "member"
+                      ? "opacity-100 max-h-40 mb-4"
+                      : "opacity-0 max-h-0 mb-0 overflow-hidden"
                   }`}
                 >
-                  <img src={assets.id_icon} width="16" height="18" alt="" />
-                  <input
-                    onChange={(e) => {
-                      setIcpepId(e.target.value);
-                      clearError("icpepId");
-                    }}
-                    value={icpepId}
-                    className="bg-transparent outline-none w-full text-white"
-                    placeholder="ICPEP ID"
-                    required={membership === "member"}
-                  />
+                  <div
+                    className={`flex items-center gap-3 w-full px-4 py-1.5 rounded-full ${
+                      errors.icpepId
+                        ? "bg-red-900/20 border border-red-500"
+                        : "bg-[#333A5C]"
+                    }`}
+                  >
+                    <img src={assets.id_icon} width="16" height="18" alt="" />
+                    <input
+                      onChange={(e) => {
+                        setIcpepId(e.target.value);
+                        clearError("icpepId");
+                      }}
+                      value={icpepId}
+                      className="bg-transparent outline-none w-full text-white"
+                      placeholder="ICPEP ID"
+                      required={membership === "member"}
+                    />
+                  </div>
+                  {errors.icpepId && (
+                    <p className="text-red-400 text-xs mt-1 ml-5">
+                      {errors.icpepId}
+                    </p>
+                  )}
                 </div>
-                {errors.icpepId && (
-                  <p className="text-red-400 text-xs mt-1 ml-5">
-                    {errors.icpepId}
-                  </p>
-                )}
-              </div>
-            </>
-          )}
-
-          <div className="mb-4">
-            <div
-              className={`flex items-center gap-3 w-full px-5 py-2.5 rounded-full ${
-                errors.email
-                  ? "bg-red-900/20 border border-red-500"
-                  : "bg-[#333A5C]"
-              } text-white`}
-            >
-              <img src={assets.mail_icon} alt="" />
-              <input
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  clearError("email");
-                }}
-                value={email}
-                className="bg-transparent outline-none w-full"
-                type="email"
-                placeholder="Email"
-                required
-              />
-            </div>
-            {errors.email && (
-              <p className="text-red-400 text-xs mt-1 ml-5">{errors.email}</p>
+              </>
             )}
-          </div>
 
-          <div className="mb-4">
-            <div
-              className={`flex items-center gap-3 w-full px-5 py-2.5 rounded-full ${
-                errors.password
-                  ? "bg-red-900/20 border border-red-500"
-                  : "bg-[#333A5C]"
-              } relative text-white`}
-            >
-              <img src={assets.lock_icon} alt="Lock Icon" />
-              <input
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  clearError("password");
-                }}
-                value={password}
-                className="bg-transparent outline-none flex-1"
-                type={showPassword ? "" : "password"}
-                placeholder="Password"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-5 text-indigo-300"
-              >
-                <img
-                  src={
-                    showPassword ? assets.eye_open_icon : assets.eye_closed_icon
-                  }
-                  alt={showPassword ? "Hide Password" : "Show Password"}
-                  className="w-5 h-5"
-                />
-              </button>
-            </div>
-            {errors.password && (
-              <p className="text-red-400 text-xs mt-1 ml-5">
-                {errors.password}
-              </p>
-            )}
-          </div>
-
-          {state === "Sign Up" && (
             <div className="mb-4">
               <div
-                className={`flex items-center text-indigo-300 text-xs ${
-                  errors.agree ? "border border-red-500 rounded p-2" : ""
-                }`}
+                className={`flex items-center gap-3 w-full px-5 py-2.5 rounded-full ${
+                  errors.email && email.trim() !== ""
+                    ? "bg-red-900/20 border border-red-500"
+                    : "bg-[#333A5C]"
+                } text-white`}
               >
+                <img src={assets.mail_icon} alt="" />
                 <input
-                  type="checkbox"
-                  checked={agree}
+                  type="email"
+                  placeholder="Email"
+                  value={email}
                   onChange={(e) => {
-                    setAgree(e.target.checked);
-                    clearError("agree");
+                    const val = e.target.value;
+                    setEmail(val);
+
+                    const emailRegex =
+                      /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$/;
+                    if (!val.trim()) {
+                      setErrors((prev) => ({
+                        ...prev,
+                        email: "Email is required",
+                      }));
+                    } else if (!emailRegex.test(val.trim())) {
+                      setErrors((prev) => ({
+                        ...prev,
+                        email: "Please enter a valid email address",
+                      }));
+                    } else {
+                      setErrors((prev) => {
+                        const { email, ...rest } = prev;
+                        return rest;
+                      });
+                    }
                   }}
-                  className="mr-2 accent-blue-500 w-4 h-4"
+                  className="appearance-none bg-transparent outline-none w-full text-white"
                   required
                 />
-                <span>
-                  I agree to the{" "}
-                  <button
-                    type="button"
-                    onClick={() => setShowTerms(true)}
-                    className="text-blue-400 underline"
-                  >
-                    Terms and Conditions
-                  </button>{" "}
-                  and{" "}
-                  <button
-                    type="button"
-                    onClick={() => setShowPrivacy(true)}
-                    className="text-blue-400 underline"
-                  >
-                    Privacy Policy
-                  </button>
-                </span>
               </div>
-              {errors.agree && (
-                <p className="text-red-400 text-xs mt-1 ml-5">{errors.agree}</p>
+              {errors.email && email.trim() !== "" && (
+                <p className="text-red-400 text-xs mt-1">{errors.email}</p>
               )}
             </div>
-          )}
 
-          {state !== "Sign Up" && (
-            <div className="mb-4 flex items-center justify-between">
-              <label className="flex items-center text-indigo-300">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="mr-2"
-                />
-                Remember Me
-              </label>
-              <p
-                onClick={() => navigate("/reset-password")}
-                className="text-indigo-500 cursor-pointer"
+            <div className="mb-4">
+              <div
+                className={`flex items-center gap-3 w-full px-5 py-2.5 rounded-full ${
+                  errors.password
+                    ? "bg-red-900/20 border border-red-500"
+                    : "bg-[#333A5C]"
+                } relative text-white`}
               >
-                Forgot password?
-              </p>
+                <img src={assets.lock_icon} alt="Lock Icon" />
+                <input
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setPassword(val);
+                    clearError("password");
+                    setPasswordStrength(getPasswordStrength(val));
+                  }}
+                  value={password}
+                  className="bg-transparent outline-none flex-1"
+                  type={showPassword ? " " : "password"}
+                  placeholder="Password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-5 text-indigo-300"
+                >
+                  <img
+                    src={
+                      showPassword
+                        ? assets.eye_open_icon
+                        : assets.eye_closed_icon
+                    }
+                    alt={showPassword ? "Hide Password" : "Show Password"}
+                    className="w-5 h-5"
+                  />
+                </button>
+              </div>
+
+              {/* 🔴 Show error if invalid */}
+              {errors.password && (
+                <p className="text-red-400 text-xs mt-1 ml-5">
+                  {errors.password}
+                </p>
+              )}
+
+              {/* 🟢 Password strength bar (only on Sign Up) */}
+              {state === "Sign Up" && password && !errors.password && (
+                <div className="ml-5 mt-2">
+                  {/* Bar background */}
+                  <div className="w-48 h-2 bg-gray-700 rounded-full overflow-hidden">
+                    {/* Fill bar */}
+                    <div
+                      className={`h-2 transition-all duration-300 ${
+                        passwordStrength === "weak"
+                          ? "w-1/3 bg-red-500"
+                          : passwordStrength === "medium"
+                          ? "w-2/3 bg-yellow-400"
+                          : passwordStrength === "strong"
+                          ? "w-full bg-green-500"
+                          : "w-0"
+                      }`}
+                    />
+                  </div>
+                  {/* Label */}
+                  <p
+                    className={`mt-1 text-xs font-medium ${
+                      passwordStrength === "weak"
+                        ? "text-red-400"
+                        : passwordStrength === "medium"
+                        ? "text-yellow-400"
+                        : "text-green-400"
+                    }`}
+                  >
+                    {passwordStrength.charAt(0).toUpperCase() +
+                      passwordStrength.slice(1)}{" "}
+                    password
+                  </p>
+                </div>
+              )}
             </div>
+
+            {state === "Sign Up" && (
+              <div className="mb-4">
+                <div
+                  className={`flex items-start gap-2 text-indigo-300 text-sm ${
+                    errors.agree ? "border border-red-500 rounded p-2" : ""
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={agree}
+                    onChange={(e) => {
+                      setAgree(e.target.checked);
+                      clearError("agree");
+                    }}
+                    className="mt-1 accent-blue-500 w-4 h-4 shrink-0"
+                    required
+                  />
+                  <span className="leading-relaxed">
+                    I agree to the{" "}
+                    <button
+                      type="button"
+                      onClick={() => setShowTerms(true)}
+                      className="text-blue-400 underline hover:text-blue-300"
+                    >
+                      Terms and Conditions
+                    </button>{" "}
+                    and{" "}
+                    <button
+                      type="button"
+                      onClick={() => setShowPrivacy(true)}
+                      className="text-blue-400 underline hover:text-blue-300"
+                    >
+                      Privacy Policy
+                    </button>
+                  </span>
+                </div>
+
+                {errors.agree && (
+                  <p className="text-red-400 text-xs mt-1 ml-6">
+                    {errors.agree}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {state !== "Sign Up" && (
+              <div className="mb-4 flex items-center justify-between">
+                <label className="flex items-center text-indigo-300">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="mr-2"
+                  />
+                  Remember Me
+                </label>
+                <p
+                  onClick={() => navigate("/reset-password")}
+                  className="text-indigo-500 cursor-pointer"
+                >
+                  Forgot password?
+                </p>
+              </div>
+            )}
+
+            <button className="w-full py-2.5 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-900 text-white font-medium">
+              {state}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <a
+              href="https://github.com/dokling1234/registra/releases/download/v0.01/Registra-release.apk"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors text-sm"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Download Mobile App
+            </a>
+          </div>
+
+          {state === "Sign Up" ? (
+            <p className="text-gray-400 text-center text-xs mt-4">
+              Already have an account?{" "}
+              <span
+                onClick={() => {
+                  setState("Login");
+                  setRememberMe(false);
+                  setEmail("");
+                  setPassword("");
+                  setErrors({}); // Clear all errors when switching to login
+                  localStorage.removeItem("userEmail");
+                  localStorage.removeItem("userPassword");
+                }}
+                className="text-blue-400 cursor-pointer underline"
+              >
+                Login Here
+              </span>
+            </p>
+          ) : (
+            <p className="text-gray-400 text-center text-xs mt-4">
+              Don't have an account?{" "}
+              <span
+                onClick={() => {
+                  setState("Sign Up");
+                  setRememberMe(false);
+                  setEmail("");
+                  setPassword("");
+                  setErrors({}); // Clear all errors when switching to sign up
+                  localStorage.removeItem("userEmail");
+                  localStorage.removeItem("userPassword");
+                }}
+                className="text-blue-400 cursor-pointer underline"
+              >
+                Sign up
+              </span>
+            </p>
           )}
-
-          <button className="w-full py-2.5 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-900 text-white font-medium">
-            {state}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <a
-            href="https://github.com/dokling1234/registra/releases/download/v0.01/Registra-release.apk"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors text-sm"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Download Mobile App
-          </a>
-        </div>
-
-        {state === "Sign Up" ? (
-          <p className="text-gray-400 text-center text-xs mt-4">
-            Already have an account?{" "}
-            <span
-              onClick={() => {
-                setState("Login");
-                setRememberMe(false);
-                setEmail("");
-                setPassword("");
-                setErrors({}); // Clear all errors when switching to login
-                localStorage.removeItem("userEmail");
-                localStorage.removeItem("userPassword");
-              }}
-              className="text-blue-400 cursor-pointer underline"
-            >
-              Login Here
-            </span>
-          </p>
-        ) : (
-          <p className="text-gray-400 text-center text-xs mt-4">
-            Don't have an account?{" "}
-            <span
-              onClick={() => {
-                setState("Sign Up");
-                setRememberMe(false);
-                setEmail("");
-                setPassword("");
-                setErrors({}); // Clear all errors when switching to sign up
-                localStorage.removeItem("userEmail");
-                localStorage.removeItem("userPassword");
-              }}
-              className="text-blue-400 cursor-pointer underline"
-            >
-              Sign up
-            </span>
-          </p>
-        )}
+        </motion.div>
       </div>
 
       {/* Terms Modal - only for Sign Up */}
       {showTerms && state === "Sign Up" && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-2xl w-full text-gray-800 overflow-y-auto max-h-[85vh] relative">
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-2xl w-full text-gray-800 overflow-y-auto hide-scrollbar max-h-[85vh] relative">
             {/* Header */}
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
               <h2 className="text-2xl font-bold text-gray-900">
@@ -825,7 +935,7 @@ const Login = () => {
       {/* Privacy Policy Modal - only for Sign Up */}
       {showPrivacy && state === "Sign Up" && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-2xl w-full text-gray-800 overflow-y-auto max-h-[85vh] relative">
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-2xl w-full text-gray-800 overflow-y-auto hide-scrollbar max-h-[85vh] relative">
             {/* Header */}
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
               <h2 className="text-2xl font-bold text-gray-900">

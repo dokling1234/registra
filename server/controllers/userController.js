@@ -23,10 +23,10 @@ const getUserData = async (req, res) => {
     } else {
       console.log("Fetching regular user:", userId);
       user = await userModel.findById(userId);
-            console.log(userType)
+      console.log(userType)
 
     }
-console.log(user)
+    console.log(user)
     // if (!user) {
     //   return res.json({
     //     success: false,
@@ -174,7 +174,7 @@ const sendOTPHandler = async (req, res, next) => {
 const verifyOTP = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
-        console.log(email, "", otp);
+    console.log(email, otp);
 
     if (!email || !otp) {
       return res
@@ -183,8 +183,6 @@ const verifyOTP = async (req, res, next) => {
     }
 
     const storedOTP = otpStorage[email];
-    console.log(storedOTP);
-    console.log("storedOTP");
     if (!storedOTP) {
       return res
         .status(400)
@@ -192,24 +190,24 @@ const verifyOTP = async (req, res, next) => {
     }
 
     const { code, timestamp } = storedOTP;
-    console.log(storedOTP.code);
+
+    // Check expiration
     if (Date.now() - timestamp > MAX_OTP_AGE) {
-      console.log("otp exipred");
       delete otpStorage[email];
       return res.status(400).json({ status: false, message: "OTP expired" });
     }
 
-    if (storedOTP !== otp) {
-      console.log(code, otp); 
+    // Compare OTP correctly
+    if (code !== otp) {
+      console.log("Expected:", code, "Received:", otp);
       return res.status(400).json({ status: false, message: "Invalid OTP" });
     }
 
+    // If valid, delete OTP and verify user
     delete otpStorage[email];
     await UserService.verifyUser(email, true);
 
-    res
-      .status(200)
-      .json({ status: true, message: "OTP verified successfully" });
+    res.status(200).json({ status: true, message: "OTP verified successfully" });
   } catch (error) {
     console.error("OTP Verification Error:", error);
     res.status(500).json({
@@ -218,6 +216,7 @@ const verifyOTP = async (req, res, next) => {
     });
   }
 };
+
 
 const mobileLogin = async (req, res, next) => {
   try {
@@ -452,7 +451,7 @@ const mobileResetPassword = async (req, res, next) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-}; 
+};
 
 const checkEmail = async (req, res) => {
   try {
@@ -570,20 +569,20 @@ const mobileRegister = async (req, res, next) => {
       if (serviceError.code === 11000) {
         // Check if it's a duplicate email or icpepId
         if (serviceError.keyPattern && serviceError.keyPattern.email) {
-          return res.status(400).json({ 
-            status: false, 
+          return res.status(400).json({
+            status: false,
             message: "Email already exists",
             field: "email"
           });
         } else if (serviceError.keyPattern && serviceError.keyPattern.icpepId) {
-          return res.status(400).json({ 
-            status: false, 
+          return res.status(400).json({
+            status: false,
             message: "ICPEP ID already exists",
             field: "icpepId"
           });
         } else {
-          return res.status(400).json({ 
-            status: false, 
+          return res.status(400).json({
+            status: false,
             message: "Duplicate entry found",
             field: "general"
           });

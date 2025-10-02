@@ -17,6 +17,7 @@ const {
   mobileRegisterForEvent,
   getTicketQR,
   getRegisteredPastEvents,
+  resendTicket,
 } = require("../controllers/eventController.js");
 const userAuth = require("../middleware/userAuth.js");
 
@@ -34,6 +35,7 @@ eventRouter.post("/location/reverse-geocode", reverseGeocode);
 eventRouter.put("/updatePaymentStatus/:id", updatePaymentStatus);
 eventRouter.get("/registered/:id", userAuth, getRegisteredEventDetail);
 eventRouter.post("/search", getEventByTitle);
+eventRouter.post("/resend-ticket/:eventId", userAuth, resendTicket);
 
 const mobileEventRouter = express.Router();
 

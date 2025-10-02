@@ -1,3 +1,4 @@
+/* ---------------- Header ---------------- */
 .header-container {
   display: flex;
   flex-direction: column;
@@ -40,11 +41,12 @@
   max-width: 28rem;
 }
 
+/* ---------------- Carousel ---------------- */
 .carousel-container {
   position: relative;
   width: 300%;
-  max-width: 80rem; /* increased width from 36rem to 64rem */
-  height: 30rem; /* new fixed height */
+  max-width: 80rem;
+  height: 30rem; /* fixed height landscape */
   overflow: hidden;
   border-radius: 0.75rem;
   box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
@@ -57,12 +59,12 @@
 }
 
 img[alt="INSTITUTE OF COMPUTER ENGINEERS OF THE PHILIPPINES"] {
-  width: 100%; /* Makes the image span the full width of the container */
-  height: auto; /* Maintains aspect ratio */
-  max-width: 1500px; /* Maximum size for the image, adjust as needed */
-  object-fit: cover; /* Ensures image covers container without distortion */
-  font-size: 3rem; /* Similar to h1 size */
-  font-weight: bold; /* Making text bold (though not necessary for an image) */
+  width: 100%;
+  height: auto;
+  max-width: 1500px;
+  object-fit: cover;
+  font-size: 3rem;
+  font-weight: bold;
 }
 
 .carousel-dots {
@@ -79,13 +81,13 @@ img[alt="INSTITUTE OF COMPUTER ENGINEERS OF THE PHILIPPINES"] {
   width: 0.75rem;
   height: 0.75rem;
   border-radius: 9999px;
-  background-color: #e2e8f0; /* gray-300 */
+  background-color: #e2e8f0;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
 
 .carousel-dot.active {
-  background-color: #2563eb; /* blue-600 */
+  background-color: #2563eb;
 }
 
 .carousel-text {
@@ -112,21 +114,25 @@ img[alt="INSTITUTE OF COMPUTER ENGINEERS OF THE PHILIPPINES"] {
   pointer-events: none;
 }
 
+/* ---------------- Search Filter ---------------- */
 .search-filter {
   margin-top: 2.5rem;
-  background-color: #1e293b; /* dark background */
+  background-color: #1e293b;
   color: white;
   padding: 2rem;
   text-align: center;
   border-radius: 1rem;
   margin-bottom: 2rem;
+  position: sticky;
+  top: 0; /* stays visible */
+  z-index: 50;
 }
 
 .filter-controls {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  align-items: flex-end; /* Aligns inputs and button at the bottom */
+  align-items: flex-end;
   gap: 1rem;
 }
 
@@ -142,7 +148,44 @@ img[alt="INSTITUTE OF COMPUTER ENGINEERS OF THE PHILIPPINES"] {
   font-weight: 600;
 }
 
-.filter-group select,
+/* ---------------- Dropdown Fix ---------------- */
+.filter-group select {
+  padding: 0.75rem 2.5rem 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  font-size: 1rem;
+  min-width: 12rem;
+  background-color: #334155;
+  color: white;
+  height: 3.3rem;
+  box-sizing: border-box;
+  cursor: pointer;
+  appearance: none;           /* remove default arrow */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='16' viewBox='0 0 24 24' width='16' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  overflow-y: auto;           /* only scroll if needed */
+  max-height: none;
+}
+
+/* Options inside dropdown */
+.filter-group select option {
+  background-color: #334155;
+  color: white;
+  padding: 0.5rem;
+}
+
+/* Focused dropdown */
+.filter-group select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.4);
+  border: 1px solid #2563eb;
+}
+
+/* Date input */
 .filter-group input[type="date"] {
   padding: 0.75rem;
   border-radius: 0.5rem;
@@ -153,17 +196,15 @@ img[alt="INSTITUTE OF COMPUTER ENGINEERS OF THE PHILIPPINES"] {
   color: white;
   box-sizing: border-box;
   height: 3.3rem;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
 }
 
-
+/* Placeholder */
 .filter-group select::placeholder,
 .filter-group input[type="date"]::placeholder {
-  color: #cbd5e1; /* light gray for placeholder */
+  color: #cbd5e1;
 }
 
+/* Search button */
 .search-btn {
   padding: 0.75rem 1.5rem;
   background-color: #2563eb;
@@ -172,14 +213,16 @@ img[alt="INSTITUTE OF COMPUTER ENGINEERS OF THE PHILIPPINES"] {
   border-radius: 0.5rem;
   font-size: 1.1rem;
   cursor: pointer;
-  height: 3.3rem; /* match input height */
-  margin-top: 0; /* remove extra top margin */
+  height: 3.3rem;
+  margin-top: 0;
   align-self: auto;
 }
 
 .search-btn:hover {
   background-color: #1d4ed8;
 }
+
+/* Section heading */
 .section-heading {
   font-size: 2rem;
   font-weight: 700;

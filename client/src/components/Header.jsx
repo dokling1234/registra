@@ -46,7 +46,10 @@ const Header = ({ filters, setFilters, onSearch }) => {
     <div className="header-container">
       <div className="carousel-container">
         <img src={carouselItems[current].image} className="carousel-image" />
-        <h1 className="carousel-title"> INSTITUTE OF COMPUTER ENGINEERS OF THE PHILIPPINES</h1>
+        <h1 className="carousel-title">
+          {" "}
+          INSTITUTE OF COMPUTER ENGINEERS OF THE PHILIPPINES
+        </h1>
 
         <div className="carousel-dots">
           {carouselItems.map((_, index) => (
@@ -85,8 +88,21 @@ const Header = ({ filters, setFilters, onSearch }) => {
             >
               <option value="">All</option>
               <option value="manila">Manila</option>
-              <option value="cebu">Quezon </option>
-              <option value="davao">Makati</option>
+              <option value="quezon">Quezon City</option>
+              <option value="makati">Makati</option>
+              <option value="pasig">Pasig</option>
+              <option value="taguig">Taguig</option>
+              <option value="mandaluyong">Mandaluyong</option>
+              <option value="caloocan">Caloocan</option>
+              <option value="valenzuela">Valenzuela</option>
+              <option value="malabon">Malabon</option>
+              <option value="navotas">Navotas</option>
+              <option value="marikina">Marikina</option>
+              <option value="paranaque">Parañaque</option>
+              <option value="laspinas">Las Piñas</option>
+              <option value="muntinlupa">Muntinlupa</option>
+              <option value="sanjuan">San Juan</option>
+              <option value="pateros">Pateros</option>
             </select>
           </div>
 
@@ -111,7 +127,7 @@ const Header = ({ filters, setFilters, onSearch }) => {
             />
           </div>
           <button className="search-btn" onClick={handleSearch}>
-            Search 🔍 
+            Search 🔍
           </button>
         </div>
       </div>

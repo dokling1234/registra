@@ -23,9 +23,9 @@ const EventList = ({ filters }) => {
   const pastLastCardRef = useRef(null);
 
   const defaultFilters = {
-    eventType: '',
-    location: '',
-    date: ''
+    eventType: "",
+    location: "",
+    date: "",
   };
 
   const appliedFilters = filters || defaultFilters;
@@ -45,19 +45,27 @@ const EventList = ({ filters }) => {
         let filtered = [...targetFiltered];
         if (appliedFilters.eventType) {
           filtered = filtered.filter(
-            (e) => e.eventType?.toLowerCase() === appliedFilters.eventType.toLowerCase()
+            (e) =>
+              e.eventType?.toLowerCase() ===
+              appliedFilters.eventType.toLowerCase()
           );
         }
         if (appliedFilters.location) {
-          filtered = filtered.filter(
-            (e) => e.location?.toLowerCase().includes(appliedFilters.location.toLowerCase())
+          filtered = filtered.filter((e) =>
+            e.location
+              ?.toLowerCase()
+              .includes(appliedFilters.location.toLowerCase())
           );
         }
         if (appliedFilters.startDate || appliedFilters.endDate) {
           filtered = filtered.filter((e) => {
             const eventDate = new Date(e.date);
-            const start = appliedFilters.startDate ? new Date(appliedFilters.startDate) : null;
-            const end = appliedFilters.endDate ? new Date(appliedFilters.endDate) : null;
+            const start = appliedFilters.startDate
+              ? new Date(appliedFilters.startDate)
+              : null;
+            const end = appliedFilters.endDate
+              ? new Date(appliedFilters.endDate)
+              : null;
 
             if (start && end) return eventDate >= start && eventDate <= end;
             if (start) return eventDate >= start;
@@ -67,13 +75,20 @@ const EventList = ({ filters }) => {
         }
 
         const currentDate = new Date();
-        const upcoming = filtered.filter(event => new Date(event.date) >= currentDate);
-        const past = filtered.filter(event => new Date(event.date) < currentDate);
+        const upcoming = filtered.filter(
+          (event) => new Date(event.date) >= currentDate
+        );
+        const past = filtered.filter(
+          (event) => new Date(event.date) < currentDate
+        );
 
         setEvents(upcoming);
         setPastEvents(past);
       } catch (err) {
-        console.error("Error fetching events:", err.response?.data || err.message);
+        console.error(
+          "Error fetching events:",
+          err.response?.data || err.message
+        );
       }
     };
 
@@ -88,15 +103,16 @@ const EventList = ({ filters }) => {
     if (type === "less" && ref?.current) {
       window.scrollTo({
         top: ref.current.offsetTop - offset,
-        behavior: "smooth"
+        behavior: "smooth",
       });
     } else if (type === "more" && cardRef?.current) {
       const rect = cardRef.current.getBoundingClientRect();
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollTop =
+        window.pageYOffset || document.documentElement.scrollTop;
       const targetTop = rect.top + scrollTop - offset;
       window.scrollTo({
         top: targetTop,
-        behavior: "smooth"
+        behavior: "smooth",
       });
     }
   };
@@ -106,106 +122,132 @@ const EventList = ({ filters }) => {
       {location.pathname !== "/home" && <Navbar className="navbar-spacing" />}
       <div className="event-list-outer-container">
         <div className="event-list-container">
-          <h2 className="section-heading" ref={upcomingRef}>
-            Upcoming <span className="highlight">Events</span>
-          </h2>
-          <div className="event-grid">
-            <AnimatePresence>
-              {events.slice(0, visibleUpcoming).map((event, idx) => {
-                const isLastVisible = idx === visibleUpcoming - 1;
-                return (
-                  <motion.div
-                    key={event._id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -30 }}
-                    transition={{ duration: 0.3 }}
-                    ref={isLastVisible ? upcomingLastCardRef : null}
-                  >
-                    <EventCard event={event} />
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-          {events.length > 3 && (
-            <div className="event-button-group">
-              {visibleUpcoming < events.length ? (
-                <button
-                  onClick={() => {
-                    setVisibleUpcoming(prev => {
-                      const newCount = prev + 3;
-                      setTimeout(() => handleScroll("more", null, upcomingLastCardRef), 300);
-                      return newCount;
-                    });
-                  }}
-                  className="event-toggle-btn"
-                >
-                  Load More
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setVisibleUpcoming(3);
-                    setTimeout(() => handleScroll("less", upcomingRef), 300);
-                  }}
-                  className="event-toggle-btn"
-                >
-                  Show Less
-                </button>
+          {events.length === 0 && pastEvents.length === 0 ? (
+            <p className="no-events-message">No events found</p>
+          ) : (
+            <>
+              {/* Upcoming Events */}
+              <h2 className="section-heading" ref={upcomingRef}>
+                Upcoming <span className="highlight">Events</span>
+              </h2>
+              <div className="event-grid">
+                <AnimatePresence>
+                  {events.length === 0 ? (
+                    <p className="no-events-message">No upcoming events</p>
+                  ) : (
+                    events.slice(0, visibleUpcoming).map((event, idx) => {
+                      const isLastVisible = idx === visibleUpcoming - 1;
+                      return (
+                        <motion.div
+                          key={event._id}
+                          initial={{ opacity: 0, y: 30 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -30 }}
+                          transition={{ duration: 0.3 }}
+                          ref={isLastVisible ? upcomingLastCardRef : null}
+                        >
+                          <EventCard event={event} />
+                        </motion.div>
+                      );
+                    })
+                  )}
+                </AnimatePresence>
+              </div>
+              {events.length > 3 && (
+                <div className="event-button-group">
+                  {visibleUpcoming < events.length ? (
+                    <button
+                      onClick={() => {
+                        setVisibleUpcoming((prev) => {
+                          const newCount = prev + 3;
+                          setTimeout(
+                            () =>
+                              handleScroll("more", null, upcomingLastCardRef),
+                            300
+                          );
+                          return newCount;
+                        });
+                      }}
+                      className="event-toggle-btn"
+                    >
+                      Load More
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setVisibleUpcoming(3);
+                        setTimeout(
+                          () => handleScroll("less", upcomingRef),
+                          300
+                        );
+                      }}
+                      className="event-toggle-btn"
+                    >
+                      Show Less
+                    </button>
+                  )}
+                </div>
               )}
-            </div>
-          )}
 
-          <h2 className="section-heading past-events-heading" ref={pastRef}>
-            Past <span className="highlight">Events</span>
-          </h2>
-          <div className="event-grid">
-            <AnimatePresence>
-              {pastEvents.slice(0, visiblePast).map((event, idx) => {
-                const isLastVisible = idx === visiblePast - 1;
-                return (
-                  <motion.div
-                    key={event._id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -30 }}
-                    transition={{ duration: 0.3 }}
-                    ref={isLastVisible ? pastLastCardRef : null}
-                  >
-                    <EventCard event={event} />
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-          {pastEvents.length > 3 && (
-            <div className="event-button-group">
-              {visiblePast < pastEvents.length ? (
-                <button
-                  onClick={() => {
-                    setVisiblePast(prev => {
-                      const newCount = prev + 3;
-                      setTimeout(() => handleScroll("more", null, pastLastCardRef), 300);
-                      return newCount;
-                    });
-                  }}
-                  className="event-toggle-btn"
-                >
-                  Load More
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setVisiblePast(3);
-                    setTimeout(() => handleScroll("less", pastRef), 300);
-                  }}
-                  className="event-toggle-btn"
-                >
-                  Show Less
-                </button>
+              {/* Past Events */}
+              <h2 className="section-heading past-events-heading" ref={pastRef}>
+                Past <span className="highlight">Events</span>
+              </h2>
+              <div className="event-grid">
+                <AnimatePresence>
+                  {pastEvents.length === 0 ? (
+                    <p className="no-events-message">No past events</p>
+                  ) : (
+                    pastEvents.slice(0, visiblePast).map((event, idx) => {
+                      const isLastVisible = idx === visiblePast - 1;
+                      return (
+                        <motion.div
+                          key={event._id}
+                          initial={{ opacity: 0, y: 30 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -30 }}
+                          transition={{ duration: 0.3 }}
+                          ref={isLastVisible ? pastLastCardRef : null}
+                        >
+                          <EventCard event={event} />
+                        </motion.div>
+                      );
+                    })
+                  )}
+                </AnimatePresence>
+              </div>
+              {pastEvents.length > 3 && (
+                <div className="event-button-group">
+                  {visiblePast < pastEvents.length ? (
+                    <button
+                      onClick={() => {
+                        setVisiblePast((prev) => {
+                          const newCount = prev + 3;
+                          setTimeout(
+                            () => handleScroll("more", null, pastLastCardRef),
+                            300
+                          );
+                          return newCount;
+                        });
+                      }}
+                      className="event-toggle-btn"
+                    >
+                      Load More
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setVisiblePast(3);
+                        setTimeout(() => handleScroll("less", pastRef), 300);
+                      }}
+                      className="event-toggle-btn"
+                    >
+                      Show Less
+                    </button>
+                  )}
+                </div>
               )}
-            </div>
+            </>
           )}
         </div>
       </div>

@@ -106,7 +106,7 @@ const createEvent = async (req, res) => {
         targetId: event._id,
         metadata: { title },
       });
-    } catch (_) {}
+    } catch (_) { }
 
     res.status(201).json({
       success: true,
@@ -264,6 +264,8 @@ const registerForEvent = async (req, res) => {
   const { userId } = req.user;
 
   try {
+    console.log(eventId);
+    
     const event = await eventModel.findById(eventId);
     if (!event) {
       return res
@@ -720,6 +722,42 @@ const getTicketQR = async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 };
+// controllers/eventController.js
+
+
+const resendTicket = async (req, res) => {
+  const { eventId } = req.params;
+  const { userId } = req.body;
+
+  if (!userId) return res.status(400).json({ message: "User ID is required" });
+
+  try {
+    const event = await eventModel.findById(eventId);
+    if (!event) return res.status(404).json({ message: "Event not found" });
+
+    const registration = event.registrations.find(
+      r => r.userId.toString() === userId.toString()
+    );
+
+    if (!registration)
+      return res.status(404).json({ message: "User not registered" });
+
+    // Generate QR if missing
+    if (!registration.ticketQR) {
+      registration.ticketQR = await QRCode.toDataURL(
+        event.webinarLink || JSON.stringify({ id: registration._id })
+      );
+      await event.save();
+    }
+
+    res.status(200).json({ ticketUrl: registration.ticketQR });
+  } catch (err) {
+    console.error("Resend ticket error:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
 
 const getRegisteredPastEvents = async (req, res) => {
   const userId = req.query.userId;
@@ -790,4 +828,5 @@ module.exports = {
   mobileGetRegisteredEvents,
   getTicketQR,
   getRegisteredPastEvents,
+  resendTicket,
 };

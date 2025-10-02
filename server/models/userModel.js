@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   confirmPassword: { type: String }, //remove
-  contactNumber: { type: Number },
+  contactNumber: { type: String },
   icpepId: { type: String },
   otp: { type: String, default: "" },//otp
   otpExpireAt: { type: Number, default: 0 },//otpExpireAt

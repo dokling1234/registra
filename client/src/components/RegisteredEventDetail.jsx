@@ -193,6 +193,72 @@ const RegisteredEventDetail = () => {
   const navigate = useNavigate();
   const certificateRef = useRef(null);
   const [activeTemplateId, setActiveTemplateId] = useState(null);
+  
+const handleResendTicket = async () => {
+  const { value: file } = await Swal.fire({
+    title: "Resubmit Receipt",
+    html: `
+      <input type="file" id="newReceipt" accept="image/*,application/pdf" />
+      <div id="previewContainer" style="margin-top:10px;"></div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: "Upload",
+    preConfirm: () => {
+      const fileInput = document.getElementById("newReceipt");
+      if (!fileInput.files[0]) {
+        Swal.showValidationMessage("Please upload a receipt.");
+        return false;
+      }
+      return fileInput.files[0];
+    },
+  });
+
+  if (file) {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "event_preset");
+
+      // ✅ Upload to Cloudinary
+      const uploadRes = await axios.post(
+        "https://api.cloudinary.com/v1_1/dqbnc38or/image/upload",
+        formData
+      );
+
+      const imageUrl = uploadRes.data.secure_url;
+
+      // ✅ Send to backend (reusing your registerForEvent logic)
+      await axios.post(
+        `/api/events/register/${id}`,
+        {
+          fullName: userData.fullName,
+          userType: userData.userType,
+          email: userData.email,
+          receipt: imageUrl,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      Swal.fire({
+        icon: "success",
+        title: "Receipt Resubmitted",
+        text: "Your new receipt has been sent for review.",
+      });
+    } catch (err) {
+      console.error(err);
+      Swal.fire({
+        icon: "error",
+        title: "Upload Failed",
+        text: "Something went wrong. Please try again.",
+      });
+    }
+  }
+};
+
 
   useEffect(() => {
     const fetchRegisteredEvent = async () => {
@@ -612,13 +678,25 @@ const RegisteredEventDetail = () => {
             <p className="registered-message text-lg font-medium mb-2">
               You are registered for this event.
             </p>
-            {event.ticketUrl && (
+            {event.ticketUrl ? (
               <div className="flex justify-center items-center mt-4">
                 <img
                   src={event.ticketUrl}
                   alt="Your Ticket / QR Code"
                   className="w-48 h-48 object-contain shadow-md rounded-lg"
                 />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center mt-4">
+                <p className="text-red-600 font-semibold mb-2">
+                  Ticket request was rejected or not generated.
+                </p>
+                <button
+                  onClick={handleResendTicket}
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                >
+                  Resend Ticket Request
+                </button>
               </div>
             )}
           </div>

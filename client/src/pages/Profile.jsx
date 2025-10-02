@@ -21,11 +21,19 @@ const Profile = () => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = React.useRef();
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const [errors, setErrors] = useState({});
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
+  const isValidPhilippineNumber = (number) => {
+    const str = String(number || "").trim();
+    // 0XXXXXXXXXX or 639XXXXXXXXX
+    const regex = /^(0\d{10}|639\d{9})$/;
+    return regex.test(str);
+  };
+
   const [showPasswords, setShowPasswords] = useState({
     currentPassword: false,
     newPassword: false,
@@ -34,15 +42,14 @@ const Profile = () => {
   const [pastEvents, setPastEvents] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [eventFilter, setEventFilter] = useState("all");
-  
-    console.log(isAdmin);
-    useEffect(() => {
-      if (isAdmin) {
-        // Not an admin, redirect to home or another page
-        navigate("/");
-      }
-    }, [isAdmin, navigate]);
-  
+
+  console.log(isAdmin);
+  useEffect(() => {
+    if (isAdmin) {
+      // Not an admin, redirect to home or another page
+      navigate("/");
+    }
+  }, [isAdmin, navigate]);
 
   useEffect(() => {
     if (userData) {
@@ -187,7 +194,46 @@ const Profile = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (name === "contactNumber") {
+      // Remove non-digit characters
+      let formatted = value.replace(/[^\d]/g, "");
+
+      // Auto-correct to 09XXXXXXXXXX format
+      if (formatted.startsWith("639") && formatted.length > 3) {
+        formatted = "09" + formatted.slice(3);
+      } else if (formatted.startsWith("9") && formatted.length >= 1) {
+        formatted = "0" + formatted;
+      }
+
+      // Limit to 11 digits
+      if (formatted.startsWith("0")) {
+        formatted = formatted.slice(0, 11);
+      }
+
+      // Allow typing 6 as first digit for 639 prefix
+      else if (formatted.startsWith("6")) {
+        // do nothing, allow user to continue typing 639
+      } else if (formatted.length > 0) {
+        // block invalid input
+        formatted = "";
+      }
+
+      // Update state so input shows formatted value
+      setFormData((prev) => ({ ...prev, [name]: formatted }));
+
+      // Set error if number is invalid
+      setErrors((prev) => ({
+        ...prev,
+        [name]: !isValidPhilippineNumber(formatted),
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+      setErrors((prev) => ({
+        ...prev,
+        [name]: !String(value || "").trim(),
+      }));
+    }
   };
 
   const handleaboutMeChange = (e) => {
@@ -205,8 +251,19 @@ const Profile = () => {
     }));
   };
   const handleSaveProfile = async () => {
-    console.log("Form Data:", formData);
-    console.log("About Us:", aboutMe);
+    // Required fields
+    const requiredFields = ["fullName", "contactNumber"];
+
+    for (let field of requiredFields) {
+      if (!String(formData[field] || "").trim()) {
+        await Swal.fire({
+          icon: "error",
+          title: "Missing Fields",
+          text: "Please fill in all required fields before saving.",
+        });
+        return;
+      }
+    }
 
     try {
       const response = await axios.put(
@@ -217,13 +274,11 @@ const Profile = () => {
         }
       );
 
-      console.log("Server Response:", response.data);
-
       if (response.data.success) {
         Swal.fire({
           position: "center",
           icon: "success",
-          title: "Your work has been saved",
+          title: "Your profile has been updated",
           showConfirmButton: false,
           timer: 1500,
         });
@@ -238,7 +293,6 @@ const Profile = () => {
         });
       }
     } catch (error) {
-      console.error("Error updating profile:", error);
       await Swal.fire({
         icon: "error",
         title: "Error",
@@ -372,7 +426,10 @@ const Profile = () => {
                       name="fullName"
                       value={formData.fullName}
                       onChange={handleChange}
-                      className="w-full border px-4 py-2 rounded focus:ring-2 focus:ring-blue-200"
+                      className={`w-full border px-4 py-2 rounded focus:ring-2 focus:ring-blue-200 ${
+                        errors.fullName ? "border-red-500" : "border-gray-300"
+                      }`}
+                      required
                     />
                   </div>
                   <div>
@@ -396,7 +453,13 @@ const Profile = () => {
                       name="contactNumber"
                       value={formData.contactNumber}
                       onChange={handleChange}
-                      className="w-full border px-4 py-2 rounded focus:ring-2 focus:ring-blue-200"
+                      className={`w-full border px-4 py-2 rounded focus:ring-2 focus:ring-blue-200 ${
+                        errors.contactNumber
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      }`}
+                      required
+                      placeholder="e.g., 09171234567 or 639171234567"
                     />
                   </div>
                   <div>
@@ -438,11 +501,16 @@ const Profile = () => {
                 </div>
                 <div className="flex gap-3 mt-4">
                   <button
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition"
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition disabled:opacity-50"
                     onClick={handleSaveProfile}
+                    disabled={
+                      !String(formData.fullName || "").trim() ||
+                      !isValidPhilippineNumber(formData.contactNumber)
+                    }
                   >
                     Save
                   </button>
+
                   <button
                     className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-semibold shadow hover:bg-gray-400 transition"
                     onClick={handleCancelEdit}

@@ -30,7 +30,7 @@ const register = async (req, res) => {
   try {
     const existingUser = await userModel.findOne({ email });
     if (existingUser) {
-      return res.json({ success: false, message: "User already exists" });
+      return res.json({ success: false, message: "invalid email already exist" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -133,7 +133,7 @@ const adminLogin = async (req, res) => {
     const admin = await adminModel.findOne({ email });
 
     if (!admin) {
-      return res.json({ success: false, message: `Account not found` });
+      return res.json({ success: false, message: `Invalid Email` });
     }
 
     if (admin.userType !== "admin" && admin.userType !== "superadmin") {
@@ -233,6 +233,59 @@ const sendVerifyOtp = async (req, res) => {
     return res.json({ success: false, message: error.message });
   }
 };
+// Resend Verification OTP
+const resendOTP = async (req, res) => {
+  try {
+    const { userId } = req.user;
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (user.isVerified) {
+      return res.json({ success: false, message: "Account already verified" });
+    }
+
+    // Cooldown check (40 seconds)
+    if (user.lastOtpSentAt && Date.now() - user.lastOtpSentAt < 40 * 1000) {
+      const secondsLeft = Math.ceil(
+        40 - (Date.now() - user.lastOtpSentAt) / 1000
+      );
+      return res.status(429).json({
+        success: false,
+        message: `Please wait ${secondsLeft}s before requesting a new OTP.`,
+      });
+    }
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    user.otp = otp;
+    user.otpExpireAt = Date.now() + 24 * 60 * 60 * 1000;
+    user.lastOtpSentAt = Date.now(); // save cooldown timestamp
+    await user.save();
+
+    const mailOptions = {
+      from: process.env.SENDER_EMAIL,
+      to: user.email,
+      subject: "Resend OTP - Verify your account",
+      html: EMAIL_VERIFY_TEMPLATE.replace("{{otp}}", otp).replace(
+        "{{email}}",
+        user.email
+      ),
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    return res.json({
+      success: true,
+      message: "A new OTP has been sent to your email.",
+    });
+  } catch (error) {
+    console.error("Resend OTP error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Reset password controller
 const verifyEmail = async (req, res) => {
   const { otp } = req.body;
@@ -471,5 +524,6 @@ module.exports = {
   resetPassword,
   adminLogin,
   mobileAdminLogin,
-  adminChangePassword
+  adminChangePassword,
+  resendOTP,
 };

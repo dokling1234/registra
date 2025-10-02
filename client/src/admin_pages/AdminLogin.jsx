@@ -9,7 +9,8 @@ import SplashScreen from "../components/SplashScreen";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const { backendUrl, setIsLoggedin, getUserData, setIsAdmin } = useContext(AppContent);
+  const { backendUrl, setIsLoggedin, getUserData, setIsAdmin } =
+    useContext(AppContent);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,10 +32,10 @@ const AdminLogin = () => {
       if (data.passwordChangeRequired) {
         setAdminId(data.adminId);
         setShowPasswordChangePopup(true);
-      } else
-      
-      if (data.success) {
+        return;
+      }
 
+      if (data.success) {
         const userType = data.user?.userType;
         if (!userType) {
           toast.error("userType not found. Something went wrong.");
@@ -47,17 +48,36 @@ const AdminLogin = () => {
         toast.success(data.message);
 
         // brief splash before dashboard
-        const to = userType === "admin" ? "/admin/dashboard" : userType === "superadmin" ? "/superadmin/dashboard" : null;
+        const to =
+          userType === "admin"
+            ? "/admin/dashboard"
+            : userType === "superadmin"
+            ? "/superadmin/dashboard"
+            : null;
+
         if (!to) {
           toast.error("Invalid user type.");
           return;
         }
-        navigate("/splash?to=" + encodeURIComponent(to), { replace: true, state: { to } });
+
+        navigate("/splash?to=" + encodeURIComponent(to), {
+          replace: true,
+          state: { to },
+        });
       } else {
-        toast.error(data.message);
+        // Backend returned success: false (wrong credentials or blocked user)
+        toast.error(data.message || "Invalid email or password");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      if (error.response) {
+        if (error.response.status === 401) {
+          toast.error("Incorrect email or password.");
+        } else {
+          toast.error(error.response.data?.message || "Something went wrong.");
+        }
+      } else {
+        toast.error("Network error. Please try again.");
+      }
     }
   };
 
@@ -76,7 +96,7 @@ const AdminLogin = () => {
           title: "Success!",
           text: "Password updated. Please log in again.",
           timer: 1500,
-          showConfirmButton: false
+          showConfirmButton: false,
         });
         setShowPasswordChangePopup(false);
         setNewPassword("");
@@ -86,7 +106,7 @@ const AdminLogin = () => {
           icon: "error",
           title: "Error",
           text: res.data.message,
-          confirmButtonText: "OK"
+          confirmButtonText: "OK",
         });
       }
     } catch (error) {
@@ -95,7 +115,7 @@ const AdminLogin = () => {
         icon: "error",
         title: "Error",
         text: "Failed to change password. Please try again.",
-        confirmButtonText: "OK"
+        confirmButtonText: "OK",
       });
     }
   };
@@ -108,7 +128,13 @@ const AdminLogin = () => {
   }, []);
 
   if (showPreSplash) {
-    return <SplashScreen duration={900} message="Loading admin login..." defaultTo={"/admin"} />;
+    return (
+      <SplashScreen
+        duration={900}
+        message="Loading admin login..."
+        defaultTo={"/admin"}
+      />
+    );
   }
 
   return (
