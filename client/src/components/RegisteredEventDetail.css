@@ -8,6 +8,7 @@
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     margin-top: 10rem;
+    margin-bottom: 5rem;
 }
 
 /* Back Button */
@@ -78,18 +79,22 @@
     font-weight: 600;
 }
 
-/* Ticket Image */
+/* Ticket Container */
 .ticket-container {
-    margin-top: 1rem;
-    text-align: center;
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;  /* Centers horizontally */
+  align-items: center;      /* Centers vertically if there's space */
+  width: 100%;
 }
 
+/* Ticket Image */
 .ticket-image {
-    width: 200px;
-    height: 200px;
-    object-fit: cover;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 .rating-choices {
   display: flex;
