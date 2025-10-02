@@ -193,72 +193,73 @@ const RegisteredEventDetail = () => {
   const navigate = useNavigate();
   const certificateRef = useRef(null);
   const [activeTemplateId, setActiveTemplateId] = useState(null);
-  
-const handleResendTicket = async () => {
-  const { value: file } = await Swal.fire({
-    title: "Resubmit Receipt",
-    html: `
-      <input type="file" id="newReceipt" accept="image/*,application/pdf" />
-      <div id="previewContainer" style="margin-top:10px;"></div>
-    `,
-    showCancelButton: true,
-    confirmButtonText: "Upload",
-    preConfirm: () => {
-      const fileInput = document.getElementById("newReceipt");
-      if (!fileInput.files[0]) {
-        Swal.showValidationMessage("Please upload a receipt.");
-        return false;
-      }
-      return fileInput.files[0];
-    },
-  });
 
-  if (file) {
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("upload_preset", "event_preset");
+  const handleResendTicket = async () => {
+    navigate(`/uploadreceipt/${id}`);
 
-      // ✅ Upload to Cloudinary
-      const uploadRes = await axios.post(
-        "https://api.cloudinary.com/v1_1/dqbnc38or/image/upload",
-        formData
-      );
+    // const { value: file } = await Swal.fire({
+    //   title: "Resubmit Receipt",
+    //   html: `
+    //     <input type="file" id="newReceipt" accept="image/*,application/pdf" />
+    //     <div id="previewContainer" style="margin-top:10px;"></div>
+    //   `,
+    //   showCancelButton: true,
+    //   confirmButtonText: "Upload",
+    //   preConfirm: () => {
+    //     const fileInput = document.getElementById("newReceipt");
+    //     if (!fileInput.files[0]) {
+    //       Swal.showValidationMessage("Please upload a receipt.");
+    //       return false;
+    //     }
+    //     return fileInput.files[0];
+    //   },
+    // });
 
-      const imageUrl = uploadRes.data.secure_url;
+    // if (file) {
+    //   try {
+    //     const formData = new FormData();
+    //     formData.append("file", file);
+    //     formData.append("upload_preset", "event_preset");
 
-      // ✅ Send to backend (reusing your registerForEvent logic)
-      await axios.post(
-        `/api/events/register/${id}`,
-        {
-          fullName: userData.fullName,
-          userType: userData.userType,
-          email: userData.email,
-          receipt: imageUrl,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+    //     // ✅ Upload to Cloudinary
+    //     const uploadRes = await axios.post(
+    //       "https://api.cloudinary.com/v1_1/dqbnc38or/image/upload",
+    //       formData
+    //     );
 
-      Swal.fire({
-        icon: "success",
-        title: "Receipt Resubmitted",
-        text: "Your new receipt has been sent for review.",
-      });
-    } catch (err) {
-      console.error(err);
-      Swal.fire({
-        icon: "error",
-        title: "Upload Failed",
-        text: "Something went wrong. Please try again.",
-      });
-    }
-  }
-};
+    //     const imageUrl = uploadRes.data.secure_url;
 
+    //     // ✅ Send to backend (reusing your registerForEvent logic)
+    //     await axios.post(
+    //       `/api/events/register/${id}`,
+    //       {
+    //         fullName: userData.fullName,
+    //         userType: userData.userType,
+    //         email: userData.email,
+    //         receipt: imageUrl,
+    //       },
+    //       {
+    //         headers: {
+    //           Authorization: `Bearer ${localStorage.getItem("token")}`,
+    //         },
+    //       }
+    //     );
+
+    //     Swal.fire({
+    //       icon: "success",
+    //       title: "Receipt Resubmitted",
+    //       text: "Your new receipt has been sent for review.",
+    //     });
+    //   } catch (err) {
+    //     console.error(err);
+    //     Swal.fire({
+    //       icon: "error",
+    //       title: "Upload Failed",
+    //       text: "Something went wrong. Please try again.",
+    //     });
+    //   }
+    // }
+  };
 
   useEffect(() => {
     const fetchRegisteredEvent = async () => {
