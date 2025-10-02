@@ -80,12 +80,12 @@ const login = async (req, res) => {
     const account = await userModel.findOne({ email });
 
     if (!account) {
-      return res.json({ success: false, message: "Invalid email" });
+      return res.json({ success: false, message: "Incorrect Email or Password" });
     }
 
     const isMatch = await bcrypt.compare(password, account.password);
     if (!isMatch) {
-      return res.json({ success: false, message: "Invalid password" });
+      return res.json({ success: false, message: "Incorrect Email or Password" });
     }
 
     const token = jwt.sign(
