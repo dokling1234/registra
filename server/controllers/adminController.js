@@ -254,24 +254,38 @@ const getEvents = async (req, res) => {
 
 const registerForEvent = async (req, res) => {
   const { id } = req.params;
-  const { eventId, userId, email, paymentStatus, ticketQR, receipt, fullName } =
-    req.body;
+  const { userId, email, paymentStatus, ticketQR, receipt, fullName } = req.body;
+
   try {
     const event = await Event.findById(id);
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    const registrations = {
-      userId,
-      registeredAt: new Date(),
-      paymentStatus,
-      ticketQR,
-      fullName,
-      receipt,
-    };
+    // Check if user already registered
+    const existingRegistration = event.registrations.find(
+      (reg) => reg.userId.toString() === userId
+    );
 
-    event.registrations.push(registrations);
+    if (existingRegistration) {
+      // ✅ Update existing registration
+      existingRegistration.paymentStatus = paymentStatus || existingRegistration.paymentStatus;
+      existingRegistration.ticketQR = ticketQR || existingRegistration.ticketQR;
+      existingRegistration.receipt = receipt || existingRegistration.receipt;
+      existingRegistration.fullName = fullName || existingRegistration.fullName;
+      existingRegistration.registeredAt = new Date(); // Optional: Update timestamp
+    } else {
+      // ➕ Add new registration if not found
+      event.registrations.push({
+        userId,
+        fullName,
+        registeredAt: new Date(),
+        paymentStatus,
+        ticketQR,
+        receipt,
+      });
+    }
+
     await event.save();
 
     await logActivity(req, {
@@ -281,12 +295,13 @@ const registerForEvent = async (req, res) => {
       metadata: { userId, email, paymentStatus },
     });
 
-    res.status(200).json({ message: "Registration successful!" });
+    res.status(200).json({ message: "Registration updated successfully!" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 const QRchecker = async (req, res) => {
   const { userId } = req.body;
