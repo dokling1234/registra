@@ -262,20 +262,24 @@ const registerForEvent = async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    // Check if user already registered
+    // Ensure both IDs are strings for comparison
     const existingRegistration = event.registrations.find(
-      (reg) => reg.userId.toString() === userId
+      (reg) => reg.userId.toString() === String(userId)
     );
 
     if (existingRegistration) {
-      // ✅ Update existing registration
+      console.log("Updating existing registration...");
+
       existingRegistration.paymentStatus = paymentStatus || existingRegistration.paymentStatus;
       existingRegistration.ticketQR = ticketQR || existingRegistration.ticketQR;
       existingRegistration.receipt = receipt || existingRegistration.receipt;
       existingRegistration.fullName = fullName || existingRegistration.fullName;
-      existingRegistration.registeredAt = new Date(); // Optional: Update timestamp
+      existingRegistration.registeredAt = new Date();
+
+      // ✅ Force mongoose to recognize subdocument as modified
+      event.markModified("registrations");
     } else {
-      // ➕ Add new registration if not found
+      console.log("Adding new registration...");
       event.registrations.push({
         userId,
         fullName,
@@ -301,6 +305,7 @@ const registerForEvent = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 
 const QRchecker = async (req, res) => {
