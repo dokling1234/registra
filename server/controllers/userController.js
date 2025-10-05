@@ -69,6 +69,7 @@ const getAllUsers = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error." });
   }
 };
+
 const updateUserData = async (req, res) => {
   try {
     const userId = req.user.userId; // Get userId from userAuth middleware
@@ -90,6 +91,7 @@ const updateUserData = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error." });
   }
 };
+
 const resetPassword = async (req, res) => {
   try {
     const userId = req.user.userId; // Get userId from userAuth middleware

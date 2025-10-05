@@ -68,6 +68,7 @@ app.use(
         "https://*.tile.openstreetmap.org",
         "https://api.maptiler.com",
         "https://api.cloudinary.com",
+        "https://res.cloudinary.com",
       ],
       frameAncestors: ["'self'"],
       workerSrc: ["'self'", "blob:"],
