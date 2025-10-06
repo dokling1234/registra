@@ -7,7 +7,6 @@ import { AppContent } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import { Bar, Pie } from "react-chartjs-2";
 
-
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -482,7 +481,7 @@ const Report = () => {
                 <div>
                   <div className="mb-4">
                     <div className="text-lg font-semibold text-blue-600 mb-2">
-                      ({questionData.responses.length})  Responses
+                       ({questionData.responses.length}) Responses
                     </div>
                   </div>
                   <div className="max-h-64 overflow-y-auto space-y-2">
