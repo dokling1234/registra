@@ -1,5 +1,6 @@
 const PDFDocument = require("pdfkit");
-const puppeteer = require("puppeteer");
+const puppeteer = require("puppeteer-core");
+const chromium = require("@sparticuz/chromium");
 const { ChartJSNodeCanvas } = require("chartjs-node-canvas");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -620,6 +621,9 @@ const samplePdf = async (req, res) => {
   }
 };
 
+const puppeteer = require("puppeteer-core");
+const chromium = require("@sparticuz/chromium");
+
 const getFeedbackQuestionReport = async (req, res) => {
   try {
     console.log("getFeedbackQuestionReport");
@@ -700,21 +704,29 @@ const getFeedbackQuestionReport = async (req, res) => {
 
           ${questionType === 'Text' ? `
           <div class="card">
-            ${(responses || []).slice(0, 50).map(r => `<div class=\"text-item\">"${String(r).replace(/"/g, '\\"')}"</div>`).join('')}
+            ${(responses || []).slice(0, 50).map(r => `<div class="text-item">"${String(r).replace(/"/g, '\\"')}"</div>`).join('')}
           </div>
           ` : ''}
         </body>
       </html>
     `;
 
-    const browser = await puppeteer.launch({ headless: "new" });
+    // ✅ Heroku-safe Puppeteer launch
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+    });
+
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
+
     const pdfBuffer = await page.pdf({
       format: "A4",
       printBackground: true,
       margin: { top: "30px", bottom: "30px", left: "24px", right: "24px" },
     });
+
     await browser.close();
 
     res.setHeader(
@@ -728,6 +740,7 @@ const getFeedbackQuestionReport = async (req, res) => {
     res.status(500).json({ message: "Error generating question report" });
   }
 };
+
 
 
 module.exports = {

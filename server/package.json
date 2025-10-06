@@ -11,6 +11,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@sparticuz/chromium": "^140.0.0",
     "axios": "^1.8.4",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
@@ -31,7 +32,7 @@
     "nodemailer": "^6.10.1",
     "pdf-lib": "^1.17.1",
     "pdfkit": "^0.17.2",
-    "puppeteer": "^24.19.0",
+    "puppeteer": "^24.23.0",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {
