@@ -621,8 +621,6 @@ const samplePdf = async (req, res) => {
   }
 };
 
-const puppeteer = require("puppeteer-core");
-const chromium = require("@sparticuz/chromium");
 
 const getFeedbackQuestionReport = async (req, res) => {
   try {
