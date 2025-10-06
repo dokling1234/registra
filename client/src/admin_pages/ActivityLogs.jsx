@@ -95,10 +95,6 @@ const ActivityLogs = () => {
                   <th className="px-4 py-2">Time</th>
                   <th className="px-4 py-2">Action</th>
                   <th className="px-4 py-2">Actor</th>
-                  <th className="px-4 py-2">Target</th>
-                  <th className="px-4 py-2">Path</th>
-                  <th className="px-4 py-2">IP</th>
-                  <th className="px-4 py-2">Metadata</th>
                 </tr>
               </thead>
               <tbody>
@@ -112,14 +108,6 @@ const ActivityLogs = () => {
                       <td className="px-4 py-3 whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</td>
                       <td className="px-4 py-3">{log.action}</td>
                       <td className="px-4 py-3">{log.actorName || log.actorId || "-"} <span className="text-gray-500">({log.actorType})</span></td>
-                      <td className="px-4 py-3">{log.targetType || "-"}{log.targetId ? `:${log.targetId}` : ""}</td>
-                      <td className="px-4 py-3">{log.path}</td>
-                      <td className="px-4 py-3">{log.ip || "-"}</td>
-                      <td className="px-4 py-3 max-w-[280px] truncate" title={JSON.stringify(log.metadata)}>
-                        {(() => {
-                          try { return JSON.stringify(log.metadata); } catch { return "-"; }
-                        })()}
-                      </td>
                     </tr>
                   ))
                 )}
