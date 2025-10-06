@@ -40,6 +40,8 @@ import SuperAdminReceipt from "./superAdmin_pages/Receipt";
 import SuperAdminReschedule from "./superAdmin_components/Reschedule";
 import SuperAdminAdminList from "./superAdmin_pages/AdminList";
 import SplashScreen from "./components/SplashScreen";
+import SuperAdminActivityLog from "./superAdmin_pages/ActivityLogs";
+import AdminActivityLog from "./admin_pages/ActivityLogs";
 
 const App = () => {
   return (
@@ -104,6 +106,11 @@ const App = () => {
           path="/superadmin/events/reschedule/:id"
           element={<SuperAdminReschedule />}
         />
+        <Route
+          path="/superadmin/activity-logs"
+          element={<SuperAdminActivityLog />}
+        />
+        <Route path="/admin/activity-logs" element={<AdminActivityLog />} />
         <Route
           path="/events"
           element={

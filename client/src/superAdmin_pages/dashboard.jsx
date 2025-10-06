@@ -32,10 +32,6 @@ ChartJS.register(
 
 const Home = () => {
   const navigate = useNavigate();
-  const [attendanceData, setAttendanceData] = useState({
-    labels: [],
-    data: [],
-  });
   const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
   const [totalEvents, setTotalEvents] = useState(0);
@@ -44,100 +40,19 @@ const Home = () => {
   const [registrationData, setRegistrationData] = useState({
     labels: [],
     data: [],
-    title: "", // add title here
-  });
-  const [participantData, setParticipantData] = useState({
-    labels: [],
-    data: [],
-    title: "", // for event name
-  });
-  const [popularEventsData, setPopularEventsData] = useState({
-    labels: [],
-    data: [],
   });
   const [eventTypeData, setEventTypeData] = useState({ labels: [], data: [] });
   const { userData, isAdmin } = useContext(AppContent);
-
+  
   useEffect(() => {
     if (!isAdmin) {
-      // Not an admin, redirect to home or another page
+      localStorage.removeItem("isAdmin");
+      localStorage.removeItem("userData");
+      localStorage.removeItem("isLoggedin");
+
       navigate("/admin");
     }
   }, [isAdmin, navigate]);
-
-  useEffect(() => {
-    const fetchPopularEvents = async () => {
-      try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/admin/events/analytics`,
-          { withCredentials: true }
-        );
-
-        if (res.data && res.data.popularEvents.length > 0) {
-          const labels = res.data.popularEvents.map((e) => e.title);
-          const data = res.data.popularEvents.map((e) => e.attendees);
-          setPopularEventsData({ labels, data });
-        }
-      } catch (err) {
-        console.error("Error fetching popular events:", err);
-      }
-    };
-
-    fetchPopularEvents();
-  }, []);
-
-  useEffect(() => {
-    const fetchParticipantBreakdown = async () => {
-      try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/admin/events/analytics`,
-          { withCredentials: true }
-        );
-
-        if (res.data && res.data.participantBreakdown.length > 0) {
-          // Map aggregation to chart format
-          const labels = res.data.participantBreakdown.map((p) => p._id);
-          const data = res.data.participantBreakdown.map((p) => p.count);
-
-          // Assuming you want this for the first event for now
-          setParticipantData({
-            labels,
-            data,
-            title: "Participant Breakdown", // or event title if available
-          });
-        }
-      } catch (err) {
-        console.error("Error fetching participant breakdown:", err);
-      }
-    };
-
-    fetchParticipantBreakdown();
-  }, []);
-
-  useEffect(() => {
-    const fetchAttendanceStats = async () => {
-      try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/admin/events/analytics`,
-          { withCredentials: true }
-        );
-
-        if (res.data && res.data.attendanceStats.length > 0) {
-          // Take first event’s attendance stats for now
-          const firstEvent = res.data.attendanceStats[0];
-          setAttendanceData({
-            labels: ["Attended", "No-show"],
-            data: [firstEvent.attended, firstEvent.noShow],
-            title: firstEvent.title, // set the event title
-          });
-        }
-      } catch (err) {
-        console.error("Error fetching attendance stats:", err);
-      }
-    };
-
-    fetchAttendanceStats();
-  }, []);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -288,6 +203,26 @@ const Home = () => {
                 Login <img src={assets.arrow_icon} alt="" />
               </button>
             )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {/* Card 1 */}
+            <div className="bg-white p-6 rounded-lg shadow">
+              <p className="text-gray-500 mb-2">Total Users</p>
+              <h2 className="text-3xl font-bold">{totalUsers}</h2>
+            </div>
+
+            {/* Card 2 */}
+            <div className="bg-white p-6 rounded-lg shadow">
+              <p className="text-gray-500 mb-2">Events</p>
+              <h2 className="text-3xl font-bold">{totalEvents}</h2>
+            </div>
+
+            {/* Card 3 */}
+            <div className="bg-white p-6 rounded-lg shadow">
+              <p className="text-gray-500 mb-2">Total Admin</p>
+              <h2 className="text-3xl font-bold">{totalAdmins}</h2>
+            </div>
           </div>
 
           {/* Charts Section */}
