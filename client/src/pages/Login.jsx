@@ -25,6 +25,7 @@ const Login = () => {
   const [agree, setAgree] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Error states for form validation
   const [errors, setErrors] = useState({
@@ -136,19 +137,15 @@ const Login = () => {
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
+
     if (!validateForm()) {
-      // Only show generic toast, email already shows inline
       if (!errors.email) {
         toast.error("Please fill in all required fields correctly");
       }
       return;
     }
-    // Validate form before submission
-    if (!validateForm()) {
-      toast.error("Please fill in all required fields correctly");
-      return;
-    }
 
+    setLoading(true); // ⏳ disable button and show spinner
     axios.defaults.withCredentials = true;
 
     try {
@@ -159,6 +156,7 @@ const Login = () => {
         } else if (!formattedContact.startsWith("+63")) {
           formattedContact = "+63" + formattedContact;
         }
+
         const formattedStringContact = formattedContact.toString();
         if (!/^\+639\d{9}$/.test(formattedContact)) {
           toast.error(
@@ -166,6 +164,7 @@ const Login = () => {
           );
           return;
         }
+
         const { data } = await axios.post(`${backendUrl}/api/auth/register`, {
           fullName,
           email,
@@ -176,6 +175,7 @@ const Login = () => {
         });
 
         if (data.success) {
+          // 🔹 remove this if backend already sends OTP
           await axios.post(`${backendUrl}/api/auth/send-verify-otp`, { email });
           toast.success("Registered! Please verify your email.");
           navigate("/email-verify");
@@ -191,7 +191,9 @@ const Login = () => {
         if (data.success) {
           const userResponse = await axios.get(
             `${backendUrl}/api/user/alldata`,
-            { withCredentials: true }
+            {
+              withCredentials: true,
+            }
           );
           const currentUser = userResponse.data.users.find(
             (user) => user.email === email
@@ -201,13 +203,13 @@ const Login = () => {
             Swal.fire({
               icon: "error",
               title: "Account Disabled",
-              text: "Your account has been disabled. Please contact the administrator for assistance.",
-              confirmButtonText: "OK",
+              text: "Your account has been disabled. Please contact the administrator.",
             });
             return;
           }
 
           if (!data.user?.isVerified) {
+            // 🔹 remove this if backend already sends OTP
             await axios.post(`${backendUrl}/api/auth/send-verify-otp`, {
               email,
             });
@@ -238,6 +240,8 @@ const Login = () => {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || error.message);
+    } finally {
+      setLoading(false); // ✅ re-enable button when done
     }
   };
 
@@ -661,8 +665,42 @@ const Login = () => {
               </div>
             )}
 
-            <button className="w-full py-2.5 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-900 text-white font-medium">
-              {state}
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full py-2.5 rounded-full font-medium transition-all duration-200 ${
+                loading
+                  ? "bg-gray-500 cursor-not-allowed"
+                  : "bg-gradient-to-r from-indigo-500 to-indigo-900 hover:from-indigo-600 hover:to-indigo-950"
+              } text-white flex items-center justify-center gap-2`}
+            >
+              {loading ? (
+                <>
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    ></path>
+                  </svg>
+                  <span>Loading...</span>
+                </>
+              ) : (
+                state
+              )}
             </button>
           </form>
 

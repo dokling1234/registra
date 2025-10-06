@@ -422,7 +422,7 @@ const changeAdminPassword = async (req, res) => {
 const getEventAnalyticsReport = async (req, res) => {
   try {
     const { id } = req.params;
-
+    console.log("geteventanalyticsreport");
     // 1. Attendance vs No-shows
     const attendanceStats = await Event.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(id) } },
@@ -620,6 +620,116 @@ const samplePdf = async (req, res) => {
   }
 };
 
+const getFeedbackQuestionReport = async (req, res) => {
+  try {
+    console.log("getFeedbackQuestionReport");
+    const { id, qIndex } = req.params;
+    const {
+      eventTitle = "Event",
+      questionTitle = `Question ${parseInt(qIndex, 10) + 1}`,
+      questionType = "Choice",
+      labels = [],
+      data = [],
+      totalResponses = 0,
+      responses = [],
+    } = req.body || {};
+
+    const safeTitle = String(eventTitle).replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+
+    const html = `
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Feedback Question Report</title>
+          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
+            h1 { font-size: 20px; margin: 0 0 4px; text-align: center; }
+            h2 { font-size: 16px; margin: 0 0 16px; text-align: center; color: #6B7280; }
+            .card { border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px; margin: 12px 0; }
+            .row { display: flex; gap: 12px; }
+            .col { flex: 1; }
+            .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+            .pill { border: 1px solid #E5E7EB; background: #F9FAFB; border-radius: 6px; padding: 8px; }
+            .pill-title { font-size: 10px; color: #6B7280; text-transform: uppercase; letter-spacing: .05em; }
+            .pill-val { font-size: 12px; font-weight: 600; color: #111827; }
+            .chart { width: 100%; height: 260px; }
+            .text-item { font-size: 12px; color: #111827; border-left: 3px solid #3B82F6; padding: 6px 8px; background: #F3F4F6; border-radius: 4px; margin: 6px 0; }
+          </style>
+        </head>
+        <body>
+          <h1>Feedback Question Report</h1>
+          <h2>${eventTitle}</h2>
+          <div class="card">
+            <div style="font-size:14px;font-weight:700;margin-bottom:8px;">${questionTitle}</div>
+            <div class="meta">
+              <div class="pill"><div class="pill-title">Question #</div><div class="pill-val">${parseInt(qIndex, 10) + 1}</div></div>
+              <div class="pill"><div class="pill-title">Type</div><div class="pill-val">${questionType}</div></div>
+              <div class="pill"><div class="pill-title">Responses</div><div class="pill-val">${totalResponses}</div></div>
+            </div>
+          </div>
+
+          ${questionType !== 'Text' ? `
+          <div class="card">
+            <canvas id="qChart" class="chart"></canvas>
+          </div>
+          <script>
+            const ctx = document.getElementById('qChart');
+            const cfg = {
+              type: '${questionType === 'Rating' ? 'bar' : 'bar'}',
+              data: {
+                labels: ${JSON.stringify(labels)},
+                datasets: [{
+                  label: 'Responses',
+                  data: ${JSON.stringify(data)},
+                  backgroundColor: ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#06B6D4','#22C55E','#F97316'].slice(0, ${labels.length}),
+                  borderWidth: 1
+                }]
+              },
+              options: {
+                responsive: true,
+                plugins: { legend: { display: false }, title: { display: false } },
+                scales: {
+                  y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                }
+              }
+            };
+            new Chart(ctx, cfg);
+          </script>
+          ` : ''}
+
+          ${questionType === 'Text' ? `
+          <div class="card">
+            ${(responses || []).slice(0, 50).map(r => `<div class=\"text-item\">"${String(r).replace(/"/g, '\\"')}"</div>`).join('')}
+          </div>
+          ` : ''}
+        </body>
+      </html>
+    `;
+
+    const browser = await puppeteer.launch({ headless: "new" });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "30px", bottom: "30px", left: "24px", right: "24px" },
+    });
+    await browser.close();
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=feedback-q${parseInt(qIndex, 10) + 1}-${safeTitle}.pdf`
+    );
+    res.setHeader("Content-Type", "application/pdf");
+    res.status(200).send(Buffer.from(pdfBuffer));
+  } catch (error) {
+    console.error("Feedback question report error:", error);
+    res.status(500).json({ message: "Error generating question report" });
+  }
+};
+
+
 module.exports = {
   adminLogin,
   getAdminData,
@@ -632,4 +742,5 @@ module.exports = {
   changeAdminPassword,
   getEventAnalyticsReport,
   samplePdf,
+  getFeedbackQuestionReport,
 };

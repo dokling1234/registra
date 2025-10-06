@@ -11,7 +11,7 @@ const {
   pdfCertificate,
   getAllUsers,
   changeAdminPassword,
-  getEventAnalytics,
+  getFeedbackQuestionReport,
   getEventAnalyticsReport,
   samplePdf,
 } = require("../controllers/adminController.js");
@@ -28,8 +28,8 @@ router.put("/attendance/update", QRchecker);
 router.post("/uploadCertificate", pdfCertificate);
 router.get("/alldata", getAllUsers);
 router.post("/change-password", changeAdminPassword);
-//router.post("/events/analytics", getEventAnalytics);
-router.post("/events/:id/report", getEventAnalyticsReport);
+router.post("/events/:id/feedback/:qIndex/report", getFeedbackQuestionReport);
+router.get("/events/:id/report", getEventAnalyticsReport);
 router.get("/events/sample", samplePdf);
 router.get("/generate-pdf", async (req, res) => {
   try {
