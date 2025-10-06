@@ -7,6 +7,7 @@ import { AppContent } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import { Bar, Pie } from "react-chartjs-2";
 
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -47,6 +48,7 @@ const Report = () => {
   const [isAnalyzingFeedback, setIsAnalyzingFeedback] = useState(false);
   const [analyticsError, setAnalyticsError] = useState(null);
   const [showEventReport, setShowEventReport] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
         if (!isAdmin) {
@@ -275,6 +277,98 @@ const Report = () => {
     html2pdf().set(opt).from(element).save();
   };
 
+  const [graphsEventId, setGraphsEventId] = useState(null);
+  const graphsEvent = graphsEventId ? filteredEvents.find(e => e._id === graphsEventId) : null;
+
+  const getAttendanceChartData = (event) => {
+    const registrations = event?.registrations || [];
+    const attended = registrations.filter(r => r.attended === true).length;
+    const total = registrations.length;
+    const noShow = Math.max(total - attended, 0);
+    return {
+      labels: ["Attended", "No-show"],
+      datasets: [{ data: [attended, noShow], backgroundColor: ["#3B82F6", "#F43F5E"], borderColor: ["#2563EB", "#E11D48"], borderWidth: 1 }]
+    };
+  };
+
+  const getRoleChartData = (event) => {
+    const registrations = event?.registrations || [];
+    const counts = registrations.reduce(
+      (acc, reg) => {
+        const role = String(reg.userType || "others").toLowerCase();
+        if (role === "student") acc.student += 1;
+        else if (role === "professional") acc.professional += 1;
+        else acc.others += 1;
+        return acc;
+      },
+      { student: 0, professional: 0, others: 0 }
+    );
+    return {
+      labels: ["Student", "Professional", "Others"],
+      datasets: [{
+        data: [counts.student, counts.professional, counts.others],
+        backgroundColor: ["#22C55E", "#06B6D4", "#F59E0B"],
+        borderColor: ["#16A34A", "#0891B2", "#D97706"],
+        borderWidth: 1
+      }]
+    };
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: "top", labels: { usePointStyle: true, boxWidth: 10 } },
+      title: { display: false }
+    }
+  };
+
+  // Controls and helpers for Event Analytics
+  const [incomeMetric, setIncomeMetric] = useState("income"); // income | revenue | attendance
+  const [sortDesc, setSortDesc] = useState(true);
+
+  const getPaidIncome = (event) => {
+    const registrations = event?.registrations || [];
+    return registrations.reduce((sum, reg) => {
+      if (reg.paymentStatus === "paid") {
+        const price = reg.price !== undefined && reg.price !== "" ? Number(reg.price) : (event.price || 0);
+        return sum + price;
+      }
+      return sum;
+    }, 0);
+  };
+
+  const getEventMetric = (event) => {
+    if (!event) return 0;
+    const cost = event.cost !== undefined && event.cost !== "" ? Number(event.cost) : 0;
+    if (incomeMetric === "attendance") return event?.registrations?.length || 0;
+    const income = getPaidIncome(event);
+    if (incomeMetric === "revenue") return income - cost;
+    return income; // default income
+  };
+
+  const handleDownloadServerReport = async (eventId, title) => {
+    try {
+      setIsDownloading(true);
+      const url = `${import.meta.env.VITE_BACKEND_URL}/api/admin/events/${eventId}/report`;
+      const response = await fetch(url, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to download");
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `event-report-${title || "report"}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const AttendeePieChart = ({ registrations }) => {
     const counts = registrations.reduce(
       (acc, reg) => {
@@ -317,6 +411,55 @@ const Report = () => {
 
     const { form, answers, totalResponses } = feedbackData;
     const [activeTab, setActiveTab] = useState('summary');
+    const [downloadingQ, setDownloadingQ] = useState(null);
+    const [openGraph, setOpenGraph] = useState({});
+    const [openResponses, setOpenResponses] = useState({});
+
+    const buildQuestionPayload = (question, index) => {
+      const dataObj = processQuestionData(question, index, answers);
+      const base = {
+        eventTitle: selectedEvent?.title || 'Event',
+        questionTitle: question.text || `Question ${index + 1}`,
+        totalResponses,
+        questionType: question.type
+      };
+      if (dataObj?.type === 'choice' || dataObj?.type === 'rating' || dataObj?.type === 'likert') {
+        return { ...base, labels: dataObj.labels || [], data: dataObj.data || [] };
+      }
+      if (dataObj?.type === 'text') {
+        return { ...base, responses: dataObj.responses || [] };
+      }
+      return base;
+    };
+
+    const downloadQuestionPDF = async (qIndex, question) => {
+      if (!selectedEventId) return;
+      try {
+        setDownloadingQ(qIndex);
+        const payload = buildQuestionPayload(question, qIndex);
+        const url = `${import.meta.env.VITE_BACKEND_URL}/api/admin/events/${selectedEventId}/feedback/${qIndex}/report`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error('Failed to generate PDF');
+        const blob = await res.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        const safeTitle = (selectedEvent?.title || 'event').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+        link.download = `feedback-q${qIndex + 1}-${safeTitle}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(blobUrl);
+      } catch (e) {
+        console.error('Question PDF download error:', e);
+      } finally {
+        setDownloadingQ(null);
+      }
+    };
 
     return (
       <div className="mt-8">
@@ -355,142 +498,186 @@ const Report = () => {
           if (!questionData) return null;
 
           return (
-            <div key={index} className="mb-8 p-6 bg-white rounded-lg shadow">
-              <h4 className="text-lg font-semibold mb-4">{question.text || `Question ${index + 1}`}</h4>
-              
+            <div key={index} className="mb-8 p-6 bg-white rounded-lg shadow relative">
+              <h4 className="text-lg font-semibold mb-4 pr-60">{question.text || `Question ${index + 1}`}</h4>
+              <div className="absolute top-4 right-4 flex items-center gap-2">
+                {questionData.type !== 'text' && (
+                  <button
+                    className="text-xs px-3 py-1 border border-gray-300 rounded hover:bg-gray-50"
+                    onClick={() => setOpenGraph((s) => ({ ...s, [index]: s[index] === false ? true : false }))}
+                  >
+                    {openGraph[index] === false ? 'Show Graph' : 'Hide Graph'}
+                  </button>
+                )}
+                {questionData.type === 'text' && (
+                  <button
+                    className="text-xs px-3 py-1 border border-gray-300 rounded hover:bg-gray-50"
+                    onClick={() => setOpenResponses((s) => ({ ...s, [index]: s[index] === false ? true : false }))}
+                  >
+                    {openResponses[index] === false ? 'Show Responses' : 'Hide Responses'}
+                  </button>
+                )}
+                <button
+                  className={`text-xs px-3 py-1 border border-gray-300 rounded ${downloadingQ === index ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-50'}`}
+                  onClick={() => downloadQuestionPDF(index, question)}
+                  disabled={downloadingQ === index}
+                  aria-label="Download question as PDF"
+                >
+                  {downloadingQ === index ? 'Preparing...' : 'Download PDF'}
+                </button>
+              </div>
+
               {questionData.type === "choice" && (
                 <div>
-                  <div className="mb-4">
-                    <Bar
-                      data={{
-                        labels: questionData.labels,
-                        datasets: [{
-                          label: 'Responses',
-                          data: questionData.data,
-                          backgroundColor: questionData.backgroundColor.slice(0, questionData.labels.length),
-                        }]
-                      }}
-                      options={{
-                        responsive: true,
-                        plugins: {
-                          legend: { display: false },
-                          title: { display: true, text: question.text || `Question ${index + 1}` },
-                        },
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            ticks: { stepSize: 1 }
-                          }
-                        }
-                      }}
-                      height={100}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {questionData.labels.map((label, i) => (
-                      <div key={i} className="text-center p-3 bg-gray-50 rounded">
-                        <div className="font-semibold">{label}</div>
-                        <div className="text-2xl text-blue-600">{questionData.data[i]}</div>
-                        <div className="text-sm text-gray-500">
-                          {((questionData.data[i] / totalResponses) * 100).toFixed(1)}%
-                        </div>
+                  {openGraph[index] === false ? null : (
+                    <>
+                      <div className="mb-4">
+                        <Bar
+                          data={{
+                            labels: questionData.labels,
+                            datasets: [{
+                              label: 'Responses',
+                              data: questionData.data,
+                              backgroundColor: questionData.backgroundColor.slice(0, questionData.labels.length),
+                            }]
+                          }}
+                          options={{
+                            responsive: true,
+                            plugins: {
+                              legend: { display: false },
+                              title: { display: true, text: question.text || `Question ${index + 1}` },
+                            },
+                            scales: {
+                              y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 }
+                              }
+                            }
+                          }}
+                          height={100}
+                        />
                       </div>
-                    ))}
-                  </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {questionData.labels.map((label, i) => (
+                          <div key={i} className="text-center p-3 bg-gray-50 rounded">
+                            <div className="font-semibold">{label}</div>
+                            <div className="text-2xl text-blue-600">{questionData.data[i]}</div>
+                            <div className="text-sm text-gray-500">
+                              {((questionData.data[i] / totalResponses) * 100).toFixed(1)}%
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
               {questionData.type === "rating" && (
                 <div>
-                  <div className="mb-4">
-                    <Bar
-                      data={{
-                        labels: questionData.labels,
-                        datasets: [{
-                          label: 'Responses',
-                          data: questionData.data,
-                          backgroundColor: questionData.backgroundColor,
-                        }]
-                      }}
-                      options={{
-                        responsive: true,
-                        plugins: {
-                          legend: { display: false },
-                          title: { display: true, text: question.text || `Question ${index + 1}` },
-                        },
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            ticks: { stepSize: 1 }
-                          }
-                        }
-                      }}
-                      height={100}
-                    />
-                  </div>
-                  <div className="text-center p-4 bg-yellow-50 rounded">
-                    <div className="text-2xl font-bold text-yellow-600">
-                      Average Rating: {getAverageRating(index, answers)} ⭐
-                    </div>
-                  </div>
+                  {openGraph[index] === false ? null : (
+                    <>
+                      <div className="mb-4">
+                        <Bar
+                          data={{
+                            labels: questionData.labels,
+                            datasets: [{
+                              label: 'Responses',
+                              data: questionData.data,
+                              backgroundColor: questionData.backgroundColor,
+                            }]
+                          }}
+                          options={{
+                            responsive: true,
+                            plugins: {
+                              legend: { display: false },
+                              title: { display: true, text: question.text || `Question ${index + 1}` },
+                            },
+                            scales: {
+                              y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 }
+                              }
+                            }
+                          }}
+                          height={100}
+                        />
+                      </div>
+                      <div className="text-center p-4 bg-yellow-50 rounded">
+                        <div className="text-2xl font-bold text-yellow-600">
+                          Average Rating: {getAverageRating(index, answers)} ⭐
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
               {questionData.type === "likert" && (
                 <div>
-                  <div className="mb-4">
-                    <Bar
-                      data={{
-                        labels: questionData.labels,
-                        datasets: [{
-                          label: 'Average Score',
-                          data: questionData.data,
-                          backgroundColor: questionData.backgroundColor.slice(0, questionData.labels.length),
-                        }]
-                      }}
-                      options={{
-                        responsive: true,
-                        plugins: {
-                          legend: { display: false },
-                          title: { display: true, text: question.text || `Question ${index + 1}` },
-                        },
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            max: 5,
-                            ticks: { stepSize: 1 }
-                          }
-                        }
-                      }}
-                      height={100}
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {questionData.labels.map((label, i) => (
-                      <div key={i} className="text-center p-3 bg-purple-50 rounded border-l-4 border-purple-500">
-                        <div className="font-semibold text-sm mb-1">{label}</div>
-                        <div className="text-2xl text-purple-600">{questionData.data[i]}</div>
-                        <div className="text-xs text-gray-500">Average Score</div>
+                  {openGraph[index] === false ? null : (
+                    <>
+                      <div className="mb-4">
+                        <Bar
+                          data={{
+                            labels: questionData.labels,
+                            datasets: [{
+                              label: 'Average Score',
+                              data: questionData.data,
+                              backgroundColor: questionData.backgroundColor.slice(0, questionData.labels.length),
+                            }]
+                          }}
+                          options={{
+                            responsive: true,
+                            plugins: {
+                              legend: { display: false },
+                              title: { display: true, text: question.text || `Question ${index + 1}` },
+                            },
+                            scales: {
+                              y: {
+                                beginAtZero: true,
+                                max: 5,
+                                ticks: { stepSize: 1 }
+                              }
+                            }
+                          }}
+                          height={100}
+                        />
                       </div>
-                    ))}
-                  </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {questionData.labels.map((label, i) => (
+                          <div key={i} className="text-center p-3 bg-purple-50 rounded border-l-4 border-purple-500">
+                            <div className="font-semibold text-sm mb-1">{label}</div>
+                            <div className="text-2xl text-purple-600">{questionData.data[i]}</div>
+                            <div className="text-xs text-gray-500">Average Score</div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
               {questionData.type === "text" && (
                 <div>
-                  <div className="mb-4">
-                    <div className="text-lg font-semibold text-blue-600 mb-2">
-                       ({questionData.responses.length}) Responses
-                    </div>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto space-y-2">
-                    {questionData.responses.map((response, i) => (
-                      <div key={i} className="p-3 bg-gray-50 rounded border-l-4 border-blue-500">
-                        <p className="text-sm text-gray-700">"{response}"</p>
+                  {openResponses[index] === false ? (
+                    <div className="text-sm text-gray-500">Responses hidden</div>
+                  ) : (
+                    <>
+                      <div className="mb-2">
+                        <div className="text-lg font-semibold text-blue-600">
+                           ({questionData.responses.length})  Responses
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                      <div className="max-h-64 overflow-y-auto space-y-2">
+                        {questionData.responses.map((response, i) => (
+                          <div key={i} className="p-3 bg-gray-50 rounded border-l-4 border-blue-500">
+                            <p className="text-sm text-gray-700">"{response}"</p>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -880,12 +1067,21 @@ const Report = () => {
                         ₱{revenue}
                       </td>
                       <td className="px-6 py-4">
-                        <Link
-                          to={`/events/${event._id}`}
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => setGraphsEventId(event._id)}
                           className="text-blue-600 hover:underline text-sm"
                         >
-                          View
-                        </Link>
+                            View Graphs
+                          </button>
+                          <button
+                            onClick={() => handleDownloadServerReport(event._id, event.title)}
+                            disabled={isDownloading}
+                            className={`text-gray-700 hover:underline text-sm ${isDownloading ? "opacity-60 cursor-not-allowed" : ""}`}
+                          >
+                            {isDownloading ? "Downloading..." : "Download PDF"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -904,101 +1100,155 @@ const Report = () => {
           </table>
         </div>
 
-        {/* Analytics Chart */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold mb-4">Event Income Analytics</h2>
-          <Bar
-            data={{
-              labels: filteredEvents
-                .slice()
-                .sort((a, b) => {
-                  const incomeA =
-                    (a.registrations?.length || 0) * (a.price || 0);
-                  const incomeB =
-                    (b.registrations?.length || 0) * (b.price || 0);
-                  return incomeB - incomeA;
-                })
-                .map((e) => e.title),
-              datasets: [
-                {
-                  label: "Income (₱)",
-                  data: filteredEvents
+        {/* Analytics + Generate */}
+        <div className="mt-6 grid grid-cols-1 gap-6 items-start">
+          <div className="bg-white rounded-lg shadow p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold">Event Analytics</h2>
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <span className="hidden sm:inline">Quick view of event performance</span>
+                <span aria-hidden>📊</span>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+              <div className="flex items-center gap-2">
+                <label htmlFor="metric" className="text-sm text-gray-700">Metric</label>
+                <select
+                  id="metric"
+                  value={incomeMetric}
+                  onChange={(e) => setIncomeMetric(e.target.value)}
+                  className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value="income">Income (₱)</option>
+                  <option value="revenue">Revenue (₱)</option>
+                  <option value="attendance">Attendance (count)</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  className="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
+                  onClick={() => setSortDesc((v) => !v)}
+                  aria-label="Toggle sort order"
+                >
+                  {sortDesc ? "Sort: High → Low" : "Sort: Low → High"}
+                </button>
+              </div>
+            </div>
+            {filteredEvents.length === 0 ? (
+              <div className="p-6 text-center text-gray-500 bg-gray-50 rounded">
+                No past events match the current filters.
+              </div>
+            ) : (
+              <Bar
+                data={{
+                  labels: filteredEvents
                     .slice()
-                    .sort(
-                      (a, b) =>
-                        (b.registrations?.length || 0) * (b.price || 0) -
-                        (a.registrations?.length || 0) * (a.price || 0)
-                    )
-                    .map(
-                      (e) => (e.registrations?.length || 0) * (e.price || 0)
-                    ),
-                  backgroundColor: "rgba(37, 99, 235, 0.7)",
-                },
-              ],
-            }}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: { position: "top" },
-                title: {
-                  display: true,
-                  text: "Events by Income (High to Low)",
-                },
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  title: { display: true, text: "Income (₱)" },
-                },
-                x: { title: { display: true, text: "Event" } },
-              },
-            }}
-            height={100}
-          />
-        </div>
-
-        {/* Generate Report Section */}
-        <div className="mt-12 bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold mb-4">Generate Event Report</h2>
-          <div className="mb-4">
-            <label
-              htmlFor="selectEvent"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Choose Event:
-            </label>
-            <select
-              id="selectEvent"
-              className="p-2 border border-gray-300 rounded-md w-full max-w-md"
-              value={selectedEventId || ""}
-              onChange={(e) => setSelectedEventId(e.target.value)}
-            >
-              <option value="">-- Select an Event --</option>
-              {filteredEvents.map((ev) => (
-                <option key={ev._id} value={ev._id}>
-                  {ev.title}
-                </option>
-              ))}
-            </select>
+                    .sort((a, b) => (sortDesc ? 1 : -1) * (getEventMetric(b) - getEventMetric(a)))
+                    .map((e) => e.title),
+                  datasets: [
+                    {
+                      label:
+                        incomeMetric === "attendance"
+                          ? "Attendance (count)"
+                          : incomeMetric === "revenue"
+                          ? "Revenue (₱)"
+                          : "Income (₱)",
+                      data: filteredEvents
+                        .slice()
+                        .sort((a, b) => (sortDesc ? 1 : -1) * (getEventMetric(b) - getEventMetric(a)))
+                        .map((e) => getEventMetric(e)),
+                      backgroundColor:
+                        incomeMetric === "attendance"
+                          ? "rgba(16, 185, 129, 0.7)"
+                          : incomeMetric === "revenue"
+                          ? "rgba(99, 102, 241, 0.7)"
+                          : "rgba(37, 99, 235, 0.7)",
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: { position: "top" },
+                    title: { display: false },
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      title: {
+                        display: true,
+                        text:
+                          incomeMetric === "attendance"
+                            ? "Attendance (count)"
+                            : incomeMetric === "revenue"
+                            ? "Revenue (₱)"
+                            : "Income (₱)",
+                      },
+                    },
+                    x: { title: { display: true, text: "Event" } },
+                  },
+                }}
+                height={160}
+              />
+            )}
+            <div className="mt-3 text-xs text-gray-500">
+              {incomeMetric === "income" && <span>Income is based only on paid registrations.</span>}
+              {incomeMetric === "revenue" && <span>Revenue = Income − Cost. Costs come from each event's recorded cost.</span>}
+              {incomeMetric === "attendance" && <span>Total number of registrations per event.</span>}
+            </div>
           </div>
-          {/* Prompt for what happened */}
-          <div className="mb-4">
-            <label
-              htmlFor="eventSummary"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              What happened in the event?
-            </label>
-            <textarea
-              id="eventSummary"
-              className="p-2 border border-gray-300 rounded-md w-full max-w-md min-h-[80px]"
-              placeholder="Type a brief summary of what happened in the event..."
-              value={eventSummary}
-              onChange={(e) => setEventSummary(e.target.value)}
-            />
-          </div>
+          <div className="bg-white rounded-lg shadow p-5 max-w-2xl mx-auto">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <h2 className="text-2xl font-bold text-center">Generate Event Report</h2>
+              <span className="text-sm text-gray-500" aria-hidden>📝</span>
+            </div>
+            <div className="mb-6">
+              <label
+                htmlFor="selectEvent"
+                className="block text-sm font-medium text-gray-700 mb-1 text-center"
+              >
+                Choose Event
+              </label>
+              <div className="relative">
+                <select
+                  id="selectEvent"
+                  className="appearance-none p-3 pr-10 border border-gray-300 rounded-lg w-full bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  value={selectedEventId || ""}
+                  onChange={(e) => setSelectedEventId(e.target.value)}
+                  aria-label="Select event for report"
+                >
+                  <option value="">-- Select an Event --</option>
+                  {filteredEvents.map((ev) => (
+                    <option key={ev._id} value={ev._id}>
+                      {ev.title}
+                    </option>
+                  ))}
+                </select>
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm" aria-hidden>▾</span>
+              </div>
+              {!selectedEventId && (
+                <p className="mt-2 text-xs text-gray-500 text-center">Select a past event to generate a detailed report.</p>
+              )}
+            </div>
+            {selectedEvent && (
+              <div className="mb-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="rounded border border-gray-200 px-3 py-2 bg-gray-50">
+                  <div className="text-[11px] uppercase tracking-wide text-gray-500">Date</div>
+                  <div className="text-sm font-medium text-gray-800">{new Date(selectedEvent.date).toLocaleDateString()}</div>
+                </div>
+                <div className="rounded border border-gray-200 px-3 py-2 bg-gray-50">
+                  <div className="text-[11px] uppercase tracking-wide text-gray-500">Price</div>
+                  <div className="text-sm font-medium text-gray-800">₱{selectedEvent.price || 0}</div>
+                </div>
+                <div className="rounded border border-gray-200 px-3 py-2 bg-gray-50">
+                  <div className="text-[11px] uppercase tracking-wide text-gray-500">Registrations</div>
+                  <div className="text-sm font-medium text-gray-800">{selectedEvent.registrations?.length || 0}</div>
+                </div>
+              </div>
+            )}
+            <div className="flex items-center justify-center gap-3">
           <button
-            className={`bg-blue-600 text-white px-6 py-2 rounded shadow transition mb-6 ${isLoadingFeedback ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+                className={`bg-blue-600 text-white px-6 py-2 rounded-lg shadow transition w-full sm:w-auto ${isLoadingFeedback ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'}`}
             onClick={() => {
               if (!selectedEvent) return;
               setGeneratedReport({
@@ -1011,7 +1261,7 @@ const Report = () => {
             disabled={!selectedEventId || isLoadingFeedback}
           >
             {isLoadingFeedback ? (
-              <span className="flex items-center gap-2">
+                  <span className="flex items-center justify-center gap-2">
                 <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
                 Generating...
               </span>
@@ -1019,20 +1269,32 @@ const Report = () => {
               'Generate Complete Report'
             )}
           </button>
+              {selectedEventId && (
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  onClick={() => { setSelectedEventId(""); setEventSummary(""); setGeneratedReport(null); setFeedbackData(null); setFeedbackAnalytics(null); }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
 
           {/* Loading indicator */}
           {isLoadingFeedback && (
-            <div className="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
+              <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
               <div className="flex items-center gap-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                 <span className="text-blue-600">Loading feedback data...</span>
               </div>
             </div>
           )}
+          </div>
+        </div>
 
           {/* Feedback Data Status */}
           {feedbackData && (
-            <div className="mb-4 p-3 bg-green-50 rounded border border-green-200">
+          <div className="mt-3 p-3 bg-green-50 rounded border border-green-200">
               <div className="flex items-center gap-2">
                 <span className="text-green-600 font-semibold">✓</span>
                 <span className="text-green-700">
@@ -1044,7 +1306,7 @@ const Report = () => {
 
           {/* Analytics Button */}
           {feedbackData && feedbackData.totalResponses > 0 && (
-            <div className="mb-4">
+          <div className="mt-3">
               <button
                 className="bg-purple-600 text-white px-6 py-2 rounded shadow hover:bg-purple-700 transition flex items-center gap-2"
                 onClick={() => analyzeFeedbackData(selectedEventId, selectedEvent?.title)}
@@ -1499,7 +1761,6 @@ const Report = () => {
               </div>
             </div>
           )}
-        </div>
 
         {/* Feedback Report */}
         {selectedEvent && feedbackData && (
@@ -1513,6 +1774,54 @@ const Report = () => {
             error={analyticsError}
             isLoading={isAnalyzingFeedback}
           />
+        )}
+
+        {/* Graphs Modal */}
+        {graphsEvent && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setGraphsEventId(null)}></div>
+            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-5xl mx-4 p-6">
+              <div className="flex items-start justify-between mb-4">
+                <h3 className="text-2xl font-bold text-gray-900">{graphsEvent.title} - Graphs</h3>
+                <button className="text-gray-500 hover:text-gray-800 text-xl" onClick={() => setGraphsEventId(null)}>×</button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <h4 className="font-semibold mb-3 text-gray-800">Attendance</h4>
+                  <div className="relative w-full" style={{ height: "300px" }}>
+                    <Pie data={getAttendanceChartData(graphsEvent)} options={chartOptions} />
+                  </div>
+                </div>
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <h4 className="font-semibold mb-3 text-gray-800">Attendees by Role</h4>
+                  <div className="relative w-full" style={{ height: "300px" }}>
+                    <Pie data={getRoleChartData(graphsEvent)} options={chartOptions} />
+                  </div>
+                </div>
+              </div>
+              <div className="mt-6 flex items-center justify-end gap-3">
+                <button
+                  className="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  onClick={() => setGraphsEventId(null)}
+                >
+                  Close
+                </button>
+                <button
+                  className={`px-4 py-2 rounded bg-blue-600 text-white ${isDownloading ? "opacity-70" : "hover:bg-blue-700"}`}
+                  onClick={() => handleDownloadServerReport(graphsEvent._id, graphsEvent.title)}
+                  disabled={isDownloading}
+                >
+                  {isDownloading ? "Downloading..." : "Download PDF"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {isDownloading && (
+          <div className="fixed top-4 right-4 z-[60] bg-white border border-gray-200 rounded-md shadow px-4 py-2 flex items-center gap-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            <span className="text-sm text-gray-700">Preparing PDF...</span>
+          </div>
         )}
       </main>
     </div>
