@@ -4,7 +4,7 @@ import Sidebar from "../superAdmin_components/Sidebar";
 import { AppContent } from "../context/AppContext";
 
 const ActivityLogs = () => {
-  const { backendUrl } = useContext(AppContent);
+  const { backendUrl, isAdmin } = useContext(AppContent);
   const [logs, setLogs] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
