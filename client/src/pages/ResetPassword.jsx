@@ -62,15 +62,36 @@ const ResetPassword = () => {
   const onSubmitOTP = async (e) => {
     e.preventDefault();
     const otpArray = inputRefs.current.map((e) => e.value);
-    setOtp(otpArray.join(""));
-    setIsOtpSubmited(true);
+    const enteredOtp = otpArray.join("");
+    if (enteredOtp.length !== 6) {
+      toast.error("Please enter the 6-digit OTP.");
+      return;
+    }
+    try {
+      const { data } = await axios.post(
+        backendUrl + "/api/auth/verify-reset-otp",
+        { email, otp: enteredOtp }
+      );
+      if (data.success) {
+        toast.success(data.message || "OTP verified successfully!");
+        setOtp(enteredOtp);
+        setIsOtpSubmited(true);
+      } else {
+        toast.error(data.message || "Invalid OTP, please try again.");
+      }
+    } catch (error) {
+      toast.error("Verification failed. Please try again.");
+    }
   };
+  {
+    /* function to ng para naman don sa input ng new password */
+  }
   {
     /* function to ng para naman don sa input ng new password */
   }
   const onSumbitNewPassword = async (e) => {
     e.preventDefault();
-    
+
     if (newPassword.length < 8) {
       toast.error("Password must be at least 8 characters long.");
       return;
@@ -78,7 +99,7 @@ const ResetPassword = () => {
     try {
       const { data } = await axios.post(
         backendUrl + "/api/auth/reset-password",
-        { email,  newPassword }
+        { email, otp, newPassword }
       );
       data.success ? toast.success(data.message) : toast.error(data.message);
       data.success && navigate("/");
@@ -88,13 +109,12 @@ const ResetPassword = () => {
   };
 
   useEffect(() => {
-      if (isAdmin) {
-        // Not an admin, redirect to home or another page
-        navigate("/");
-      }
-    }, [isAdmin, navigate]);
-  
-    
+    if (isAdmin) {
+      // Not an admin, redirect to home or another page
+      navigate("/");
+    }
+  }, [isAdmin, navigate]);
+
   return (
     <div className="flex items-center justify-center min-h-screen px-6 sm:px-0 bg-gradient-to-br from-blue-200 to-[#60B5FF]">
       <img
