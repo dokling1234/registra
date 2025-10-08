@@ -8,7 +8,7 @@ import { toast } from "react-toastify";
 const ResetPassword = () => {
   const { backendUrl, isAdmin } = useContext(AppContent);
   axios.defaults.withCredentials = true;
-
+  const [passwordStrength, setPasswordStrength] = useState("");
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -152,6 +152,15 @@ const ResetPassword = () => {
       setVerifyLoading(false); // ✅ ensure reset on any failure
     }
   };
+  const getPasswordStrength = (password) => {
+    if (!password) return "";
+    const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+    const mediumRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+
+    if (strongRegex.test(password)) return "strong";
+    if (mediumRegex.test(password)) return "medium";
+    return "weak";
+  };
 
   {
     /* function to ng para naman don sa input ng new password */
@@ -161,19 +170,45 @@ const ResetPassword = () => {
     if (passwordLoading) return; // prevent multiple clicks
     setPasswordLoading(true);
 
-    if (newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters long.");
+    // Password validation
+    const newErrors = {};
+
+    if (!newPassword.trim()) {
+      newErrors.password = "Password is required.";
+    } else {
+      const strongPasswordRegex =
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+      if (!strongPasswordRegex.test(newPassword)) {
+        newErrors.password =
+          "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      toast.error(Object.values(newErrors)[0]);
+      setPasswordLoading(false);
       return;
     }
+
     try {
       const { data } = await axios.post(
-        backendUrl + "/api/auth/reset-password",
-        { email, newPassword }
+        `${backendUrl}/api/auth/reset-password`,
+        {
+          email,
+          newPassword,
+        }
       );
-      data.success ? toast.success(data.message) : toast.error(data.message);
-      data.success && navigate("/");
+
+      if (data.success) {
+        toast.success(data.message || "Password reset successfully!");
+        navigate("/");
+      } else {
+        toast.error(data.message || "Failed to reset password.");
+      }
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.response?.data?.message || "Something went wrong.");
+    } finally {
       setPasswordLoading(false);
     }
   };
@@ -397,14 +432,64 @@ const ResetPassword = () => {
             <input
               type="password"
               placeholder="Password"
-              className="bg-transparent outline-none text-white"
+              className="bg-transparent outline-none text-white w-full"
               value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                setPasswordStrength(getPasswordStrength(e.target.value)); // ✅ update strength dynamically
+              }}
               required
             />
           </div>
-          <button className="w-full py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-900 text-white rounded-full mt-3">
-            Submit
+          {newPassword && (
+            <div className="w-full bg-gray-700 rounded-full h-1.5 mt-2">
+              <div
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  passwordStrength === "strong"
+                    ? "bg-green-400 w-full"
+                    : passwordStrength === "medium"
+                    ? "bg-yellow-400 w-2/3"
+                    : "bg-red-400 w-1/3"
+                }`}
+              ></div>
+            </div>
+          )}
+          <button
+            type="submit"
+            disabled={passwordLoading}
+            className={`w-full py-2.5 rounded-full flex justify-center items-center gap-2 transition-all duration-300 ${
+              passwordLoading
+                ? "bg-gray-500 text-gray-300 cursor-not-allowed"
+                : "bg-gradient-to-r from-indigo-500 to-indigo-900 text-white hover:opacity-90"
+            }`}
+          >
+            {passwordLoading ? (
+              <>
+                <svg
+                  className="animate-spin h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  ></path>
+                </svg>
+                Submitting...
+              </>
+            ) : (
+              "Submit"
+            )}
           </button>
         </form>
       )}
