@@ -106,7 +106,7 @@ const createEvent = async (req, res) => {
         targetId: event._id,
         metadata: { title },
       });
-    } catch (_) { }
+    } catch (_) {}
 
     res.status(201).json({
       success: true,
@@ -265,7 +265,7 @@ const registerForEvent = async (req, res) => {
 
   try {
     console.log(eventId);
-    
+
     const event = await eventModel.findById(eventId);
     if (!event) {
       return res
@@ -621,6 +621,34 @@ const mobileRegisterForEvent = async (req, res) => {
 
     if (!event) return res.status(404).json({ message: "Event not found" });
 
+    // Block registering for two different events on the same calendar day
+    try {
+      const eventDate = new Date(event.date);
+      const startOfDay = new Date(
+        eventDate.getFullYear(),
+        eventDate.getMonth(),
+        eventDate.getDate()
+      );
+      const endOfDay = new Date(
+        eventDate.getFullYear(),
+        eventDate.getMonth(),
+        eventDate.getDate() + 1
+      );
+      const sameDayOtherEvent = await eventModel.findOne({
+        _id: { $ne: event._id },
+        date: { $gte: startOfDay, $lt: endOfDay },
+        "registrations.userId": new mongoose.Types.ObjectId(userId),
+      });
+      if (sameDayOtherEvent) {
+        return res
+          .status(400)
+          .json({
+            message:
+              "You are already registered for another event on the same date.",
+          });
+      }
+    } catch (_) {}
+
     // If resubmitting for an existing registration
     if (registrationId) {
       const reg = event.registrations.id(registrationId);
@@ -628,8 +656,7 @@ const mobileRegisterForEvent = async (req, res) => {
         return res.status(404).json({ message: "Registration not found" });
       }
       // Update receipt and reset status to pending; clear QR until re-approved
-      reg.receipt = receipt;
-      reg.receipt;
+      reg.receipt = receipt || reg.receipt;
       reg.paymentStatus = "pending";
       reg.ticketQR = "";
       await event.save();
@@ -641,8 +668,7 @@ const mobileRegisterForEvent = async (req, res) => {
       (r) => r.userId?.toString() === String(userId)
     );
     if (existing) {
-      existing.receipt = receipt;
-      existing.receipt;
+      existing.receipt = receipt || existing.receipt;
       existing.paymentStatus = "pending";
       existing.ticketQR = "";
       await event.save();
@@ -724,7 +750,6 @@ const getTicketQR = async (req, res) => {
 };
 // controllers/eventController.js
 
-
 const resendTicket = async (req, res) => {
   const { eventId } = req.params;
   const { userId } = req.body;
@@ -736,7 +761,7 @@ const resendTicket = async (req, res) => {
     if (!event) return res.status(404).json({ message: "Event not found" });
 
     const registration = event.registrations.find(
-      r => r.userId.toString() === userId.toString()
+      (r) => r.userId.toString() === userId.toString()
     );
 
     if (!registration)
@@ -756,8 +781,6 @@ const resendTicket = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
-
 
 const getRegisteredPastEvents = async (req, res) => {
   const userId = req.query.userId;
