@@ -410,6 +410,39 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const verifyResetOtp = async (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    return res.json({ success: false, message: "Email and OTP are required." });
+  }
+
+  try {
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      return res.json({ success: false, message: "User not found." });
+    }
+
+    // ✅ Check if OTP matches and is not expired
+    if (user.otp !== otp) {
+      return res.json({ success: false, message: "Invalid OTP." });
+    }
+
+    if (user.otpExpireAt < Date.now()) {
+      return res.json({ success: false, message: "OTP has expired." });
+    }
+
+    // If correct, clear OTP (optional but recommended)
+    user.otp = null;
+    await user.save();
+
+    return res.json({ success: true, message: "OTP verified successfully!" });
+  } catch (error) {
+    return res.json({ success: false, message: error.message });
+  }
+};
+
+
 const mobileAdminLogin = async (req, res) => {
   const { email, password } = req.body;
 
@@ -526,4 +559,5 @@ module.exports = {
   mobileAdminLogin,
   adminChangePassword,
   resendOTP,
+  verifyResetOtp,
 };
