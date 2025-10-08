@@ -59,34 +59,12 @@ const ResetPassword = () => {
   {
     /* function to ng para mapagana yung otp */
   }
-const onSubmitOTP = async (e) => {
-  e.preventDefault();
-
-  const otpArray = inputRefs.current.map((e) => e.value);
-  const enteredOtp = otpArray.join("");
-
-  if (enteredOtp.length !== 6) {
-    toast.error("Please enter the 6-digit OTP.");
-    return;
-  }
-
-  try {
-    const { data } = await axios.post(
-      backendUrl + "/api/auth/verify-reset-otp",
-      { email, otp: enteredOtp }
-    );
-
-    if (data.success) {
-      toast.success(data.message || "OTP verified successfully!");
-      setOtp(enteredOtp);
-      setIsOtpSubmited(true);
-    } else {
-      toast.error(data.message || "Invalid OTP, please try again.");
-    }
-  } catch (error) {
-    toast.error("Verification failed. Please try again.");
-  }
-};
+  const onSubmitOTP = async (e) => {
+    e.preventDefault();
+    const otpArray = inputRefs.current.map((e) => e.value);
+    setOtp(otpArray.join(""));
+    setIsOtpSubmited(true);
+  };
   {
     /* function to ng para naman don sa input ng new password */
   }
