@@ -12,8 +12,8 @@ const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
   auth: {
-    user: "pernida12345@gmail.com", 
-    pass: "ivhgdymrsuzzkqrh", 
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS, 
   },
   tls: {
     rejectUnauthorized: false,
@@ -34,7 +34,7 @@ async function sendOTP(email, otp, template = EMAIL_VERIFY_TEMPLATE, subject = "
   }
   otpStorage[email] = otp;
   const mailOptions = {
-    from: "pernida12345@gmail.com",
+    from: process.env.SMTP_USER,
     to: email,
     subject: subject,
     html: template.replace("{{otp}}", otp).replace(
@@ -60,7 +60,7 @@ async function sendResetOTP(email, otp, template = PASSWORD_RESET_TEMPLATE, subj
   }
   otpStorage[email] = otp;
   const mailOptions = {
-    from: "pernida12345@gmail.com",
+    from: process.env.SMTP_USER,
     to: email,
     subject: subject,
     html: template.replace("{{otp}}", otp).replace(
