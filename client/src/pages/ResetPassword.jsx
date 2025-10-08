@@ -89,7 +89,7 @@ const ResetPassword = () => {
   {
     /* function to ng para naman don sa input ng new password */
   }
-  const onSumbitNewPassword = async (e) => {
+  const onSubmitNewPassword = async (e) => {
     e.preventDefault();
 
     if (newPassword.length < 8) {
@@ -191,7 +191,7 @@ const ResetPassword = () => {
 
       {isOtpSubmited && isEmailSent && (
         <form
-          onSubmit={onSumbitNewPassword}
+          onSubmit={onSubmitNewPassword}
           className="bg-slate-900 p-8 rounded-lg shadow-lg w-96 text-sm"
         >
           <h1 className="text-center mb-6 text-indigo-300">New Password</h1>
