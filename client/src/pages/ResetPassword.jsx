@@ -427,6 +427,7 @@ const ResetPassword = () => {
           <p className="text-center mb-6 text-indigo-300">
             Enter your new password below
           </p>
+
           <div className="mb-4 flex items-center gap-3 w-full px-5 py-2.5 rounded-full bg-[#333A5C]">
             <img src={assets.lock_icon} alt="" className="w-3 h-3" />
             <input
@@ -436,28 +437,53 @@ const ResetPassword = () => {
               value={newPassword}
               onChange={(e) => {
                 setNewPassword(e.target.value);
-                setPasswordStrength(getPasswordStrength(e.target.value)); // ✅ update strength dynamically
+                setPasswordStrength(getPasswordStrength(e.target.value)); // ✅ Update strength dynamically
               }}
               required
             />
           </div>
+
+          {/* ✅ Password Strength Indicator Bar */}
           {newPassword && (
-            <div className="w-full bg-gray-700 rounded-full h-1.5 mt-2">
-              <div
-                className={`h-1.5 rounded-full transition-all duration-300 ${
+            <div className="ml-5 mt-2">
+              {/* Bar background */}
+              <div className="w-48 h-2 bg-gray-700 rounded-full overflow-hidden">
+                {/* Fill bar */}
+                <div
+                  className={`h-2 transition-all duration-300 ${
+                    passwordStrength === "weak"
+                      ? "w-1/3 bg-red-500"
+                      : passwordStrength === "medium"
+                      ? "w-2/3 bg-yellow-400"
+                      : passwordStrength === "strong"
+                      ? "w-full bg-green-500"
+                      : "w-0"
+                  }`}
+                ></div>
+              </div>
+
+              {/* Text indicator */}
+              <p
+                className={`text-sm mt-1 ${
                   passwordStrength === "strong"
-                    ? "bg-green-400 w-full"
+                    ? "text-green-400"
                     : passwordStrength === "medium"
-                    ? "bg-yellow-400 w-2/3"
-                    : "bg-red-400 w-1/3"
+                    ? "text-yellow-400"
+                    : "text-red-400"
                 }`}
-              ></div>
+              >
+                Strength:{" "}
+                <span className="capitalize font-semibold">
+                  {passwordStrength}
+                </span>
+              </p>
             </div>
           )}
+
           <button
             type="submit"
             disabled={passwordLoading}
-            className={`w-full py-2.5 rounded-full flex justify-center items-center gap-2 transition-all duration-300 ${
+            className={`w-full py-2.5 mt-5 rounded-full flex justify-center items-center gap-2 transition-all duration-300 ${
               passwordLoading
                 ? "bg-gray-500 text-gray-300 cursor-not-allowed"
                 : "bg-gradient-to-r from-indigo-500 to-indigo-900 text-white hover:opacity-90"
