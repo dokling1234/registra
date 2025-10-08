@@ -665,7 +665,7 @@ const Profile = () => {
         <div className="profile-section">
           <h3 className="profile-section-title">About Me</h3>
           <p className="profile-section-content">
-            {userData?.aboutMe || "N/A"}
+            {userData?.aboutMe || "Say Something about yourself..."}
           </p>
         </div>
         <div className="events-section">
