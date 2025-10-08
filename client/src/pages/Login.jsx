@@ -151,11 +151,11 @@ const Login = () => {
     try {
       if (state === "Sign Up") {
         let formattedContact = contactNumber.trim().replace(/[\s-()]/g, "");
-        if (formattedContact.startsWith("0")) {
-          formattedContact = "+63" + formattedContact.slice(1);
-        } else if (!formattedContact.startsWith("+63")) {
-          formattedContact = "+63" + formattedContact;
-        }
+        // if (formattedContact.startsWith("0")) {
+        //   formattedContact = "+63" + formattedContact.slice(1);
+        // } else if (!formattedContact.startsWith("+63")) {
+        //   formattedContact = "+63" + formattedContact;
+        // }
 
         const formattedStringContact = formattedContact.toString();
         if (!/^\+639\d{9}$/.test(formattedContact)) {
