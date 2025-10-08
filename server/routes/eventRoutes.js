@@ -18,6 +18,7 @@ const {
   getTicketQR,
   getRegisteredPastEvents,
   resendTicket,
+  checkSameDayRegistration,
 } = require("../controllers/eventController.js");
 const userAuth = require("../middleware/userAuth.js");
 
@@ -27,7 +28,7 @@ eventRouter.post("/create", createEvent);
 eventRouter.get("/registered", userAuth, getRegisteredEvents);
 eventRouter.get("/", getAllEvents);
 eventRouter.get("/:id", getEventById);
-eventRouter.post("/register/:id", userAuth, registerForEvent);// eventId
+eventRouter.post("/register/:id", userAuth, registerForEvent); // eventId
 eventRouter.put("/:id", updateEvent);
 eventRouter.put("/events/:id/confirm-payment", confirmPayment);
 eventRouter.post("/location/geocode", geocodeAddress);
@@ -36,6 +37,7 @@ eventRouter.put("/updatePaymentStatus/:id", updatePaymentStatus);
 eventRouter.get("/registered/:id", userAuth, getRegisteredEventDetail);
 eventRouter.post("/search", getEventByTitle);
 eventRouter.post("/resend-ticket/:eventId", userAuth, resendTicket);
+eventRouter.get("/:eventId/check-sameday", userAuth, checkSameDayRegistration);
 
 const mobileEventRouter = express.Router();
 

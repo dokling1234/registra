@@ -31,7 +31,7 @@ const EventDetail = () => {
   const renderActionButtons = () => (
     <div className="event-actions" role="group" aria-label="Event actions">
       <button
-        onClick={() => {
+        onClick={async () => {
           if (isRegistered) {
             Swal.fire({
               icon: "info",
@@ -41,28 +41,55 @@ const EventDetail = () => {
             });
             return;
           }
-          Swal.fire({
-            title: "Confirm Booking",
-            text: "Do you want to book this event?",
-            icon: "question",
-            showCancelButton: true,
-            confirmButtonColor: "#2563EB",
-            cancelButtonColor: "#9CA3AF",
-            confirmButtonText: "Yes, book it!",
-          }).then((result) => {
-            if (result.isConfirmed) {
+
+          try {
+            // ✅ Step 1: Check same-day registration from backend
+            const res = await axios.get(`/api/events/${id}/check-sameday`, {
+              withCredentials: true,
+            });
+
+            if (!res.data.success) {
               Swal.fire({
-                title: "Booking Confirmed!",
-                text: "Redirecting to payment/receipt upload...",
-                icon: "success",
-                timer: 1500,
-                showConfirmButton: false,
+                icon: "warning",
+                title: "Conflict Detected",
+                text:
+                  res.data.message || "You already have an event on this date.",
+                confirmButtonColor: "#2563EB",
               });
-              setTimeout(() => {
-                navigate(`/uploadreceipt/${id}`);
-              }, 1500);
+              return;
             }
-          });
+
+            // ✅ Step 2: Proceed with booking confirmation if clear
+            Swal.fire({
+              title: "Confirm Booking",
+              text: "Do you want to book this event?",
+              icon: "question",
+              showCancelButton: true,
+              confirmButtonColor: "#2563EB",
+              cancelButtonColor: "#9CA3AF",
+              confirmButtonText: "Yes, book it!",
+            }).then((result) => {
+              if (result.isConfirmed) {
+                Swal.fire({
+                  title: "Booking Confirmed!",
+                  text: "Redirecting to payment/receipt upload...",
+                  icon: "success",
+                  timer: 1500,
+                  showConfirmButton: false,
+                });
+                setTimeout(() => {
+                  navigate(`/uploadreceipt/${id}`);
+                }, 1500);
+              }
+            });
+          } catch (err) {
+            console.error("Error checking same-day:", err);
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "Could not verify registration status. Please try again later.",
+            });
+          }
         }}
         className={`register-button ${
           isRegistered ? "registered" : "not-registered"
@@ -70,7 +97,11 @@ const EventDetail = () => {
         aria-label={isRegistered ? "Already registered" : "Book now"}
         disabled={isRegistered || isPastEvent}
       >
-        {isRegistered ? "Already Registered" : isPastEvent ? "Event Ended" : "Book Now"}
+        {isRegistered
+          ? "Already Registered"
+          : isPastEvent
+          ? "Event Ended"
+          : "Book Now"}
       </button>
 
       {!isPastEvent && (
@@ -234,7 +265,9 @@ const EventDetail = () => {
                     <p>We couldn’t load the map right now.</p>
                     {Array.isArray(event?.coordinates) && (
                       <>
-                        <p className="map-fallback-text">Here are the coordinates you can use:</p>
+                        <p className="map-fallback-text">
+                          Here are the coordinates you can use:
+                        </p>
                         <p className="map-coordinates">{`${event.coordinates[1]}, ${event.coordinates[0]}`}</p>
                       </>
                     )}

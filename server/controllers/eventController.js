@@ -640,12 +640,10 @@ const mobileRegisterForEvent = async (req, res) => {
         "registrations.userId": new mongoose.Types.ObjectId(userId),
       });
       if (sameDayOtherEvent) {
-        return res
-          .status(400)
-          .json({
-            message:
-              "You are already registered for another event on the same date.",
-          });
+        return res.status(400).json({
+          message:
+            "You are already registered for another event on the same date.",
+        });
       }
     } catch (_) {}
 
@@ -832,6 +830,38 @@ const getEventDetailsById = async (req, res) => {
   }
 };
 
+const checkSameDayRegistration = async (req, res) => {
+  const { eventId } = req.params;
+  const { userId } = req.user;
+
+  try {
+    const event = await eventModel.findById(eventId);
+    if (!event)
+      return res
+        .status(404)
+        .json({ success: false, message: "Event not found" });
+
+    // Find other events with same date and user already registered
+    const sameDayEvents = await eventModel.find({
+      _id: { $ne: eventId },
+      date: { $eq: event.date },
+      "registrations.userId": userId,
+    });
+
+    if (sameDayEvents.length > 0) {
+      return res.json({
+        success: false,
+        message: "Already registered for another event on the same date",
+      });
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 module.exports = {
   createEvent,
   getAllEvents,
@@ -852,4 +882,5 @@ module.exports = {
   getTicketQR,
   getRegisteredPastEvents,
   resendTicket,
+  checkSameDayRegistration,
 };
