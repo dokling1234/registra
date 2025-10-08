@@ -23,16 +23,14 @@ const transporter = nodemailer.createTransport({
 // Function to generate a random 4-digit OTP
 function generateOTP() {
   return Math.floor(1000 + Math.random() * 9000).toString();
-
 }
 
 async function sendOTP(email, otp, template = EMAIL_VERIFY_TEMPLATE, subject = "OTP Verification") {
   console.log(email+"emailsender"+otp);
   if (!canResendOTP(email)) {
-    console.log(email);
     throw new Error("You can only request a new OTP every 5 minutes.");
   }
-  otpStorage[email] = otp;
+  //otpStorage[email] = otp;
   const mailOptions = {
     from: process.env.SMTP_USER,
     to: email,

@@ -176,7 +176,7 @@ const sendOTPHandler = async (req, res, next) => {
 const verifyOTP = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
-    console.log(email, otp);
+        console.log(email, "", otp);
 
     if (!email || !otp) {
       return res
@@ -185,31 +185,36 @@ const verifyOTP = async (req, res, next) => {
     }
 
     const storedOTP = otpStorage[email];
+    console.log(storedOTP);
+    console.log("storedOTP");
     if (!storedOTP) {
       return res
         .status(400)
         .json({ status: false, message: "OTP not found or expired" });
     }
 
-    const { code, timestamp } = storedOTP;
-
-    // Check expiration
-    if (Date.now() - timestamp > MAX_OTP_AGE) {
+    // Support both legacy string OTP and new structured { code, timestamp }
+    const isStructured = typeof storedOTP === "object" && storedOTP !== null;
+    const code = isStructured ? storedOTP.code : storedOTP;
+    const timestamp = isStructured ? storedOTP.timestamp : undefined;
+    console.log(code);
+    if (timestamp && Date.now() - timestamp > MAX_OTP_AGE) {
+      console.log("otp exipred");
       delete otpStorage[email];
       return res.status(400).json({ status: false, message: "OTP expired" });
     }
 
-    // Compare OTP correctly
-    if (code !== otp) {
-      console.log("Expected:", code, "Received:", otp);
+    if ((code  "").trim() !== (otp || "").trim()) {
+      console.log(code, otp);
       return res.status(400).json({ status: false, message: "Invalid OTP" });
     }
 
-    // If valid, delete OTP and verify user
     delete otpStorage[email];
     await UserService.verifyUser(email, true);
 
-    res.status(200).json({ status: true, message: "OTP verified successfully" });
+    res
+      .status(200)
+      .json({ status: true, message: "OTP verified successfully" });
   } catch (error) {
     console.error("OTP Verification Error:", error);
     res.status(500).json({
