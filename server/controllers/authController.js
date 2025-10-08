@@ -390,18 +390,8 @@ const resetPassword = async (req, res) => {
       return res.json({ success: false, message: "User not found" });
     }
 
-    if (user.otp === "" || user.otp !== otp) {
-      return res.json({ success: false, message: "Invalid OTP" });
-    }
-
-    if (user.otpExpireAt < Date.now()) {
-      return res.json({ success: false, message: "OTP expired" });
-    }
-
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
-    user.otp = "";
-    user.otpExpireAt = 0;
 
     await user.save();
     return res.json({ success: true, message: "Password reset successfully" });
