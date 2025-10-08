@@ -204,7 +204,7 @@ const verifyOTP = async (req, res, next) => {
       return res.status(400).json({ status: false, message: "OTP expired" });
     }
 
-    if ((code  "").trim() !== (otp || "").trim()) {
+    if ((code || "").trim() !== (otp || "").trim()) {
       console.log(code, otp);
       return res.status(400).json({ status: false, message: "Invalid OTP" });
     }
@@ -223,7 +223,6 @@ const verifyOTP = async (req, res, next) => {
     });
   }
 };
-
 
 const mobileLogin = async (req, res, next) => {
   try {
