@@ -29,6 +29,8 @@ const EventDetail = () => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
+    const { backendUrl } = useContext(AppContent);
+  
 
 const renderActionButtons = () => (
   <div className="event-actions" role="group" aria-label="Event actions">
