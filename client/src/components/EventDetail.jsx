@@ -25,151 +25,137 @@ const EventDetail = () => {
   const [loading, setLoading] = useState(true);
   const [mapLoading, setMapLoading] = useState(false);
   const [mapError, setMapError] = useState(false);
-  const { userData, isLoggedin, authLoading } = useContext(AppContent);
+  const { userData, isLoggedin } = useContext(AppContent);
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
 
-const renderActionButtons = () => (
-  <div className="event-actions" role="group" aria-label="Event actions">
-    <button
-      onClick={async () => {
-        if (isRegistered) {
-          Swal.fire({
-            icon: "info",
-            title: "You're already registered!",
-            text: "You have already booked this event.",
-            confirmButtonColor: "#2563EB",
-          });
-          return;
-        }
-
-        // ✅ NEW: Handle loading state before checking login
-        if (authLoading) {
-          Swal.fire({
-            icon: "info",
-            title: "Please wait...",
-            text: "We’re still verifying your session. Try again in a moment.",
-            showConfirmButton: false,
-            timer: 1200,
-          });
-          return;
-        }
-
-        // ✅ Check authentication state before calling backend
-        if (!isLoggedin) {
-          Swal.fire({
-            icon: "warning",
-            title: "Login Required",
-            text: "You must be logged in to register for this event.",
-            showCancelButton: true,
-            confirmButtonColor: "#2563EB",
-            cancelButtonColor: "#9CA3AF",
-            confirmButtonText: "Go to Login",
-            cancelButtonText: "Cancel",
-          }).then((result) => {
-            if (result.isConfirmed) {
-              navigate("/login");
-            }
-          });
-          return;
-        }
-
-        try {
-          // ✅ Step 1: Check same-day registration from backend
-          const res = await axios.get(`/api/events/${id}/check-sameday`, {
-            withCredentials: true,
-          });
-
-          if (!res.data.success) {
+  const renderActionButtons = () => (
+    <div className="event-actions" role="group" aria-label="Event actions">
+      <button
+        onClick={async () => {
+          if (isRegistered) {
             Swal.fire({
-              icon: "warning",
-              title: "Conflict Detected",
-              text:
-                res.data.message || "You already have an event on this date.",
+              icon: "info",
+              title: "You're already registered!",
+              text: "You have already booked this event.",
               confirmButtonColor: "#2563EB",
             });
             return;
           }
+          if (authLoading) return; // ⏳ Don’t check until auth state is ready
 
-          // ✅ Step 2: Proceed with booking confirmation if clear
-          Swal.fire({
-            title: "Confirm Booking",
-            text: "Do you want to book this event?",
-            icon: "question",
-            showCancelButton: true,
-            confirmButtonColor: "#2563EB",
-            cancelButtonColor: "#9CA3AF",
-            confirmButtonText: "Yes, book it!",
-          }).then((result) => {
-            if (result.isConfirmed) {
-              Swal.fire({
-                title: "Booking Confirmed!",
-                text: "Redirecting to payment/receipt upload...",
-                icon: "success",
-                timer: 1500,
-                showConfirmButton: false,
-              });
-              setTimeout(() => {
-                navigate(`/uploadreceipt/${id}`);
-              }, 1500);
-            }
-          });
-        } catch (err) {
-          console.error("Error checking same-day:", err);
-
-          // ✅ Handle real unauthorized case (session expired)
-          if (err.response?.status === 401) {
+          // ✅ Check authentication state before calling backend
+          if (!authLoading && !isLoggedin) {
             Swal.fire({
               icon: "warning",
-              title: "Session Expired",
-              text: "Please log in again to continue.",
+              title: "Login Required",
+              text: "You must be logged in to register for this event.",
               showCancelButton: true,
               confirmButtonColor: "#2563EB",
               cancelButtonColor: "#9CA3AF",
               confirmButtonText: "Go to Login",
               cancelButtonText: "Cancel",
             }).then((result) => {
+              if (result.isConfirmed) navigate("/login");
+            });
+            return;
+          }
+
+          try {
+            // ✅ Step 1: Check same-day registration from backend
+            const res = await axios.get(`/api/events/${id}/check-sameday`, {
+              withCredentials: true,
+            });
+
+            if (!res.data.success) {
+              Swal.fire({
+                icon: "warning",
+                title: "Conflict Detected",
+                text:
+                  res.data.message || "You already have an event on this date.",
+                confirmButtonColor: "#2563EB",
+              });
+              return;
+            }
+
+            // ✅ Step 2: Proceed with booking confirmation if clear
+            Swal.fire({
+              title: "Confirm Booking",
+              text: "Do you want to book this event?",
+              icon: "question",
+              showCancelButton: true,
+              confirmButtonColor: "#2563EB",
+              cancelButtonColor: "#9CA3AF",
+              confirmButtonText: "Yes, book it!",
+            }).then((result) => {
               if (result.isConfirmed) {
-                navigate("/login");
+                Swal.fire({
+                  title: "Booking Confirmed!",
+                  text: "Redirecting to payment/receipt upload...",
+                  icon: "success",
+                  timer: 1500,
+                  showConfirmButton: false,
+                });
+                setTimeout(() => {
+                  navigate(`/uploadreceipt/${id}`);
+                }, 1500);
               }
             });
-          } else {
-            Swal.fire({
-              icon: "error",
-              title: "Error",
-              text: "Could not verify registration status. Please try again later.",
-              confirmButtonColor: "#2563EB",
-            });
+          } catch (err) {
+            console.error("Error checking same-day:", err);
+
+            // ✅ Handle real unauthorized case (session expired)
+            if (err.response?.status === 401) {
+              Swal.fire({
+                icon: "warning",
+                title: "Session Expired",
+                text: "Please log in again to continue.",
+                showCancelButton: true,
+                confirmButtonColor: "#2563EB",
+                cancelButtonColor: "#9CA3AF",
+                confirmButtonText: "Go to Login",
+                cancelButtonText: "Cancel",
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  navigate("/login");
+                }
+              });
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "Could not verify registration status. Please try again later.",
+                confirmButtonColor: "#2563EB",
+              });
+            }
           }
-        }
-      }}
-      className={`register-button ${
-        isRegistered ? "registered" : "not-registered"
-      }`}
-      aria-label={isRegistered ? "Already registered" : "Book now"}
-      disabled={isRegistered || isPastEvent}
-    >
-      {isRegistered
-        ? "Already Registered"
-        : isPastEvent
-        ? "Event Ended"
-        : "Book Now"}
-    </button>
-
-    {!isPastEvent && (
-      <button
-        onClick={() => window.open(createGoogleCalendarLink(event), "_blank")}
-        className="calendar-button"
-        aria-label="Add to Google Calendar"
-        type="button"
+        }}
+        className={`register-button ${
+          isRegistered ? "registered" : "not-registered"
+        }`}
+        aria-label={isRegistered ? "Already registered" : "Book now"}
+        disabled={isRegistered || isPastEvent}
       >
-        Add to Google Calendar
+        {isRegistered
+          ? "Already Registered"
+          : isPastEvent
+          ? "Event Ended"
+          : "Book Now"}
       </button>
-    )}
-  </div>
-);
 
+      {!isPastEvent && (
+        <button
+          onClick={() => window.open(createGoogleCalendarLink(event), "_blank")}
+          className="calendar-button"
+          aria-label="Add to Google Calendar"
+          type="button"
+        >
+          Add to Google Calendar
+        </button>
+      )}
+    </div>
+  );
 
   const createGoogleCalendarLink = (event) => {
     const startDate = new Date(event.date);
