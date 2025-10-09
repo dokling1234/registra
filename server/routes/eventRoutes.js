@@ -37,7 +37,7 @@ eventRouter.put("/updatePaymentStatus/:id", updatePaymentStatus);
 eventRouter.get("/registered/:id", userAuth, getRegisteredEventDetail);
 eventRouter.post("/search", getEventByTitle);
 eventRouter.post("/resend-ticket/:eventId", userAuth, resendTicket);
-eventRouter.get("/:eventId/check-sameday", checkSameDayRegistration);
+eventRouter.get("/:eventId/check-sameday",  checkSameDayRegistration);
 
 const mobileEventRouter = express.Router();
 
