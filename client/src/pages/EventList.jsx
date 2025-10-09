@@ -30,72 +30,77 @@ const EventList = ({ filters }) => {
 
   const appliedFilters = filters || defaultFilters;
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const res = await axios.get(backendUrl + "/api/events");
-        const allEvents = res.data.events;
+useEffect(() => {
+  const fetchEvents = async () => {
+    try {
+      const res = await axios.get(backendUrl + "/api/events");
+      const allEvents = res.data.events;
 
-        const useruserType = userData?.userType?.toLowerCase();
-        const targetFiltered = allEvents.filter((event) => {
-          const eventTarget = event.eventTarget?.toLowerCase();
-          return eventTarget === "both" || eventTarget === useruserType;
-        });
+      const useruserType = userData?.userType?.toLowerCase();
+      const targetFiltered = allEvents.filter((event) => {
+        const eventTarget = event.eventTarget?.toLowerCase();
+        return eventTarget === "both" || eventTarget === useruserType;
+      });
 
-        let filtered = [...targetFiltered];
-        if (appliedFilters.eventType) {
-          filtered = filtered.filter(
-            (e) =>
-              e.eventType?.toLowerCase() ===
-              appliedFilters.eventType.toLowerCase()
-          );
-        }
-        if (appliedFilters.location) {
-          filtered = filtered.filter((e) =>
-            e.location
-              ?.toLowerCase()
-              .includes(appliedFilters.location.toLowerCase())
-          );
-        }
-        if (appliedFilters.startDate || appliedFilters.endDate) {
-          filtered = filtered.filter((e) => {
-            const eventDate = new Date(e.date);
-            const start = appliedFilters.startDate
-              ? new Date(appliedFilters.startDate)
-              : null;
-            const end = appliedFilters.endDate
-              ? new Date(appliedFilters.endDate)
-              : null;
+      let filtered = [...targetFiltered];
 
-            if (start && end) return eventDate >= start && eventDate <= end;
-            if (start) return eventDate >= start;
-            if (end) return eventDate <= end;
-            return true;
-          });
-        }
+      // Filter by cancelled status
+      filtered = filtered.filter((event) => event.status !== "cancelled");
 
-        const currentDate = new Date();
-        const upcoming = filtered.filter(
-          (event) => new Date(event.date) >= currentDate
-        );
-        const past = filtered.filter(
-          (event) => new Date(event.date) < currentDate
-        );
-
-        setEvents(upcoming);
-        setPastEvents(past);
-      } catch (err) {
-        console.error(
-          "Error fetching events:",
-          err.response?.data || err.message
+      if (appliedFilters.eventType) {
+        filtered = filtered.filter(
+          (e) =>
+            e.eventType?.toLowerCase() ===
+            appliedFilters.eventType.toLowerCase()
         );
       }
-    };
+      if (appliedFilters.location) {
+        filtered = filtered.filter((e) =>
+          e.location
+            ?.toLowerCase()
+            .includes(appliedFilters.location.toLowerCase())
+        );
+      }
+      if (appliedFilters.startDate || appliedFilters.endDate) {
+        filtered = filtered.filter((e) => {
+          const eventDate = new Date(e.date);
+          const start = appliedFilters.startDate
+            ? new Date(appliedFilters.startDate)
+            : null;
+          const end = appliedFilters.endDate
+            ? new Date(appliedFilters.endDate)
+            : null;
 
-    if (userData?.userType) {
-      fetchEvents();
+          if (start && end) return eventDate >= start && eventDate <= end;
+          if (start) return eventDate >= start;
+          if (end) return eventDate <= end;
+          return true;
+        });
+      }
+
+      const currentDate = new Date();
+      const upcoming = filtered.filter(
+        (event) => new Date(event.date) >= currentDate
+      );
+      const past = filtered.filter(
+        (event) => new Date(event.date) < currentDate
+      );
+
+      setEvents(upcoming);
+      setPastEvents(past);
+    } catch (err) {
+      console.error(
+        "Error fetching events:",
+        err.response?.data || err.message
+      );
     }
-  }, [userData, appliedFilters]);
+  };
+
+  if (userData?.userType) {
+    fetchEvents();
+  }
+}, [userData, appliedFilters]);
+
 
   const handleScroll = (type, ref, cardRef = null) => {
     const offset = 100;

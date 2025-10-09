@@ -113,16 +113,23 @@ const Map = () => {
         const response = await axios.get("/api/events");
         const eventsData = response.data.events;
 
+        // 🔽 Exclude cancelled events
+        const activeEvents = eventsData.filter(
+          (event) => event.status !== "cancelled"
+        );
+
         const currentDate = new Date();
-        const upcomingEvents = eventsData.filter((event) => {
+        const upcomingEvents = activeEvents.filter((event) => {
           const eventDate = new Date(event.date);
           return eventDate >= currentDate;
         });
 
         let filteredEvents = upcomingEvents;
+
         console.log("Event data sample:", eventsData[0]);
-console.log(eventsData[1]?.eventTarget);
-        // 🔽 Adjust this to match your backend field
+        console.log(eventsData[1]?.eventTarget);
+
+        // Filter by userType
         if (userType === "professional") {
           filteredEvents = upcomingEvents.filter(
             (event) =>
