@@ -27,7 +27,7 @@ const eventRouter = express.Router();
 eventRouter.post("/create", createEvent);
 eventRouter.get("/registered", userAuth, getRegisteredEvents);
 eventRouter.get("/", getAllEvents);
-eventRouter.get("/:eventId/check-sameday", userAuth, checkSameDayRegistration);
+eventRouter.get("/:id/check-sameday", userAuth, checkSameDayRegistration);
 eventRouter.get("/:id", getEventById);
 eventRouter.post("/register/:id", userAuth, registerForEvent); // eventId
 eventRouter.put("/:id", updateEvent);
