@@ -6,6 +6,7 @@ export const AppContent = createContext();
 
 export const AppContextProvider = (props) => {
   axios.defaults.withCredentials = true;
+  const [authLoading, setAuthLoading] = useState(true);
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const [isLoggedin, setIsLoggedin] = useState(() => {
@@ -59,10 +60,7 @@ export const AppContextProvider = (props) => {
 
         setIsAdmin(derivedIsAdmin);
 
-        // ✅ Set userType directly if returned from backend
-        if (data.user?.userType) {
-          setUserType(data.user.userType);
-        }
+        if (data.user?.userType) setUserType(data.user.userType);
 
         await getUserData(derivedIsAdmin);
       } else {
@@ -76,14 +74,14 @@ export const AppContextProvider = (props) => {
       setIsAdmin(false);
       setUserData(false);
       setUserType(null);
+    } finally {
+      setAuthLoading(false); // ✅ mark as finished
     }
   };
 
   const getUserData = async (isAdminFlag = isAdmin) => {
     try {
-      const endpoint = isAdminFlag
-        ? "/api/admin/data"
-        : "/api/user/data";
+      const endpoint = isAdminFlag ? "/api/admin/data" : "/api/user/data";
 
       const { data } = await axios.get(backendUrl + endpoint);
 
@@ -116,11 +114,10 @@ export const AppContextProvider = (props) => {
     userType, // ✅ Added here for global use
     setUserType,
     getUserData,
+    authLoading, 
   };
 
   return (
-    <AppContent.Provider value={value}>
-      {props.children}
-    </AppContent.Provider>
+    <AppContent.Provider value={value}>{props.children}</AppContent.Provider>
   );
 };
