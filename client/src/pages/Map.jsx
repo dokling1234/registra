@@ -113,24 +113,42 @@ const Map = () => {
         const response = await axios.get("/api/events");
         const eventsData = response.data.events;
 
-        // Filter out past events
         const currentDate = new Date();
         const upcomingEvents = eventsData.filter((event) => {
           const eventDate = new Date(event.date);
           return eventDate >= currentDate;
         });
 
-        setEvents(upcomingEvents);
-        addMarkers(upcomingEvents);
+        let filteredEvents = upcomingEvents;
+        console.log("Event data sample:", eventsData[0]);
 
-        console.log("Upcoming events fetched successfully", upcomingEvents);
+        // 🔽 Adjust this to match your backend field
+        if (userType === "professional") {
+          filteredEvents = upcomingEvents.filter(
+            (event) =>
+              event.eventTarget === "professional" ||
+              event.eventTarget === "both"
+          );
+        } else if (userType === "student") {
+          filteredEvents = upcomingEvents.filter(
+            (event) =>
+              event.eventTarget === "student" || event.eventTarget === "both"
+          );
+        } else if (userType === "both") {
+          filteredEvents = upcomingEvents; // show everything
+        }
+
+        setEvents(filteredEvents);
+        addMarkers(filteredEvents);
+
+        console.log("Filtered upcoming events:", filteredEvents);
       } catch (error) {
         console.error("Failed to fetch events", error);
       }
     };
 
     fetchEvents();
-  }, []);
+  }, [userType]);
 
   // Get unique locations from events
   const uniqueLocations = [
