@@ -174,6 +174,8 @@ const getEvents = async (req, res) => {
     if (type && type !== "All") match.eventType = type;
     if (location && location !== "All") match.location = location;
 
+    match.status = { $ne: "cancelled" };
+
     // Role-based filtering
     if (userType === "student" || membership === "non-member") {
       match.eventTarget = { $nin: ["Admin"] };
@@ -838,7 +840,7 @@ const checkSameDayRegistration = async (req, res) => {
   try {
     console.log("Checking same-day registration for user:", userId);
     const event = await eventModel.findById(eventId);
-        console.log("Checking same-day registration for user:", eventId);
+    console.log("Checking same-day registration for user:", eventId);
 
     if (!event)
       return res
@@ -882,7 +884,6 @@ const checkSameDayRegistration = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 
 module.exports = {
   createEvent,

@@ -272,6 +272,31 @@ const Events = () => {
     }
   };
 
+  const handleReactivate = async (eventId) => {
+    try {
+      const confirm = window.confirm(
+        "Are you sure you want to reactivate this event?"
+      );
+      if (!confirm) return;
+
+      const { data } = await axios.put(
+        `${backendUrl}/api/superadmin/uncancel-event/${eventId}`,
+        {},
+        { withCredentials: true }
+      );
+
+      if (data.success) {
+        toast.success("Event reactivated successfully");
+        const res = await axios.get(`${backendUrl}/api/events`);
+        setEvents(res.data.events);
+      } else {
+        toast.error(data.message || "Failed to reactivate event");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Error reactivating event");
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
@@ -549,16 +574,17 @@ const Events = () => {
                       </td>
                       <td className="px-6 py-4">
                         {event.status === "cancelled" ? (
-                          <span className="text-red-600 font-semibold">
-                            Cancelled
-                          </span>
+                          <button
+                            className="text-green-600 font-semibold hover:underline"
+                            onClick={() => handleReactivate(event._id)}
+                          >
+                            Reactivate
+                          </button>
                         ) : isPastEvent ? (
                           <Link
                             to={`/adminevents/${event._id}`}
                             className="text-blue-600 hover:underline text-sm"
-                          >
-                            
-                          </Link>
+                          ></Link>
                         ) : (
                           <div className="flex gap-2">
                             <button
