@@ -65,7 +65,7 @@ const renderActionButtons = () => (
         // ✅ If logged in, continue normally
         try {
           console.log(id);
-          const res = await axios.get(`/api/events/${id}/check-sameday`, {
+          const res = await axios.get(`(${backendUrl}/api/events/${id}/check-sameday`, {
             withCredentials: true,
           });
 
