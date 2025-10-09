@@ -31,10 +31,11 @@ const EventDetail = () => {
   const markerRef = useRef(null);
 
   const renderActionButtons = () => (
-    console.log(isLoggedin),
     <div className="event-actions" role="group" aria-label="Event actions">
       <button
         onClick={async () => {
+              console.log(isLoggedin);
+
           if (isRegistered) {
             Swal.fire({
               icon: "info",

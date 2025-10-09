@@ -11,7 +11,6 @@ const Home = () => {
   const { isAdmin } = useContext(AppContent);
   const navigate = useNavigate();
 
-  console.log(isAdmin);
   useEffect(() => {
     if (isAdmin) {
       // Not an admin, redirect to home or another page
