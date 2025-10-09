@@ -25,7 +25,7 @@ const EventDetail = () => {
   const [loading, setLoading] = useState(true);
   const [mapLoading, setMapLoading] = useState(false);
   const [mapError, setMapError] = useState(false);
-  const { userData, isLoggedin } = useContext(AppContent);
+  const { userData, isLoggedin, authLoading } = useContext(AppContent);
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
@@ -105,7 +105,6 @@ const EventDetail = () => {
           } catch (err) {
             console.error("Error checking same-day:", err);
 
-            // ✅ Handle real unauthorized case (session expired)
             if (err.response?.status === 401) {
               Swal.fire({
                 icon: "warning",
