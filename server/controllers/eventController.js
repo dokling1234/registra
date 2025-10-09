@@ -810,7 +810,7 @@ const getEventDetailsById = async (req, res) => {
 const checkSameDayRegistration = async (req, res) => {
   const { eventId } = req.params;
   const { userId } = req.user;
-
+console.log(req.user);
   try {
     const event = await eventModel.findById(eventId);
     if (!event)

@@ -22,7 +22,6 @@ export const AppContextProvider = (props) => {
     return stored ? JSON.parse(stored) : false;
   });
 
-  // ✅ New: Store userType separately for easy access
   const [userType, setUserType] = useState(() => {
     const stored = localStorage.getItem("userType");
     return stored ? JSON.parse(stored) : null;
