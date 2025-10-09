@@ -831,21 +831,32 @@ const getEventDetailsById = async (req, res) => {
 };
 
 const checkSameDayRegistration = async (req, res) => {
+  console.log("checkSameDayRegistration called");
   const { eventId } = req.params;
   const { userId } = req.user;
+
   try {
+    console.log("Checking same-day registration for user:", userId);
     const event = await eventModel.findById(eventId);
+        console.log("Checking same-day registration for user:", eventId);
+
     if (!event)
       return res
         .status(404)
         .json({ success: false, message: "Event not found" });
 
-    // Find other events with same date and user already registered
+    // Print original event date
+    console.log("Original event.date:", event.date);
+
+    // Calculate start and end of day
     const startOfDay = new Date(event.date);
     startOfDay.setUTCHours(0, 0, 0, 0);
 
     const endOfDay = new Date(event.date);
     endOfDay.setUTCHours(23, 59, 59, 999);
+
+    // Print what is being used in the query
+    console.log("Checking between:", startOfDay, "and", endOfDay);
 
     const sameDayEvents = await eventModel.find({
       _id: { $ne: eventId },
@@ -855,6 +866,8 @@ const checkSameDayRegistration = async (req, res) => {
         $lte: endOfDay,
       },
     });
+
+    console.log("Found same-day events:", sameDayEvents);
 
     if (sameDayEvents.length > 0) {
       return res.json({
@@ -869,6 +882,7 @@ const checkSameDayRegistration = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 module.exports = {
   createEvent,
