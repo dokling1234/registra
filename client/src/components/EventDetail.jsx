@@ -45,9 +45,6 @@ const renderActionButtons = () => (
           });
           return;
         }
-
-        if (authLoading) return; // Wait until auth state is ready
-
         // ✅ Only block if NOT logged in
         if (!isLoggedin) {
           Swal.fire({
