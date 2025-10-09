@@ -557,7 +557,7 @@ const Events = () => {
                             to={`/adminevents/${event._id}`}
                             className="text-blue-600 hover:underline text-sm"
                           >
-                            View
+                            
                           </Link>
                         ) : (
                           <div className="flex gap-2">
