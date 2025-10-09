@@ -27,6 +27,7 @@ const eventRouter = express.Router();
 eventRouter.post("/create", createEvent);
 eventRouter.get("/registered", userAuth, getRegisteredEvents);
 eventRouter.get("/", getAllEvents);
+eventRouter.get("/:eventId/check-sameday", userAuth, checkSameDayRegistration);
 eventRouter.get("/:id", getEventById);
 eventRouter.post("/register/:id", userAuth, registerForEvent); // eventId
 eventRouter.put("/:id", updateEvent);
@@ -37,7 +38,6 @@ eventRouter.put("/updatePaymentStatus/:id", updatePaymentStatus);
 eventRouter.get("/registered/:id", userAuth, getRegisteredEventDetail);
 eventRouter.post("/search", getEventByTitle);
 eventRouter.post("/resend-ticket/:eventId", userAuth, resendTicket);
-eventRouter.get("/:eventId/check-sameday", userAuth, checkSameDayRegistration);
 
 const mobileEventRouter = express.Router();
 
