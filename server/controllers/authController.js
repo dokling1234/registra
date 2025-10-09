@@ -7,7 +7,7 @@ const crypto = require("crypto");
 const {
   EMAIL_VERIFY_TEMPLATE,
   PASSWORD_RESET_TEMPLATE,
-  LOGIN_OTP_TEMPLATE,
+  LOGIN_OTP_TEMPLATE
 } = require("../config/emailTemplates.js");
 
 // register controller
@@ -30,10 +30,7 @@ const register = async (req, res) => {
   try {
     const existingUser = await userModel.findOne({ email });
     if (existingUser) {
-      return res.json({
-        success: false,
-        message: "invalid email already exist",
-      });
+      return res.json({ success: false, message: "invalid email already exist" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -62,7 +59,7 @@ const register = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -83,18 +80,12 @@ const login = async (req, res) => {
     const account = await userModel.findOne({ email });
 
     if (!account) {
-      return res.json({
-        success: false,
-        message: "Incorrect Email or Password",
-      });
+      return res.json({ success: false, message: "Incorrect Email or Password" });
     }
 
     const isMatch = await bcrypt.compare(password, account.password);
     if (!isMatch) {
-      return res.json({
-        success: false,
-        message: "Incorrect Email or Password",
-      });
+      return res.json({ success: false, message: "Incorrect Email or Password" });
     }
 
     const token = jwt.sign(
@@ -108,14 +99,10 @@ const login = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    console.log("🧩 Setting cookie:", {
-      name: "token",
-      value: token,
-      options: cookieOptions,
-    });
+
     return res.json({
       success: true,
       message: "Login Successful",
@@ -177,7 +164,7 @@ const adminLogin = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     return res.json({
@@ -205,7 +192,7 @@ const logout = async (req, res) => {
     res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
     });
     return res.json({ success: true, message: "Logout successful" });
   } catch (error) {
@@ -240,7 +227,7 @@ const sendVerifyOtp = async (req, res) => {
       ),
     };
     await transporter.sendMail(mailOptions);
-
+ 
     return res.json({ success: true, message: "OTP sent successfully" });
   } catch (error) {
     return res.json({ success: false, message: error.message });
@@ -253,9 +240,7 @@ const resendOTP = async (req, res) => {
 
     const user = await userModel.findById(userId);
     if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
     if (user.isVerified) {
@@ -391,8 +376,8 @@ const sendResetOtp = async (req, res) => {
 
 // Reset User Password
 const resetPassword = async (req, res) => {
-  const { email, newPassword } = req.body;
-  if (!email || !newPassword) {
+  const { email,  newPassword } = req.body;
+  if (!email ||  !newPassword) {
     return res.json({
       success: false,
       message: "Email, OTP, and new password are required",
@@ -447,6 +432,7 @@ const verifyResetOtp = async (req, res) => {
   }
 };
 
+
 const mobileAdminLogin = async (req, res) => {
   const { email, password } = req.body;
 
@@ -491,7 +477,7 @@ const mobileAdminLogin = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -503,7 +489,7 @@ const mobileAdminLogin = async (req, res) => {
         id: account._id,
         fullName: account.fullName,
         email: account.email,
-        userType: account.userType,
+        userType: account.userType ,
       },
       token,
     });
@@ -520,36 +506,22 @@ const adminChangePassword = async (req, res) => {
     // Get the logged-in user's email from the session or JWT
     // Example: req.user.email (make sure your auth middleware sets req.user)
     if (!email) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Unauthorized. Please log in." });
+      return res.status(401).json({ success: false, message: "Unauthorized. Please log in." });
     }
 
     if (!icpepId || !newPassword) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "New ICPEP ID and new password are required.",
-        });
+      return res.status(400).json({ success: false, message: "New ICPEP ID and new password are required." });
     }
 
     // Find user by their own email
     const user = await adminModel.findOne({ email });
     if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found." });
+      return res.status(404).json({ success: false, message: "User not found." });
     }
 
     // Only allow admin or superadmin to change their own password and ICPEP ID
     if (!["admin", "superadmin"].includes(user.userType)) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Not authorized to change password for this user.",
-        });
+      return res.status(403).json({ success: false, message: "Not authorized to change password for this user." });
     }
 
     // Hash new password and update ICPEP ID
@@ -558,10 +530,7 @@ const adminChangePassword = async (req, res) => {
     user.icpepId = icpepId;
     await user.save();
 
-    return res.json({
-      success: true,
-      message: "Password and ICPEP ID changed successfully.",
-    });
+    return res.json({ success: true, message: "Password and ICPEP ID changed successfully." });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
