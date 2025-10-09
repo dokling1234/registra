@@ -66,6 +66,7 @@ const renderActionButtons = () => (
         try {
           console.log(id);
           const res = await axios.get(`/api/events/${id}/check-sameday`, {
+            withCredentials: false,
           });
 
           if (!res.data.success) {
