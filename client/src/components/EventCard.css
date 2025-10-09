@@ -77,6 +77,16 @@
   height: 18px;
 }
 
+.event-card-time {
+  font-size: 0.95rem;
+  color: #4B5563;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-weight: 500;
+}
+
 .event-card-price {
   font-size: 1.125rem;
   font-weight: 700;

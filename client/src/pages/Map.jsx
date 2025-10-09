@@ -24,14 +24,15 @@ const Map = () => {
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const selectedEventRef = useRef(null);
   const [markers, setMarkers] = useState([]);
+  const { userType } = useContext(AppContent);
 
   useEffect(() => {
-      if (isAdmin) {
-        // Not an admin, redirect to home or another page
-        navigate("/");
-      }
-    }, [isAdmin, navigate]);
-    
+    if (isAdmin) {
+      // Not an admin, redirect to home or another page
+      navigate("/");
+    }
+  }, [isAdmin, navigate]);
+
   // Disable scroll only on this page
   useEffect(() => {
     document.body.style.overflow = "hidden"; // Disable scrolling
@@ -172,7 +173,7 @@ const Map = () => {
     ),
   ].sort();
 
-  const filteredEvents = events.filter((event) => {
+  const eventsFiltered = events.filter((event) => {
     const matchesSearch = searchQuery
       ? event.title.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
@@ -402,12 +403,12 @@ const Map = () => {
               </div>
             </div>
             <div className="cpemap-events-list">
-              {filteredEvents.length === 0 ? (
+              {eventsFiltered.length === 0 ? (
                 <div className="cpemap-no-results">
                   No events found matching your search
                 </div>
               ) : (
-                filteredEvents.map((event) => (
+                eventsFiltered.map((event) => (
                   <div
                     key={event._id}
                     ref={

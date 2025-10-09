@@ -32,6 +32,24 @@ const EventCard = ({ event }) => {
     </svg>
   );
 
+  const TimeIcon = (
+    <svg
+      width="18"
+      height="18"
+      fill="none"
+      viewBox="0 0 24 24"
+      style={{ marginRight: "0.5rem", verticalAlign: "middle" }}
+    >
+      <circle cx="12" cy="12" r="9" stroke="#2563eb" strokeWidth="2" />
+      <path
+        d="M12 7v5l3 2"
+        stroke="#2563eb"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+
   const LocationIcon = (
     <svg
       width="18"
@@ -50,6 +68,17 @@ const EventCard = ({ event }) => {
     </svg>
   );
 
+  const eventDate = new Date(event.date);
+  const formattedDate = eventDate.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const formattedTime = eventDate.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   return (
     <Link to={`/events/${event._id}`} className="event-card-link">
       <div className="event-card">
@@ -60,14 +89,18 @@ const EventCard = ({ event }) => {
             className="event-card-image"
           />
           <span className="event-card-price-badge">
-            ₱{event.price?.toLocaleString() || 'Free'}
+            ₱{event.price?.toLocaleString() || "Free"}
           </span>
         </div>
         <div className="event-card-content">
           <h3 className="event-card-title">{event.title}</h3>
           <p className="event-card-date">
             {DateIcon}
-            {new Date(event.date).toLocaleDateString()}
+            {formattedDate}
+          </p>
+          <p className="event-card-time">
+            {TimeIcon}
+            {formattedTime}
           </p>
           <p className="event-card-location">
             {LocationIcon}
