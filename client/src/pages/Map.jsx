@@ -121,18 +121,18 @@ const Map = () => {
 
         let filteredEvents = upcomingEvents;
         console.log("Event data sample:", eventsData[0]);
-
+console.log(eventsData[1]?.eventTarget);
         // 🔽 Adjust this to match your backend field
         if (userType === "professional") {
           filteredEvents = upcomingEvents.filter(
             (event) =>
-              event.eventTarget === "professional" ||
-              event.eventTarget === "both"
+              event.eventTarget === "Professional" ||
+              event.eventTarget === "Both"
           );
         } else if (userType === "student") {
           filteredEvents = upcomingEvents.filter(
             (event) =>
-              event.eventTarget === "student" || event.eventTarget === "both"
+              event.eventTarget === "Student" || event.eventTarget === "Both"
           );
         } else if (userType === "both") {
           filteredEvents = upcomingEvents; // show everything
