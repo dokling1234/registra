@@ -434,7 +434,6 @@ const changeAdminPassword = async (req, res) => {
 const getEventAnalyticsReport = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("geteventanalyticsreport");
     // 1. Attendance vs No-shows
     const attendanceStats = await Event.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(id) } },
@@ -635,7 +634,6 @@ const samplePdf = async (req, res) => {
 
 const getFeedbackQuestionReport = async (req, res) => {
   try {
-    console.log("getFeedbackQuestionReport");
     const { id, qIndex } = req.params;
     const {
       eventTitle = "Event",

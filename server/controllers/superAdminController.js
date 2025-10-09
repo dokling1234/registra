@@ -199,7 +199,6 @@ const cancelEvent = async (req, res) => {
 };
 
 const uncancelEventController = async (req, res) => {
-  console.log("Uncancel event request received");
   const { eventId } = req.params;
   try {
     const event = await eventModel.findById(eventId);

@@ -35,7 +35,6 @@ const EventDetail = () => {
     <div className="event-actions" role="group" aria-label="Event actions">
       <button
         onClick={async () => {
-          console.log("isLoggedin:", isLoggedin);
 
           if (isRegistered) {
             Swal.fire({
@@ -65,7 +64,6 @@ const EventDetail = () => {
 
           // ✅ If logged in, continue normally
           try {
-            console.log(id);
             const res = await axios.get(
               `${backendUrl}/api/events/${event._id}/check-sameday`,
               {

@@ -122,7 +122,6 @@ if (process.env.NODE_ENV === "production") {
   // ✅ Dynamic OG tags for event detail pages
   app.get("/events/:id", async (req, res) => {
     const eventId = req.params.id;
-    console.log("OG request for event:", eventId);
 
     try {
       // fetch event data from API

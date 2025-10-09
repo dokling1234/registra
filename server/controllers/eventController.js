@@ -92,7 +92,6 @@ const createEvent = async (req, res) => {
       }
 
       await admin.messaging().send(notificationData);
-      console.log("Notification sent for event:", event.title);
     } catch (notifyErr) {
       console.error("Error sending notification:", notifyErr);
     }
@@ -266,7 +265,6 @@ const registerForEvent = async (req, res) => {
   const { userId } = req.user;
 
   try {
-    console.log(eventId);
 
     const event = await eventModel.findById(eventId);
     if (!event) {
@@ -381,7 +379,6 @@ const geocodeAddress = async (req, res) => {
 };
 
 const reverseGeocode = async (req, res) => {
-  console.log("reverseGeocode");
   const { lat, lon } = req.body;
 
   if (!lat || !lon) {
@@ -833,14 +830,11 @@ const getEventDetailsById = async (req, res) => {
 };
 
 const checkSameDayRegistration = async (req, res) => {
-  console.log("checkSameDayRegistration called");
   const { eventId } = req.params;
   const { userId } = req.user;
 
   try {
-    console.log("Checking same-day registration for user:", userId);
     const event = await eventModel.findById(eventId);
-    console.log("Checking same-day registration for user:", eventId);
 
     if (!event)
       return res
@@ -848,7 +842,6 @@ const checkSameDayRegistration = async (req, res) => {
         .json({ success: false, message: "Event not found" });
 
     // Print original event date
-    console.log("Original event.date:", event.date);
 
     // Calculate start and end of day
     const startOfDay = new Date(event.date);
@@ -858,7 +851,6 @@ const checkSameDayRegistration = async (req, res) => {
     endOfDay.setUTCHours(23, 59, 59, 999);
 
     // Print what is being used in the query
-    console.log("Checking between:", startOfDay, "and", endOfDay);
 
     const sameDayEvents = await eventModel.find({
       _id: { $ne: eventId },
@@ -869,7 +861,6 @@ const checkSameDayRegistration = async (req, res) => {
       },
     });
 
-    console.log("Found same-day events:", sameDayEvents);
 
     if (sameDayEvents.length > 0) {
       return res.json({

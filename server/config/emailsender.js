@@ -26,7 +26,6 @@ function generateOTP() {
 }
 
 async function sendOTP(email, otp, template = EMAIL_VERIFY_TEMPLATE, subject = "OTP Verification") {
-  console.log(email+"emailsender"+otp);
   if (!canResendOTP(email)) {
     throw new Error("You can only request a new OTP every 5 minutes.");
   }
@@ -43,7 +42,6 @@ async function sendOTP(email, otp, template = EMAIL_VERIFY_TEMPLATE, subject = "
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`OTP sent to ${email}`);
   } catch (error) {
     console.error("Error sending email:", error.message, error.stack);
     throw new Error("Failed to send OTP");
@@ -51,9 +49,7 @@ async function sendOTP(email, otp, template = EMAIL_VERIFY_TEMPLATE, subject = "
 }
 
 async function sendResetOTP(email, otp, template = PASSWORD_RESET_TEMPLATE, subject = "OTP Verification") {
-  console.log(email+"emailsender"+otp);
   if (!canResendOTP(email)) {
-    console.log(email);
     throw new Error("You can only request a new OTP every 5 minutes.");
   }
   otpStorage[email] = otp;
@@ -69,7 +65,6 @@ async function sendResetOTP(email, otp, template = PASSWORD_RESET_TEMPLATE, subj
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`OTP sent to ${email}`);
   } catch (error) {
     console.error("Error sending email:", error.message, error.stack);
     throw new Error("Failed to send OTP");

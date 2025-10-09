@@ -40,7 +40,6 @@ const FeedbackBuilder = () => {
   // Check for existing feedback form when event is selected
   useEffect(() => {
     if (selectedEvent) {
-      console.log(`selecte ${selectedEvent._id}`);
 
       axios
         .get(`/api/feedback/getFeedback/${selectedEvent._id}`)

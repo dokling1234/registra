@@ -30,7 +30,6 @@ const UploadReceipt = () => {
   // Prefill user data
   useEffect(() => {
     if (userData) {
-      console.log(userData);
       setAccountName(userData.fullName || "");
       setMobileNumber(userData.contactNumber || "");
     }
@@ -76,7 +75,6 @@ const UploadReceipt = () => {
       );
 
       imageUrl = uploadRes.data.secure_url;
-      console.log("Cloudinary upload success:", imageUrl);
     } catch (err) {
       console.error("Cloudinary upload error:", err);
       Swal.fire({
@@ -110,7 +108,6 @@ const UploadReceipt = () => {
         navigate("/home");
       });
 
-      console.log({ accountName, mobileNumber, receipt, receiptUrl: imageUrl });
     } catch (err) {
       console.error("Backend registration error:", err);
       Swal.fire({

@@ -37,8 +37,6 @@ const EditEvent = () => {
           address,
         });
         const { lat, lon, display_name } = geoRes.data;
-        console.log("response");
-        console.log(event, event, address, location);
         // Prepare the new event data object
         const newEventData = {
           title: event.title || "",

@@ -267,7 +267,6 @@ const Report = () => {
   };
 
   const handleDownload = () => {
-    console.log("Downloading report:", generatedReport);
     const element = document.getElementById("downloadableReport");
     const opt = {
       margin: 0.5,

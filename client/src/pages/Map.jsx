@@ -126,8 +126,7 @@ const Map = () => {
 
         let filteredEvents = upcomingEvents;
 
-        console.log("Event data sample:", eventsData[0]);
-        console.log(eventsData[1]?.eventTarget);
+
 
         // Filter by userType
         if (userType === "professional") {
@@ -148,7 +147,6 @@ const Map = () => {
         setEvents(filteredEvents);
         addMarkers(filteredEvents);
 
-        console.log("Filtered upcoming events:", filteredEvents);
       } catch (error) {
         console.error("Failed to fetch events", error);
       }

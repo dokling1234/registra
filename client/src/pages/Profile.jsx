@@ -43,7 +43,6 @@ const Profile = () => {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [eventFilter, setEventFilter] = useState("all");
 
-  console.log(isAdmin);
   useEffect(() => {
     if (isAdmin) {
       // Not an admin, redirect to home or another page
@@ -118,8 +117,7 @@ const Profile = () => {
   };
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
-    console.log(file);
-    console.log(cloudName);
+
 
     if (!file) return;
 
@@ -139,7 +137,7 @@ const Profile = () => {
       );
       setFormData((prev) => ({ ...prev, profileImage: res.data.secure_url }));
       setIsUploading(false);
-      console.log("uploaded");
+ 
       Swal.fire({
         title: "Success!",
         text: "Profile picture uploaded successfully!",
