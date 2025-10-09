@@ -151,10 +151,6 @@ if (process.env.NODE_ENV === "production") {
         <meta property="og:image" content="${event.image}" />
         <meta property="og:site_name" content="Registra" />
         <meta property="og:locale" content="en_US" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="${event.title}" />
-        <meta name="twitter:description" content="${event.about}" />
-        <meta name="twitter:image" content="${event.image}" />
       `;
 
       // ✅ safer inject into <head>

@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useContext } from "react";
 import {
+  Navigate,
   useNavigate,
   useParams,
   useLocation,
@@ -11,9 +12,9 @@ import Footer from "../components/Footer";
 import "./EventDetail.css";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { FaFacebook, FaTwitter, FaLink } from "react-icons/fa";
 import Swal from "sweetalert2";
-import { Helmet } from "react-helmet"; // ✅ For Open Graph meta tags
+import { FaFacebook, FaTwitter, FaLink } from "react-icons/fa";
+import { Helmet } from "react-helmet";
 
 const EventDetail = () => {
   const navigate = useNavigate();
@@ -29,9 +30,119 @@ const EventDetail = () => {
   const mapRef = useRef(null);
   const markerRef = useRef(null);
 
+  const renderActionButtons = () => (
+    <div className="event-actions" role="group" aria-label="Event actions">
+      <button
+        onClick={async () => {
+          if (isRegistered) {
+            Swal.fire({
+              icon: "info",
+              title: "You're already registered!",
+              text: "You have already booked this event.",
+              confirmButtonColor: "#2563EB",
+            });
+            return;
+          }
+
+          try {
+            // ✅ Step 1: Check same-day registration from backend
+            const res = await axios.get(`/api/events/${id}/check-sameday`, {
+              withCredentials: true,
+            });
+
+            if (!res.data.success) {
+              Swal.fire({
+                icon: "warning",
+                title: "Conflict Detected",
+                text:
+                  res.data.message || "You already have an event on this date.",
+                confirmButtonColor: "#2563EB",
+              });
+              return;
+            }
+
+            // ✅ Step 2: Proceed with booking confirmation if clear
+            Swal.fire({
+              title: "Confirm Booking",
+              text: "Do you want to book this event?",
+              icon: "question",
+              showCancelButton: true,
+              confirmButtonColor: "#2563EB",
+              cancelButtonColor: "#9CA3AF",
+              confirmButtonText: "Yes, book it!",
+            }).then((result) => {
+              if (result.isConfirmed) {
+                Swal.fire({
+                  title: "Booking Confirmed!",
+                  text: "Redirecting to payment/receipt upload...",
+                  icon: "success",
+                  timer: 1500,
+                  showConfirmButton: false,
+                });
+                setTimeout(() => {
+                  navigate(`/uploadreceipt/${id}`);
+                }, 1500);
+              }
+            });
+          } catch (err) {
+            console.error("Error checking same-day:", err);
+
+            // ✅ Handle Unauthorized (token missing/expired)
+            if (err.response && err.response.status === 401) {
+              Swal.fire({
+                icon: "warning",
+                title: "Login Required",
+                text: "You must be logged in to register for this event.",
+                showCancelButton: true,
+                confirmButtonColor: "#2563EB",
+                cancelButtonColor: "#9CA3AF",
+                confirmButtonText: "Go to Login",
+                cancelButtonText: "Cancel",
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  navigate("/login");
+                }
+              });
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "Could not verify registration status. Please try again later.",
+                confirmButtonColor: "#2563EB",
+              });
+            }
+          }
+        }}
+        className={`register-button ${
+          isRegistered ? "registered" : "not-registered"
+        }`}
+        aria-label={isRegistered ? "Already registered" : "Book now"}
+        disabled={isRegistered || isPastEvent}
+      >
+        {isRegistered
+          ? "Already Registered"
+          : isPastEvent
+          ? "Event Ended"
+          : "Book Now"}
+      </button>
+
+      {!isPastEvent && (
+        <button
+          onClick={() => window.open(createGoogleCalendarLink(event), "_blank")}
+          className="calendar-button"
+          aria-label="Add to Google Calendar"
+          type="button"
+        >
+          Add to Google Calendar
+        </button>
+      )}
+    </div>
+  );
+
   const createGoogleCalendarLink = (event) => {
     const startDate = new Date(event.date);
     const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // 2-hour duration
+
     const formatDate = (date) => date.toISOString().replace(/-|:|\.\d+/g, "");
 
     const details = encodeURIComponent(event.about || "");
@@ -44,7 +155,6 @@ const EventDetail = () => {
       endDate
     )}&details=${details}&location=${location}&sf=true&output=xml`;
   };
-
   useEffect(() => {
     const fetchEvent = async () => {
       try {
@@ -56,7 +166,10 @@ const EventDetail = () => {
         setIsRegistered(registered);
         setLoading(false);
       } catch (err) {
-        console.error("Failed to fetch event:", err.response?.data || err.message);
+        console.error(
+          "Failed to fetch event:",
+          err.response?.data || err.message
+        );
         setLoading(false);
       }
     };
@@ -64,7 +177,9 @@ const EventDetail = () => {
   }, [id, userData?.id]);
 
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current || !event?.coordinates) return;
+    if (!mapContainerRef.current || mapRef.current || !event?.coordinates) {
+      return;
+    }
 
     const [lng, lat] = event.coordinates;
     if (isNaN(lng) || isNaN(lat)) {
@@ -83,17 +198,20 @@ const EventDetail = () => {
           "https://api.maptiler.com/maps/streets-v2/style.json?key=cyT8CBxXMzVIORtIP1Pj",
         center: [lng, lat],
         zoom: 16,
-        attributionControl: false,
+        attributionControl: false, // Disable attribution for cleaner look
       });
 
       mapRef.current.on("load", () => {
         setMapLoading(false);
+
+        // Add marker after map loads
         const marker = new maplibregl.Marker({ color: "#FF0000" })
           .setLngLat([lng, lat])
           .setPopup(
             new maplibregl.Popup().setText(event.location || "Event Location")
           )
           .addTo(mapRef.current);
+
         markerRef.current = marker;
       });
 
@@ -108,76 +226,23 @@ const EventDetail = () => {
       setMapLoading(false);
     }
 
+    // Cleanup function
     return () => {
-      if (mapRef.current) mapRef.current.remove();
-      mapRef.current = null;
-      markerRef.current = null;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+      if (markerRef.current) {
+        markerRef.current = null;
+      }
     };
   }, [event]);
 
   if (loading || !event) return <div className="loading">Loading...</div>;
-
   const isPastEvent = new Date(event.date) < new Date();
-
-  const renderActionButtons = () => (
-    <div className="event-actions" role="group" aria-label="Event actions">
-      <button
-        onClick={() => {
-          if (isRegistered) {
-            Swal.fire({
-              icon: "info",
-              title: "You're already registered!",
-              text: "You have already booked this event.",
-              confirmButtonColor: "#2563EB",
-            });
-            return;
-          }
-          Swal.fire({
-            title: "Confirm Booking",
-            text: "Do you want to book this event?",
-            icon: "question",
-            showCancelButton: true,
-            confirmButtonColor: "#2563EB",
-            cancelButtonColor: "#9CA3AF",
-            confirmButtonText: "Yes, book it!",
-          }).then((result) => {
-            if (result.isConfirmed) {
-              Swal.fire({
-                title: "Booking Confirmed!",
-                text: "Redirecting to payment/receipt upload...",
-                icon: "success",
-                timer: 1500,
-                showConfirmButton: false,
-              });
-              setTimeout(() => {
-                navigate(`/uploadreceipt/${id}`);
-              }, 1500);
-            }
-          });
-        }}
-        className={`register-button ${isRegistered ? "registered" : "not-registered"}`}
-        aria-label={isRegistered ? "Already registered" : "Book now"}
-        disabled={isRegistered || isPastEvent}
-      >
-        {isRegistered ? "Already Registered" : isPastEvent ? "Event Ended" : "Book Now"}
-      </button>
-
-      {!isPastEvent && (
-        <button
-          onClick={() => window.open(createGoogleCalendarLink(event), "_blank")}
-          className="calendar-button"
-          aria-label="Add to Google Calendar"
-          type="button"
-        >
-          Add to Google Calendar
-        </button>
-      )}
-    </div>
-  );
 
   return (
     <>
-      {/* ✅ Open Graph Meta Tags */}
       <Helmet>
         <title>{event.title}</title>
         <meta property="og:title" content={event.title} />
@@ -200,12 +265,15 @@ const EventDetail = () => {
       </Helmet>
 
       {location.pathname !== "/home" && <Navbar />}
-
       <div className="container">
         <div className="event-detail-page">
           {/* Banner */}
           <div className="event-banner">
-            <img src={event.image} alt={event.title} className="event-banner-img" />
+            <img
+              src={event.image}
+              alt={event.title}
+              className="event-banner-img"
+            />
             <span className="event-detail-price-badge">
               ₱{event.price?.toLocaleString() || "Free"}
             </span>
@@ -254,23 +322,25 @@ const EventDetail = () => {
             </div>
           </div>
         </div>
-
         {/* Mobile sticky action bar */}
         <div className="mobile-action-bar" aria-hidden={false}>
           {renderActionButtons()}
         </div>
-
-        {/* Share Section */}
+        {/* Share This Event */}
         <div className="event-share-section">
           <h2>Share This Event</h2>
           <div className="share-icons">
-            {/* ✅ Facebook Share (OG tags handle image + details) */}
+            {/* Facebook */}
             <FaFacebook
               className="share-icon facebook"
               onClick={() =>
                 window.open(
                   `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
                     window.location.href
+                  )}&quote=${encodeURIComponent(
+                    `${event.title} - ${event.about}\nDate: ${new Date(
+                      event.date
+                    ).toDateString()}`
                   )}`,
                   "_blank"
                 )
@@ -278,21 +348,8 @@ const EventDetail = () => {
             />
 
             {/* Twitter */}
-            <FaTwitter
-              className="share-icon twitter"
-              onClick={() =>
-                window.open(
-                  `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                    `${event.title} - ${event.about}\nDate: ${new Date(
-                      event.date
-                    ).toDateString()}\n`
-                  )}&url=${encodeURIComponent(window.location.href)}`,
-                  "_blank"
-                )
-              }
-            />
 
-            {/* ✅ Copy Link (URL only) */}
+            {/* Copy Link + Details */}
             <FaLink
               className="share-icon copy"
               onClick={() => {
@@ -309,7 +366,6 @@ const EventDetail = () => {
           </div>
         </div>
       </div>
-
       <Footer />
     </>
   );
