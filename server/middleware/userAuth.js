@@ -1,12 +1,8 @@
 const jwt = require("jsonwebtoken");
 
 const userAuth = (req, res, next) => {
-  console.log("🔍 Authenticating user...");
-  console.log("🧩 Cookies received:", req.cookies);
   const { token } = req.cookies;
   if (!token) {
-    console.log("🚫 No token in cookies");
-
     return res.status(401).json({ success: false });
   }
   try {
@@ -20,17 +16,10 @@ const userAuth = (req, res, next) => {
       };
       next();
     } else {
-      return res
-        .status(401)
-        .json({
-          success: false,
-          message: "Unauthorized. Please log in again2.",
-        });
+      return res.status(401).json({ success: false, message: "Unauthorized. Please log in again2." });
     }
   } catch (error) {
-    res
-      .status(401)
-      .json({ success: false, message: "Invalid token. Please log in again." });
+    res.status(401).json({ success: false, message: "Invalid token. Please log in again." });
   }
 };
 

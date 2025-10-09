@@ -140,15 +140,16 @@ const createAdmin = async (req, res) => {
       .toString("base64")
       .replace(/[^a-zA-Z0-9]/g, "")
       .slice(0, 10);
+
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-    // Create new admin with passwordChangeRequired flag
+    // Create new admin
     const newAdmin = new Admin({
       fullName,
       email,
       password: hashedPassword,
       userType: "admin",
-      passwordChangeRequired: true, // Add this flag in your model
+      passwordChangeRequired: true,
     });
 
     await newAdmin.save();
@@ -170,15 +171,25 @@ const createAdmin = async (req, res) => {
       metadata: { email, fullName },
     });
 
+    // ✅ Return full admin object
     res.json({
       success: true,
       message: "Admin created and credentials sent via email.",
+      user: {
+        _id: newAdmin._id,
+        fullName: newAdmin.fullName,
+        email: newAdmin.email,
+        icpepId: newAdmin.icpepId || "",
+        passwordChangeRequired: newAdmin.passwordChangeRequired,
+        userType: newAdmin.userType,
+      },
     });
   } catch (error) {
     console.error("Create admin error:", error);
     res.json({ success: false, message: "Server error: " + error.message });
   }
 };
+
 
 const getAllUsers = async (req, res) => {
   try {

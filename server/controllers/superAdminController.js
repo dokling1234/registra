@@ -32,15 +32,16 @@ const createSuperAdmin = async (req, res) => {
       .toString("base64")
       .replace(/[^a-zA-Z0-9]/g, "")
       .slice(0, 10);
+
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-    // Create new admin with passwordChangeRequired flag
+    // Create new admin
     const newAdmin = new adminModel({
       fullName,
       email,
       password: hashedPassword,
       userType: "superadmin",
-      passwordChangeRequired: true, // Add this flag in your model
+      passwordChangeRequired: true,
     });
 
     await newAdmin.save();
@@ -55,17 +56,32 @@ const createSuperAdmin = async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
-    await logActivity(req, { action: "create_superadmin", targetType: "admin", targetId: newAdmin._id, metadata: { email, fullName } });
+    await logActivity(req, {
+      action: "create_superadmin",
+      targetType: "admin",
+      targetId: newAdmin._id,
+      metadata: { email, fullName },
+    });
 
+    // ✅ Return full admin object
     res.json({
       success: true,
       message: "Admin created and credentials sent via email.",
+      user: {
+        _id: newAdmin._id,
+        fullName: newAdmin.fullName,
+        email: newAdmin.email,
+        icpepId: newAdmin.icpepId || "",
+        passwordChangeRequired: newAdmin.passwordChangeRequired,
+        userType: newAdmin.userType,
+      },
     });
   } catch (error) {
     console.error("Create admin error:", error);
     res.json({ success: false, message: "Server error: " + error.message });
   }
 };
+
 
 const enableUser = async (req, res) => {
   try {
