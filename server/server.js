@@ -35,6 +35,8 @@ const allowedOrigins = [
   "https://registra-b7181b9e50a0.herokuapp.com",
   "https://www.icpepncrregistra.com",
   "https://icpepncrregistra.com",
+  "https://www.registra-b7181b9e50a0.herokuapp.com/",
+  "https://registra-b7181b9e50a0.herokuapp.com/"
 ];
 
 // helmet + CSP
