@@ -182,5 +182,21 @@ const cancelEvent = async (req, res) => {
   }
 };
 
+const uncancelEventController = async (req, res) => {
+  console.log("Uncancel event request received");
+  const { eventId } = req.params;
+  try {
+    const event = await eventModel.findById(eventId);
+    if (!event) return res.status(404).json({ success: false, message: "Event not found" });
 
-module.exports = { createSuperAdmin, enableUser, disableUser, updateUser, cancelEvent, updateAdminOrSuperadmin };
+    event.status = "active"; // assuming you set status = "cancelled" on cancel
+    await event.save();
+
+    return res.json({ success: true, message: "Event reactivated" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+module.exports = { createSuperAdmin, enableUser, disableUser, updateUser, cancelEvent, updateAdminOrSuperadmin, uncancelEventController, };
