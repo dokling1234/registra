@@ -10,6 +10,7 @@ const adminSchema = new mongoose.Schema({
     default: false,
   },
   userType: String,
+  disabled: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model("Admin", adminSchema);

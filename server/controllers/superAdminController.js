@@ -112,6 +112,7 @@ const disableUser = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
+  console.log("ewan")
   try {
     const { id } = req.params;
     const updateData = req.body; // Contains any fields to update, including disabled
@@ -145,6 +146,7 @@ const updateUser = async (req, res) => {
 };
 
 const updateAdminOrSuperadmin = async (req, res) => {
+  console.log("ewan admin")
   try {
     const { id } = req.params;
     const updateData = req.body; // Contains fields to update, including userType, disabled, etc.

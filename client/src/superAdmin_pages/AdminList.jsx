@@ -504,7 +504,7 @@ const AdminList = () => {
                                     const userResponse = await axios.put(
                                       `${
                                         import.meta.env.VITE_BACKEND_URL
-                                      }/api/superadmin/update/${user._id}`,
+                                      }/api/superadmin/admin/update/${user._id}`,
                                       { disabled: newStatus },
                                       { withCredentials: true }
                                     );
