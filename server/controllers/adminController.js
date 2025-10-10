@@ -1,6 +1,6 @@
 const PDFDocument = require("pdfkit");
-const puppeteer = require("puppeteer-core");
 const chromium = require("@sparticuz/chromium");
+const puppeteer = require("puppeteer-core");
 const { ChartJSNodeCanvas } = require("chartjs-node-canvas");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -190,7 +190,6 @@ const createAdmin = async (req, res) => {
   }
 };
 
-
 const getAllUsers = async (req, res) => {
   try {
     const admins = await Admin.find({});
@@ -331,6 +330,18 @@ const QRchecker = async (req, res) => {
       return res
         .status(404)
         .json({ message: "Registration not found in any event" });
+    }
+
+    // Check if event is past
+    const currentDate = new Date();
+    const eventDate = new Date(event.date);
+    const isPastEvent = eventDate < currentDate;
+
+    if (isPastEvent) {
+      return res.status(400).json({
+        message:
+          "Event has already ended. Cannot mark attendance for past events.",
+      });
     }
 
     const registration = event.registrations.find(
@@ -631,8 +642,8 @@ const samplePdf = async (req, res) => {
   }
 };
 
-
 const getFeedbackQuestionReport = async (req, res) => {
+  console.log("Generating feedback question report...");
   try {
     const { id, qIndex } = req.params;
     const {
@@ -645,7 +656,9 @@ const getFeedbackQuestionReport = async (req, res) => {
       responses = [],
     } = req.body || {};
 
-    const safeTitle = String(eventTitle).replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+    const safeTitle = String(eventTitle)
+      .replace(/[^a-z0-9]+/gi, "-")
+      .toLowerCase();
 
     const html = `
       <html>
@@ -674,26 +687,32 @@ const getFeedbackQuestionReport = async (req, res) => {
           <div class="card">
             <div style="font-size:14px;font-weight:700;margin-bottom:8px;">${questionTitle}</div>
             <div class="meta">
-              <div class="pill"><div class="pill-title">Question #</div><div class="pill-val">${parseInt(qIndex, 10) + 1}</div></div>
+              <div class="pill"><div class="pill-title">Question #</div><div class="pill-val">${
+                parseInt(qIndex, 10) + 1
+              }</div></div>
               <div class="pill"><div class="pill-title">Type</div><div class="pill-val">${questionType}</div></div>
               <div class="pill"><div class="pill-title">Responses</div><div class="pill-val">${totalResponses}</div></div>
             </div>
           </div>
 
-          ${questionType !== 'Text' ? `
+          ${
+            questionType !== "Text"
+              ? `
           <div class="card">
             <canvas id="qChart" class="chart"></canvas>
           </div>
           <script>
             const ctx = document.getElementById('qChart');
             const cfg = {
-              type: '${questionType === 'Rating' ? 'bar' : 'bar'}',
+              type: '${questionType === "Rating" ? "bar" : "bar"}',
               data: {
                 labels: ${JSON.stringify(labels)},
                 datasets: [{
                   label: 'Responses',
                   data: ${JSON.stringify(data)},
-                  backgroundColor: ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#06B6D4','#22C55E','#F97316'].slice(0, ${labels.length}),
+                  backgroundColor: ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#06B6D4','#22C55E','#F97316'].slice(0, ${
+                    labels.length
+                  }),
                   borderWidth: 1
                 }]
               },
@@ -707,13 +726,28 @@ const getFeedbackQuestionReport = async (req, res) => {
             };
             new Chart(ctx, cfg);
           </script>
-          ` : ''}
+          `
+              : ""
+          }
 
-          ${questionType === 'Text' ? `
+          ${
+            questionType === "Text"
+              ? `
           <div class="card">
-            ${(responses || []).slice(0, 50).map(r => `<div class="text-item">"${String(r).replace(/"/g, '\\"')}"</div>`).join('')}
+            ${(responses || [])
+              .slice(0, 50)
+              .map(
+                (r) =>
+                  `<div class="text-item">"${String(r).replace(
+                    /"/g,
+                    '\\"'
+                  )}"</div>`
+              )
+              .join("")}
           </div>
-          ` : ''}
+          `
+              : ""
+          }
         </body>
       </html>
     `;
@@ -738,7 +772,9 @@ const getFeedbackQuestionReport = async (req, res) => {
 
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=feedback-q${parseInt(qIndex, 10) + 1}-${safeTitle}.pdf`
+      `attachment; filename=feedback-q${
+        parseInt(qIndex, 10) + 1
+      }-${safeTitle}.pdf`
     );
     res.setHeader("Content-Type", "application/pdf");
     res.status(200).send(Buffer.from(pdfBuffer));
@@ -747,8 +783,6 @@ const getFeedbackQuestionReport = async (req, res) => {
     res.status(500).json({ message: "Error generating question report" });
   }
 };
-
-
 
 module.exports = {
   adminLogin,

@@ -265,7 +265,6 @@ const registerForEvent = async (req, res) => {
   const { userId } = req.user;
 
   try {
-
     const event = await eventModel.findById(eventId);
     if (!event) {
       return res
@@ -501,6 +500,8 @@ const updatePaymentStatus = async (req, res) => {
 
         registrant.ticketQR = await QRCode.toDataURL(combinedPayload);
       }
+    } else if (paymentStatus === "rejected") {
+      registrant.ticketQR = "";
     }
 
     registrant.paymentStatus = paymentStatus;
@@ -508,7 +509,7 @@ const updatePaymentStatus = async (req, res) => {
 
     res.json({ success: true, message: "Payment status updated", registrant });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message } + "eto ba?");
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -860,7 +861,6 @@ const checkSameDayRegistration = async (req, res) => {
         $lte: endOfDay,
       },
     });
-
 
     if (sameDayEvents.length > 0) {
       return res.json({
