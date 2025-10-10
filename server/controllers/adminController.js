@@ -626,7 +626,11 @@ const samplePdf = async (req, res) => {
     `;
 
     // 2. Launch Puppeteer and generate PDF
-    const browser = await puppeteer.launch({ headless: "true" });
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+    });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
     const pdfBuffer = await page.pdf({
