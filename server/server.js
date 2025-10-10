@@ -152,6 +152,7 @@ if (process.env.NODE_ENV === "production") {
         <meta property="og:image" content="${event.image}" />
         <meta property="og:site_name" content="Registra" />
         <meta property="og:locale" content="en_US" />
+         <meta property="fb:app_id" content="704250539358567" />
       `;
 
       // ✅ safer inject into <head>
