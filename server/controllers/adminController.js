@@ -444,6 +444,7 @@ const changeAdminPassword = async (req, res) => {
 // --- Event Analytics ---
 const getEventAnalyticsReport = async (req, res) => {
   try {
+    console.log("getventanalyticreport");
     const { id } = req.params;
     // 1. Attendance vs No-shows
     const attendanceStats = await Event.aggregate([
@@ -576,7 +577,10 @@ const getEventAnalyticsReport = async (req, res) => {
     // ----------------------------
     // Generate PDF with Puppeteer
     // ----------------------------
-    const browser = await puppeteer.launch({ headless: "new" });
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: "networkidle0" });
     const pdfBuffer = await page.pdf({
@@ -597,7 +601,7 @@ const getEventAnalyticsReport = async (req, res) => {
     res.status(200).send(Buffer.from(pdfBuffer));
   } catch (error) {
     console.error("Analytics report error:", error);
-    res.status(500).json({ message: "Error generating report" });
+    res.status(500).json({ message: error.message, stack: error.stack });
   }
 };
 
@@ -643,7 +647,6 @@ const samplePdf = async (req, res) => {
 };
 
 const getFeedbackQuestionReport = async (req, res) => {
-  console.log("Generating feedback question report...");
   try {
     const { id, qIndex } = req.params;
     const {
