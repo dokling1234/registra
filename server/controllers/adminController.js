@@ -1,5 +1,5 @@
 const PDFDocument = require("pdfkit");
-const puppeteer = require("puppeteer-core");
+const puppeteer = require("puppeteer");
 const chromium = require("@sparticuz/chromium");
 const { ChartJSNodeCanvas } = require("chartjs-node-canvas");
 const bcrypt = require("bcryptjs");
