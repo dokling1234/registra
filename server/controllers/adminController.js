@@ -1,6 +1,6 @@
 const PDFDocument = require("pdfkit");
-const chromium = require("@sparticuz/chromium");
 const puppeteer = require("puppeteer-core");
+const chromium = require("@sparticuz/chromium");
 const { ChartJSNodeCanvas } = require("chartjs-node-canvas");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
