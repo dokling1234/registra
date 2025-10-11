@@ -94,7 +94,7 @@ const EventDetail = () => {
               if (result.isConfirmed) {
                 Swal.fire({
                   title: "Booking Confirmed!",
-                  text: "Redirecting to payment/receipt upload...",
+                  //text: "Redirecting to payment/receipt upload...",
                   icon: "success",
                   timer: 1500,
                   showConfirmButton: false,

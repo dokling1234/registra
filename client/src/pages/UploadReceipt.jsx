@@ -136,7 +136,7 @@ const UploadReceipt = () => {
             <input
               type="text"
               className="account-name"
-              value={accountName || "None"}
+              value={"ICpEPNCR"}
               readOnly
             />
 
@@ -144,7 +144,7 @@ const UploadReceipt = () => {
             <input
               type="text"
               className="mobile-number"
-              value={mobileNumber || "None"}
+              value={"09876543211"}
               readOnly
             />
 
