@@ -62,8 +62,8 @@ const Events = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate that coordinates are provided
-    if (!lngLat) {
+    // ✅ Only require a map location for non-webinar events
+    if (eventData.eventType !== "Webinar" && !lngLat) {
       toast.error(
         "Please select a location on the map before creating the event."
       );
@@ -82,16 +82,12 @@ const Events = () => {
           const uploadRes = await axios.post(
             `https://api.cloudinary.com/v1_1/dqbnc38or/image/upload`,
             formData,
-            {
-              withCredentials: false,
-            }
+            { withCredentials: false }
           );
           imageUrl = uploadRes.data.secure_url;
         } catch (uploadError) {
           console.error("Cloudinary upload error:", uploadError);
-          toast.error(
-            "Image upload failed. Please check your network or try a smaller image."
-          );
+          toast.error("Image upload failed. Please try again.");
           return;
         }
       }
@@ -103,7 +99,7 @@ const Events = () => {
         time: timeIn24Hour,
         image: imageUrl,
         cost: eventData.cost,
-        coordinates: lngLat,
+        coordinates: eventData.eventType === "Webinar" ? null : lngLat, // ✅ no coordinates for webinars
         webinarLink:
           eventData.eventType === "Webinar" ? eventData.webinarLink : undefined,
       };
@@ -116,9 +112,9 @@ const Events = () => {
       if (data.success) {
         toast.success("Event created successfully!");
         setShowAddForm(false);
-        // Refresh events list
         const res = await axios.get("/api/events");
         setEvents(res.data.events);
+
         // Reset form
         setEventData({
           title: "",
@@ -445,82 +441,86 @@ const Events = () => {
               </select>
             </div>
             {eventData.eventType !== "Webinar" && (
-              <div className="flex flex-col">
-                <label className="mb-1 font-semibold">Search Location</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    name="location"
-                    value={eventData.location}
-                    onChange={handleChange}
-                    className="flex-1 border border-gray-300 rounded-md px-4 py-2"
-                    placeholder="Ex: SM Megamall, etc"
-                  />
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (!eventData.location) return;
+              <>
+                <div className="flex flex-col">
+                  <label className="mb-1 font-semibold">Search Location</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      name="location"
+                      value={eventData.location}
+                      onChange={handleChange}
+                      className="flex-1 border border-gray-300 rounded-md px-4 py-2"
+                      placeholder="Ex: SM Megamall, etc"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!eventData.location) return;
+                        try {
+                          const res = await fetch(
+                            `https://api.maptiler.com/geocoding/${encodeURIComponent(
+                              eventData.location
+                            )}.json?key=cyT8CBxXMzVIORtIP1Pj`
+                          );
+                          const data = await res.json();
+                          const feature = data.features[0];
+                          if (feature) {
+                            const [lng, lat] = feature.center;
+                            setLngLat([lng, lat]);
+                            setPlaceName(feature.place_name);
+                            setEventData((prev) => ({
+                              ...prev,
+                              location: feature.place_name,
+                            }));
+                            if (markerRef.current) markerRef.current.remove();
 
-                      try {
-                        const res = await fetch(
-                          `https://api.maptiler.com/geocoding/${encodeURIComponent(
-                            eventData.location
-                          )}.json?key=cyT8CBxXMzVIORtIP1Pj`
-                        );
-                        const data = await res.json();
-                        const feature = data.features[0];
-                        if (feature) {
-                          const [lng, lat] = feature.center;
-                          setLngLat([lng, lat]);
-                          setPlaceName(feature.place_name);
-                          setEventData((prev) => ({
-                            ...prev,
-                            location: feature.place_name,
-                          }));
-                          if (markerRef.current) markerRef.current.remove();
+                            const newMarker = new maplibregl.Marker()
+                              .setLngLat([lng, lat])
+                              .addTo(mapRef.current);
 
-                          const newMarker = new maplibregl.Marker()
-                            .setLngLat([lng, lat])
-                            .addTo(mapRef.current);
-
-                          markerRef.current = newMarker;
-                          mapRef.current.flyTo({
-                            center: [lng, lat],
-                            zoom: 15,
-                          });
-                        } else {
-                          toast.error("No location found.");
+                            markerRef.current = newMarker;
+                            mapRef.current.flyTo({
+                              center: [lng, lat],
+                              zoom: 15,
+                            });
+                          } else {
+                            toast.error("No location found.");
+                          }
+                        } catch (err) {
+                          console.error(err);
+                          toast.error("Search failed.");
                         }
-                      } catch (err) {
-                        console.error(err);
-                        toast.error("Search failed.");
-                      }
-                    }}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-                  >
-                    Search
-                  </button>
+                      }}
+                      className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+                    >
+                      Search
+                    </button>
+                  </div>
                 </div>
-              </div>
+
+                <div className="flex flex-col">
+                  <label className="mb-1 font-semibold">
+                    Pick Location (Map)
+                  </label>
+                  <div
+                    ref={mapContainer}
+                    className="h-64 rounded border border-gray-300 mb-2"
+                  />
+                  <p className="text-sm text-gray-500">
+                    {placeName
+                      ? `Selected: ${placeName}`
+                      : "Click on the map to select a location"}
+                  </p>
+                  {lngLat && (
+                    <p className="text-xs text-green-600 mt-1">
+                      ✓ Coordinates selected: {lngLat[1]?.toFixed(6)},{" "}
+                      {lngLat[0]?.toFixed(6)}
+                    </p>
+                  )}
+                </div>
+              </>
             )}
-            <div className="flex flex-col">
-              <label className="mb-1 font-semibold">Pick Location (Map)</label>
-              <div
-                ref={mapContainer}
-                className="h-64 rounded border border-gray-300 mb-2"
-              />
-              <p className="text-sm text-gray-500">
-                {placeName
-                  ? `Selected: ${placeName}`
-                  : "Click on the map to select a location"}
-              </p>
-              {lngLat && (
-                <p className="text-xs text-green-600 mt-1">
-                  ✓ Coordinates selected: {lngLat[1]?.toFixed(6)},{" "}
-                  {lngLat[0]?.toFixed(6)}
-                </p>
-              )}
-            </div>
 
             <div className="flex flex-col">
               <label className="mb-1 font-medium">Event Image</label>

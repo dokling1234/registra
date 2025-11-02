@@ -4,466 +4,511 @@ import { AppContent } from "../context/AppContext";
 import maplibregl from "maplibre-gl";
 import axios from "axios";
 import "maplibre-gl/dist/maplibre-gl.css";
-import "./Map.css";
 import Navbar from "../components/Navbar";
 
 const Map = () => {
-  const { isAdmin } = useContext(AppContent);
+  const { isAdmin, userType } = useContext(AppContent);
   const navigate = useNavigate();
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
+
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
-  const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
-  const [locationSearchQuery, setLocationSearchQuery] = useState("");
-  const locationDropdownRef = useRef(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isDetailsVisible, setIsDetailsVisible] = useState(false);
-  const selectedEventRef = useRef(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [markers, setMarkers] = useState([]);
-  const { userType } = useContext(AppContent);
+  const [activeMarkerId, setActiveMarkerId] = useState(null);
+
+  // Default view
+  const DEFAULT_CENTER = [121.0437, 14.676];
+  const DEFAULT_ZOOM = 12;
 
   useEffect(() => {
-    if (isAdmin) {
-      // Not an admin, redirect to home or another page
-      navigate("/");
-    }
+    if (isAdmin) navigate("/");
   }, [isAdmin, navigate]);
 
-  // Disable scroll only on this page
   useEffect(() => {
-    document.body.style.overflow = "hidden"; // Disable scrolling
-
-    return () => {
-      document.body.style.overflow = ""; // Re-enable scrolling on unmount
-    };
+    document.body.style.overflow = "hidden";
+    return () => (document.body.style.overflow = "");
   }, []);
 
+  // Sidebar default (desktop open, mobile closed)
+  useEffect(() => {
+    const setInitialSidebar = () => setIsSidebarOpen(window.innerWidth >= 768);
+    setInitialSidebar();
+    window.addEventListener("resize", setInitialSidebar);
+    return () => window.removeEventListener("resize", setInitialSidebar);
+  }, []);
+
+  // Init map
   useEffect(() => {
     if (!mapContainerRef.current) return;
-
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
       style:
         "https://api.maptiler.com/maps/streets-v2/style.json?key=cyT8CBxXMzVIORtIP1Pj",
-      center: [121.0437, 14.676],
-      zoom: 12,
+      center: DEFAULT_CENTER,
+      zoom: DEFAULT_ZOOM,
     });
-
     mapRef.current = map;
-
-    return () => {
-      map.remove();
-    };
+    return () => map.remove();
   }, []);
 
-  // Scroll to selected event when it changes
-  useEffect(() => {
-    if (selectedEvent && selectedEventRef.current) {
-      selectedEventRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }
-  }, [selectedEvent]);
-
-  // Clear existing markers
   const clearMarkers = () => {
-    markers.forEach((marker) => marker.remove());
+    markers.forEach((m) => m.remove());
     setMarkers([]);
   };
 
-  // Add markers for events
+  // ✅ Auto-fit all events
+  const resetMapView = () => {
+    if (!mapRef.current) return;
+
+    if (events.length > 0) {
+      const bounds = new maplibregl.LngLatBounds();
+      events.forEach((e) => {
+        const normalized = normalizeCoordinates(e.coordinates);
+        if (normalized) bounds.extend(normalized);
+      });
+
+      if (!bounds.isEmpty()) {
+        mapRef.current.fitBounds(bounds, {
+          padding: 50,
+          duration: 1000,
+        });
+        return;
+      }
+    }
+
+    // fallback if no events
+    mapRef.current.flyTo({
+      center: DEFAULT_CENTER,
+      zoom: DEFAULT_ZOOM,
+      speed: 1.2,
+    });
+  };
+
+  // ✅ Smooth transition function
+  const flySmoothTo = (coords) => {
+    if (!mapRef.current || !coords) return;
+
+    // Step 1: zoom out slightly
+    mapRef.current.flyTo({
+      center: coords,
+      zoom: 13,
+      speed: 0.8,
+      essential: true,
+    });
+
+    // Step 2: zoom in closer
+    setTimeout(() => {
+      mapRef.current.flyTo({
+        center: coords,
+        zoom: 15,
+        speed: 1.2,
+        essential: true,
+      });
+    }, 600);
+  };
+
+  // Normalize coordinates
+  const normalizeCoordinates = (coords) => {
+    if (!coords) return null;
+    let lng, lat;
+    if (Array.isArray(coords)) {
+      [lng, lat] = coords.map((v) => (typeof v === "string" ? Number(v) : v));
+    } else if (typeof coords === "string") {
+      const parts = coords.split(",").map((v) => Number(v.trim()));
+      [lng, lat] = parts;
+    } else if (typeof coords === "object") {
+      lat = coords.lat ?? coords.latitude;
+      lng = coords.lng ?? coords.longitude;
+    }
+    if (Number.isNaN(lng) || Number.isNaN(lat)) return null;
+    if (Math.abs(lng) <= 90 && Math.abs(lat) <= 180) {
+      const maybeLat = lng;
+      const maybeLng = lat;
+      lng = maybeLng;
+      lat = maybeLat;
+    }
+    return [lng, lat];
+  };
+
+  // Mobile bottom sheet
+  const showBottomSheet = (event) => {
+    setSelectedEvent(event);
+    setIsSidebarOpen(false);
+  };
+
   const addMarkers = (eventsToShow) => {
+    clearMarkers();
     const newMarkers = [];
+
     eventsToShow.forEach((event) => {
-      if (event.coordinates && event.coordinates.length === 2) {
-        const marker = new maplibregl.Marker({ color: "#FF0000" })
-          .setLngLat(event.coordinates)
+      const normalized = normalizeCoordinates(event.coordinates);
+      if (normalized) {
+        // default pin marker
+        const marker = new maplibregl.Marker({
+          color: event._id === activeMarkerId ? "#2563eb" : "#FF0000", // blue if active, red otherwise
+        })
+          .setLngLat(normalized)
           .addTo(mapRef.current);
 
-        const markerElement = marker.getElement();
-        markerElement.style.cursor = "pointer";
+        marker.getElement().classList.add("map-pin");
 
-        markerElement.addEventListener("click", () => {
+        // add bounce if active
+        if (event._id === activeMarkerId) {
+          marker.getElement().classList.add("bounce-pin");
+        }
+
+        marker.getElement().addEventListener("click", () => {
           setSelectedEvent(event);
-          setIsSidebarOpen(true);
-          setIsDetailsVisible(true);
-          mapRef.current.flyTo({
-            center: event.coordinates,
-            zoom: 15,
-            speed: 1.2,
-            curve: 1,
-            essential: true,
-          });
+          setActiveMarkerId(event._id); // highlight this pin
+          const mobile = window.innerWidth < 768;
+          if (mobile) {
+            showBottomSheet(event);
+          } else {
+            setIsSidebarOpen(true);
+          }
+          flySmoothTo(normalized);
         });
 
         newMarkers.push(marker);
       }
     });
+
     setMarkers(newMarkers);
   };
 
+  // Fetch events
   useEffect(() => {
     const fetchEvents = async () => {
       try {
         const response = await axios.get("/api/events");
-        const eventsData = response.data.events;
-
-        // 🔽 Exclude cancelled events
-        const activeEvents = eventsData.filter(
-          (event) => event.status !== "cancelled"
+        const eventsData = response.data.events.filter(
+          (e) => e.status !== "cancelled"
         );
 
         const currentDate = new Date();
-        const upcomingEvents = activeEvents.filter((event) => {
-          const eventDate = new Date(event.date);
-          return eventDate >= currentDate;
-        });
+        let upcomingEvents = eventsData.filter(
+          (e) => new Date(e.date) >= currentDate
+        );
 
-        let filteredEvents = upcomingEvents;
-
-
-
-        // Filter by userType
         if (userType === "professional") {
-          filteredEvents = upcomingEvents.filter(
-            (event) =>
-              event.eventTarget === "Professional" ||
-              event.eventTarget === "Both"
+          upcomingEvents = upcomingEvents.filter(
+            (e) => e.eventTarget === "Professional" || e.eventTarget === "Both"
           );
         } else if (userType === "student") {
-          filteredEvents = upcomingEvents.filter(
-            (event) =>
-              event.eventTarget === "Student" || event.eventTarget === "Both"
+          upcomingEvents = upcomingEvents.filter(
+            (e) => e.eventTarget === "Student" || e.eventTarget === "Both"
           );
-        } else if (userType === "both") {
-          filteredEvents = upcomingEvents; // show everything
         }
 
-        setEvents(filteredEvents);
-        addMarkers(filteredEvents);
+        const mapEvents = upcomingEvents.filter(
+          (e) => e.eventType?.toLowerCase() !== "webinar"
+        );
 
+        setEvents(mapEvents);
+        addMarkers(mapEvents);
       } catch (error) {
         console.error("Failed to fetch events", error);
       }
     };
-
     fetchEvents();
   }, [userType]);
-
-  // Get unique locations from events
-  const uniqueLocations = [
-    ...new Set(events.map((event) => event.location)),
-  ].filter(Boolean);
-
-  // Filter locations based on search query
-  const filteredLocations = uniqueLocations.filter((location) =>
-    location.toLowerCase().includes(locationSearchQuery.toLowerCase())
-  );
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        locationDropdownRef.current &&
-        !locationDropdownRef.current.contains(event.target)
-      ) {
-        setIsLocationDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleLocationSelect = (location) => {
-    setSelectedLocation(location);
-    setIsLocationDropdownOpen(false);
-    setLocationSearchQuery("");
-  };
-
-  // Get unique dates from events
-  const uniqueDates = [
-    ...new Set(
-      events.map((event) => {
-        const date = new Date(event.date);
-        return date.toISOString().split("T")[0];
-      })
-    ),
-  ].sort();
 
   const eventsFiltered = events.filter((event) => {
     const matchesSearch = searchQuery
       ? event.title.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
-
-    const matchesLocation = selectedLocation
-      ? event.location === selectedLocation
-      : true;
-
     const matchesDate = selectedDate
       ? new Date(event.date).toISOString().split("T")[0] === selectedDate
       : true;
-
-    return matchesSearch && matchesLocation && matchesDate;
+    return matchesSearch && matchesDate;
   });
 
   const handleEventClick = (event) => {
     setSelectedEvent(event);
-    setIsSidebarOpen(true);
-    setIsDetailsVisible(true);
-    mapRef.current.flyTo({
-      center: event.coordinates,
-      zoom: 15,
-      speed: 1.2,
-      curve: 1,
-      essential: true,
-    });
-  };
+    setActiveMarkerId(event._id); // highlight marker
+    const mobile = window.innerWidth < 768;
+    if (mobile) {
+      showBottomSheet(event);
+    } else {
+      setIsSidebarOpen(true);
+    }
 
-  const handleCloseSidebar = () => {
-    setIsSidebarOpen(false);
-    setSelectedEvent(null);
-    setIsDetailsVisible(false);
-    mapRef.current.flyTo({
-      center: [121.0437, 14.676],
-      zoom: 12,
-      speed: 1.2,
-      curve: 1,
-      essential: true,
-    });
-  };
-
-  const handleCloseDetails = () => {
-    setIsDetailsVisible(false);
-  };
-
-  const handleSearch = (e) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const handleDateChange = (e) => {
-    setSelectedDate(e.target.value);
-  };
-
-  const handleClearFilters = () => {
-    setSearchQuery("");
-    setSelectedLocation("");
-    setSelectedDate("");
+    const normalized = normalizeCoordinates(event.coordinates);
+    if (!normalized) return;
+    flySmoothTo(normalized);
   };
 
   return (
-    <>
+    <div className="flex flex-col h-screen">
       <Navbar />
 
-      <div className="cpemap-wrapper">
-        {/* Event Details Container */}
+      <div className="relative flex-1 w-full overflow-hidden">
+        {/* Map */}
         <div
-          className={`cpemap-event-details-container ${
-            isDetailsVisible ? "visible" : ""
-          }`}
+          ref={mapContainerRef}
+          className="absolute top-0 left-0 w-full h-full z-10"
+        />
+
+        {/* Overlay - only desktop */}
+        {isSidebarOpen && window.innerWidth >= 768 && (
+          <div
+            className="absolute inset-0 bg-black bg-opacity-30 z-15"
+            onClick={() => {
+              setIsSidebarOpen(false);
+              setSelectedEvent(null);
+              setActiveMarkerId(null);
+              resetMapView(); // ✅ zoom out to all markers
+            }}
+          ></div>
+        )}
+
+        {/* Sidebar (desktop) */}
+        <div
+          className={`absolute top-0 left-0 h-full w-80 md:w-96 bg-white shadow-xl transform transition-transform duration-300 z-20 flex flex-col
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
-          {selectedEvent && (
+          {/* Toggle button (desktop only) */}
+          <button
+            className="hidden md:flex absolute top-1/2 right-0 transform translate-x-full -translate-y-1/2 bg-white border shadow-md px-2 py-1 rounded-r-lg z-30 hover:bg-gray-100"
+            onClick={() => {
+              setIsSidebarOpen(!isSidebarOpen);
+              if (isSidebarOpen) {
+                setSelectedEvent(null);
+                setActiveMarkerId(null);
+                resetMapView(); // ✅ zoom out
+              }
+            }}
+          >
+            {isSidebarOpen ? "⮜" : "⮞"}
+          </button>
+
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 sticky top-0 z-10 shadow-sm">
+            {selectedEvent && window.innerWidth >= 768 ? (
+              <button
+                onClick={() => {
+                  setSelectedEvent(null);
+                  setActiveMarkerId(null);
+                  resetMapView(); // ✅ zoom out
+                }}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded-lg transition"
+              >
+                ← Back
+              </button>
+            ) : (
+              <h2 className="text-lg font-semibold text-gray-800">
+                Event List
+              </h2>
+            )}
+            <button
+              onClick={() => {
+                setIsSidebarOpen(false);
+                setSelectedEvent(null);
+                setActiveMarkerId(null);
+                resetMapView(); // ✅ zoom out
+              }}
+              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm"
+            >
+              Close
+            </button>
+          </div>
+
+          {/* Event list or details (desktop) */}
+          {!selectedEvent || window.innerWidth < 768 ? (
             <>
-              <div className="cpemap-event-details-header">
-                <h3>{selectedEvent.title}</h3>
+              {/* Filters */}
+              <div className="p-4 border-b border-gray-200 space-y-3">
+                <input
+                  type="text"
+                  placeholder="🔍 Search by title..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <select
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">All Dates</option>
+                  {[...new Set(events.map((e) => e.date.split("T")[0]))].map(
+                    (date) => (
+                      <option key={date} value={date}>
+                        {new Date(date).toDateString()}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+
+              {/* Event list */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {eventsFiltered.length === 0 ? (
+                  <p className="text-center text-gray-500">
+                    No events found matching your search
+                  </p>
+                ) : (
+                  eventsFiltered.map((event) => (
+                    <div
+                      key={event._id}
+                      className="flex flex-col bg-white border rounded-xl shadow hover:shadow-md hover:bg-gray-50 transition cursor-pointer"
+                      onClick={() => handleEventClick(event)}
+                    >
+                      <img
+                        src={event.image || "/placeholder.jpg"}
+                        alt={event.title}
+                        className="w-full h-40 object-cover rounded-t-xl"
+                      />
+                      <div className="p-3 space-y-1">
+                        <h3 className="font-semibold text-gray-800 text-base truncate">
+                          {event.title || "Untitled Event"}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          📍 {event.location || "Unknown"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          📅{" "}
+                          {event.date
+                            ? new Date(event.date).toDateString()
+                            : "No date"}{" "}
+                          • ⏰ {event.time || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          ) : (
+            // Desktop details
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <h3 className="text-xl font-bold text-gray-800">
+                {selectedEvent.title || "Untitled Event"}
+              </h3>
+              <img
+                src={selectedEvent.image || "/placeholder.jpg"}
+                alt={selectedEvent.title}
+                className="w-full h-48 object-cover rounded-lg shadow mb-3"
+              />
+              <div className="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
+                <p>
+                  <strong>📍 Location:</strong>{" "}
+                  {selectedEvent.location || "Unknown"}
+                </p>
+                <p>
+                  <strong>📅 Date:</strong>{" "}
+                  {selectedEvent.date
+                    ? new Date(selectedEvent.date).toLocaleDateString()
+                    : "No date"}
+                </p>
+                <p>
+                  <strong>⏰ Time:</strong> {selectedEvent.time || "N/A"}
+                </p>
+                <p>
+                  <strong>🎟 Type:</strong>{" "}
+                  {selectedEvent.eventType || "General"}
+                </p>
+              </div>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                {selectedEvent.about || "No description available"}
+              </p>
+
+              {/* Navigate button on desktop */}
+              <button
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg mt-4"
+                onClick={() => {
+                  const normalized = normalizeCoordinates(
+                    selectedEvent.coordinates
+                  );
+                  if (normalized) {
+                    const [lng, lat] = normalized;
+                    window.open(
+                      `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
+                      "_blank"
+                    );
+                  }
+                }}
+              >
+                Navigate
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile bottom sheet */}
+        {selectedEvent && window.innerWidth < 768 && (
+          <div className="fixed bottom-0 left-0 w-full bg-white rounded-t-2xl shadow-2xl z-50 animate-slide-up max-h-[75vh] overflow-y-auto">
+            <div className="p-4">
+              <div className="flex justify-between items-start">
+                <h3 className="text-lg font-bold text-gray-800">
+                  {selectedEvent.title || "Untitled Event"}
+                </h3>
                 <button
-                  className="cpemap-event-details-close"
-                  onClick={handleCloseDetails}
+                  className="text-gray-400 hover:text-gray-700 text-xl"
+                  onClick={() => {
+                    setSelectedEvent(null);
+                    setActiveMarkerId(null);
+                    resetMapView(); // ✅ zoom out
+                  }}
                 >
                   ✕
                 </button>
               </div>
-              <div className="cpemap-event-details-content">
-                <img
-                  src={selectedEvent.image || "/placeholder.jpg"}
-                  alt={selectedEvent.title}
-                  className="cpemap-event-details-image"
-                />
-                <div className="cpemap-event-details-info">
-                  <p>
-                    <strong>Location:</strong>
-                    <span>{selectedEvent.location}</span>
-                  </p>
-                  <p>
-                    <strong>Date:</strong>
-                    <span>
-                      {new Date(selectedEvent.date).toLocaleDateString(
-                        "en-US",
-                        {
-                          weekday: "long",
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        }
-                      )}
-                    </span>
-                  </p>
-                  <p>
-                    <strong>Time:</strong>
-                    <span>{selectedEvent.time}</span>
-                  </p>
-                  <p>
-                    <strong>Type:</strong>
-                    <span>{selectedEvent.eventType || "Not specified"}</span>
-                  </p>
-                  <p>
-                    <strong>Description:</strong>
-                    <span>
-                      {selectedEvent.about || "No description available"}
-                    </span>
-                  </p>
-                </div>
+              <img
+                src={selectedEvent.image || "/placeholder.jpg"}
+                alt={selectedEvent.title}
+                className="w-full h-40 object-cover rounded-lg mt-3"
+              />
+              <div className="mt-3 space-y-2 text-sm">
+                <p>📍 {selectedEvent.location || "Unknown"}</p>
+                <p>
+                  📅{" "}
+                  {selectedEvent.date
+                    ? new Date(selectedEvent.date).toDateString()
+                    : "No date"}{" "}
+                  • ⏰ {selectedEvent.time || "N/A"}
+                </p>
+                <p>🎟 {selectedEvent.eventType || "General"}</p>
               </div>
-            </>
-          )}
-        </div>
+              <p className="mt-3 text-gray-700 text-sm leading-relaxed">
+                {selectedEvent.about || "No description available"}
+              </p>
+              <button
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg mt-4"
+                onClick={() => {
+                  const normalized = normalizeCoordinates(
+                    selectedEvent.coordinates
+                  );
+                  if (normalized) {
+                    const [lng, lat] = normalized;
+                    window.open(
+                      `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
+                      "_blank"
+                    );
+                  }
+                }}
+              >
+                Navigate
+              </button>
+            </div>
+          </div>
+        )}
 
-        <div className={`cpemap-sidebar ${isSidebarOpen ? "open" : "closed"}`}>
+        {/* Mobile sidebar toggle (hidden if bottom sheet is open) */}
+        {!selectedEvent && (
           <button
-            className="cpemap-sidebar-toggle"
+            className="fixed bottom-20 left-6 md:hidden bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg z-50"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           >
             {isSidebarOpen ? "◀" : "▶"}
           </button>
-          <div className="cpemap-sidebar-content">
-            <div className="cpemap-sidebar-header">
-              <h2>Event Details</h2>
-              <button
-                className="cpemap-close-button"
-                onClick={handleCloseSidebar}
-              >
-                ✕
-              </button>
-            </div>
-            <div className="cpemap-search">
-              <div className="cpemap-search-filters">
-                <input
-                  type="text"
-                  placeholder="Search by title..."
-                  value={searchQuery}
-                  onChange={handleSearch}
-                  className="cpemap-search-input"
-                />
-                <div
-                  className="cpemap-location-dropdown"
-                  ref={locationDropdownRef}
-                >
-                  <div
-                    className="cpemap-location-select"
-                    onClick={() =>
-                      setIsLocationDropdownOpen(!isLocationDropdownOpen)
-                    }
-                  >
-                    <span>{selectedLocation || "Select Location"}</span>
-                    <span className="cpemap-dropdown-arrow">▼</span>
-                  </div>
-                  {isLocationDropdownOpen && (
-                    <div className="cpemap-location-dropdown-content">
-                      <div className="cpemap-location-search">
-                        <input
-                          type="text"
-                          placeholder="Search locations..."
-                          value={locationSearchQuery}
-                          onChange={(e) =>
-                            setLocationSearchQuery(e.target.value)
-                          }
-                          onClick={(e) => e.stopPropagation()}
-                          className="cpemap-location-search-input"
-                        />
-                      </div>
-                      <div className="cpemap-location-list">
-                        {filteredLocations.length > 0 ? (
-                          filteredLocations.map((location) => (
-                            <div
-                              key={location}
-                              className={`cpemap-location-item ${
-                                selectedLocation === location ? "selected" : ""
-                              }`}
-                              onClick={() => handleLocationSelect(location)}
-                            >
-                              {location}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="cpemap-no-locations">
-                            No locations found
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <select
-                  value={selectedDate}
-                  onChange={handleDateChange}
-                  className="cpemap-search-select"
-                >
-                  <option value="">All Dates</option>
-                  {uniqueDates.map((date) => (
-                    <option key={date} value={date}>
-                      {new Date(date).toLocaleDateString("en-US", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </option>
-                  ))}
-                </select>
-                {(searchQuery || selectedLocation || selectedDate) && (
-                  <button
-                    onClick={handleClearFilters}
-                    className="cpemap-clear-filters"
-                  >
-                    Clear Filters
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="cpemap-events-list">
-              {eventsFiltered.length === 0 ? (
-                <div className="cpemap-no-results">
-                  No events found matching your search
-                </div>
-              ) : (
-                eventsFiltered.map((event) => (
-                  <div
-                    key={event._id}
-                    ref={
-                      selectedEvent?._id === event._id ? selectedEventRef : null
-                    }
-                    className={`cpemap-event-item ${
-                      selectedEvent?._id === event._id ? "selected" : ""
-                    }`}
-                    onClick={() => handleEventClick(event)}
-                  >
-                    <img
-                      src={event.image || "/placeholder.jpg"}
-                      alt={event.title}
-                      className="cpemap-event-thumbnail"
-                    />
-                    <div className="cpemap-event-item-info">
-                      <h3>{event.title}</h3>
-                      <p>{event.location}</p>
-                      <p>
-                        {new Date(event.date).toDateString()} • {event.time}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div ref={mapContainerRef} className="cpemap-map" />
+        )}
       </div>
-    </>
+    </div>
   );
 };
 

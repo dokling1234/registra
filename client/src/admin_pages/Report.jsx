@@ -6,6 +6,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { AppContent } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import { Bar, Pie } from "react-chartjs-2";
+import { Menu } from "lucide-react";
 
 
 import {
@@ -49,6 +50,7 @@ const Report = () => {
   const [analyticsError, setAnalyticsError] = useState(null);
   const [showEventReport, setShowEventReport] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
         if (!isAdmin) {
@@ -342,7 +344,10 @@ const Report = () => {
   const getEventMetric = (event) => {
     if (!event) return 0;
     const cost = event.cost !== undefined && event.cost !== "" ? Number(event.cost) : 0;
-    if (incomeMetric === "attendance") return event?.registrations?.length || 0;
+    if (incomeMetric === "attendance") {
+      // Return the count of users who actually attended, not just registered
+      return event?.registrations?.filter(reg => reg.attended === true).length || 0;
+    }
     const income = getPaidIncome(event);
     if (incomeMetric === "revenue") return income - cost;
     return income; // default income
@@ -921,47 +926,60 @@ const Report = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <Sidebar />
+      
+      {/* Sidebar */}
+      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
-      <main className="flex-1 p-6 ml-64">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Event Attendance Report</h1>
-          {userData ? (
-            <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-lg shadow-sm">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <span className="text-blue-600 font-semibold text-lg">
-                  {userData.fullName.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div className="flex flex-col">
-                <p className="text-sm text-gray-500">Welcome back,</p>
-                <p className="text-lg font-semibold text-gray-800">
-                  {userData.fullName}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => navigate("/")}
-              className="flex items-center gap-2 border border-gray-500 rounded-full px-6 py-2 text-gray-800 hover:bg-gray-100 transition-all"
-            >
-              Login <img src={assets.arrow_icon} alt="Arrow Icon" />
-            </button>
-          )}
+      {/* Main content */}
+      <div className="flex flex-col flex-1 xl:ml-64 transition-all duration-300">
+        {/* Header (for mobile) */}
+        <div className="bg-gray-900 text-white flex items-center justify-between p-2 sm:p-3 lg:p-4 shadow-md xl:hidden sticky top-0 z-50">
+          <button onClick={() => setIsSidebarOpen(true)} className="p-1">
+            <Menu size={18} className="sm:w-5 sm:h-5" />
+          </button>
+          <h1 className="text-sm sm:text-base font-semibold">Event Reports</h1>
+          <div className="w-5 sm:w-6" /> {/* Spacer */}
         </div>
 
+        <main className="flex-1 p-2 sm:p-3 lg:p-6 overflow-y-auto">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <div className="hidden xl:block">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Event Attendance Report</h1>
+            </div>
+            {userData ? (
+              <div className="flex items-center gap-1 sm:gap-2 bg-white px-2 py-1 sm:py-2 rounded-lg shadow-sm w-full sm:w-auto justify-center sm:justify-end">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 rounded-full bg-blue-100 flex items-center justify-center">
+                  <span className="text-blue-600 font-semibold text-xs sm:text-sm lg:text-base">
+                    {userData.fullName.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center sm:items-start">
+                  <p className="text-xs text-gray-500">Welcome back,</p>
+                  <p className="text-xs sm:text-sm lg:text-base font-semibold text-gray-800">{userData.fullName}</p>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate("/")}
+                className="flex items-center gap-1 border border-gray-500 rounded-full px-2 sm:px-3 lg:px-4 py-1 sm:py-2 text-gray-800 hover:bg-gray-100 transition-all text-xs sm:text-sm lg:text-base justify-center"
+              >
+                Login <img src={assets.arrow_icon} alt="Arrow Icon" className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
         {/* Filters and Date Range */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6 w-full">
+        <div className="flex flex-col lg:flex-row gap-2 sm:gap-3 mb-3 sm:mb-4 w-full">
           {/* Filter Dropdown */}
           <div className="flex-1">
-            <label htmlFor="eventType" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="eventType" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Filter by Event Type:
             </label>
             <select
               id="eventType"
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="p-2 border border-gray-300 rounded-md w-full shadow focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="p-1.5 sm:p-2 border border-gray-300 rounded-md w-full shadow focus:outline-none focus:ring-2 focus:ring-blue-400 text-xs sm:text-sm"
             >
               <option value="All">All Event Types</option>
               {/* Manually add Seminar and Webinar options */}
@@ -977,23 +995,23 @@ const Report = () => {
           </div>
 
           {/* Date Range Filter */}
-          <div className="flex-1 flex gap-4">
+          <div className="flex-1 flex flex-col sm:flex-row gap-1 sm:gap-2">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Start Date</label>
               <input
                 type="date"
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
-                className="border border-gray-300 rounded-md px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="border border-gray-300 rounded-md px-1.5 sm:px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 text-xs sm:text-sm"
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">End Date</label>
               <input
                 type="date"
                 value={endDate}
                 onChange={e => setEndDate(e.target.value)}
-                className="border border-gray-300 rounded-md px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="border border-gray-300 rounded-md px-1.5 sm:px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 text-xs sm:text-sm"
               />
             </div>
           </div>
@@ -1001,19 +1019,19 @@ const Report = () => {
 
         {/* Report Table */}
         <div className="overflow-x-auto bg-white shadow-md rounded-lg">
-          <table className="min-w-full text-sm text-left text-gray-700">
+          <table className="min-w-full text-xs text-left text-gray-700">
             <thead className="bg-gray-200 text-xs uppercase sticky top-0 z-10">
               <tr>
-                <th className="px-6 py-3">Title</th>
-                <th className="px-6 py-3">Date</th>
-                <th className="px-6 py-3">Price (₱)</th>
-                <th className="px-6 py-3">Registered</th>
-                <th className="px-6 py-3">Attended</th>
-                <th className="px-6 py-3">Not Attended</th>
-                <th className="px-6 py-3">Cost (₱)</th>
-                <th className="px-6 py-3">Income (₱)</th>
-                <th className="px-6 py-3">Revenue (₱)</th>
-                <th className="px-6 py-3">Actions</th>
+                <th className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2 text-xs">Title</th>
+                <th className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2 text-xs hidden sm:table-cell">Date</th>
+                <th className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2 text-xs hidden lg:table-cell">Price</th>
+                <th className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2 text-xs">Registered</th>
+                <th className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2 text-xs">Attended</th>
+                <th className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2 text-xs hidden sm:table-cell">No-Show</th>
+                <th className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2 text-xs hidden lg:table-cell">Cost</th>
+                <th className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2 text-xs hidden lg:table-cell">Income</th>
+                <th className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2 text-xs hidden lg:table-cell">Revenue</th>
+                <th className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2 text-xs">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -1050,37 +1068,41 @@ const Report = () => {
                       key={idx}
                       className="border-t hover:bg-gray-50 transition"
                     >
-                      <td className="px-6 py-4">{event.title}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2">
+                        <div className="max-w-[120px] sm:max-w-[200px] lg:max-w-xs truncate text-xs" title={event.title}>
+                          {event.title}
+                        </div>
+                      </td>
+                      <td className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2 hidden sm:table-cell text-xs">
                         {new Date(event.date).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4">₱{price}</td>
-                      <td className="px-6 py-4">{registered}</td>
-                      <td className="px-6 py-4">{attended}</td>
-                      <td className="px-6 py-4">{notAttended}</td>
-                      <td className="px-6 py-4">₱{cost}</td>
-                      <td className="px-6 py-4">₱{income}</td>
+                      <td className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2 hidden lg:table-cell text-xs">₱{price}</td>
+                      <td className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2 text-xs">{registered}</td>
+                      <td className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2 text-xs">{attended}</td>
+                      <td className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2 hidden sm:table-cell text-xs">{notAttended}</td>
+                      <td className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2 hidden lg:table-cell text-xs">₱{cost}</td>
+                      <td className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2 hidden lg:table-cell text-xs">₱{income}</td>
                       <td
-                        className={`px-6 py-4 font-medium ${
+                        className={`px-1 sm:px-2 lg:px-4 py-1 sm:py-2 font-medium hidden lg:table-cell text-xs ${
                           revenue >= 0 ? "text-green-600" : "text-red-600"
                         }`}
                       >
                         ₱{revenue}
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
+                      <td className="px-1 sm:px-2 lg:px-4 py-1 sm:py-2">
+                        <div className="flex flex-col gap-0.5">
                           <button
                             onClick={() => setGraphsEventId(event._id)}
-                          className="text-blue-600 hover:underline text-sm"
-                        >
-                            View Graphs
+                            className="text-blue-600 hover:underline text-xs"
+                          >
+                            Graphs
                           </button>
                           <button
                             onClick={() => handleDownloadServerReport(event._id, event.title)}
                             disabled={isDownloading}
-                            className={`text-gray-700 hover:underline text-sm ${isDownloading ? "opacity-60 cursor-not-allowed" : ""}`}
+                            className={`text-gray-700 hover:underline text-xs ${isDownloading ? "opacity-60 cursor-not-allowed" : ""}`}
                           >
-                            {isDownloading ? "Downloading..." : "Download PDF"}
+                            {isDownloading ? "..." : "PDF"}
                           </button>
                         </div>
                       </td>
@@ -1102,36 +1124,36 @@ const Report = () => {
         </div>
 
         {/* Analytics + Generate */}
-        <div className="mt-6 grid grid-cols-1 gap-6 items-start">
-          <div className="bg-white rounded-lg shadow p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold">Event Analytics</h2>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span className="hidden sm:inline">Quick view of event performance</span>
+        <div className="mt-3 sm:mt-4 grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 items-start">
+          <div className="bg-white rounded-lg shadow p-2 sm:p-3 lg:p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-3">
+              <h2 className="text-sm sm:text-base lg:text-lg font-bold">Event Analytics</h2>
+              <div className="flex items-center gap-1 text-xs text-gray-500 mt-1 sm:mt-0">
+                <span className="hidden sm:inline text-xs">Quick view</span>
                 <span aria-hidden>📊</span>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-              <div className="flex items-center gap-2">
-                <label htmlFor="metric" className="text-sm text-gray-700">Metric</label>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 mb-2 sm:mb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                <label htmlFor="metric" className="text-xs text-gray-700">Metric</label>
                 <select
                   id="metric"
                   value={incomeMetric}
                   onChange={(e) => setIncomeMetric(e.target.value)}
-                  className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+                  className="px-1.5 py-1 border border-gray-300 rounded-md text-xs"
                 >
                   <option value="income">Income (₱)</option>
                   <option value="revenue">Revenue (₱)</option>
-                  <option value="attendance">Attendance (count)</option>
+                  <option value="attendance">Attended (count)</option>
                 </select>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <button
-                  className="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
+                  className="px-1.5 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
                   onClick={() => setSortDesc((v) => !v)}
                   aria-label="Toggle sort order"
                 >
-                  {sortDesc ? "Sort: High → Low" : "Sort: Low → High"}
+                  {sortDesc ? "High→Low" : "Low→High"}
                 </button>
               </div>
             </div>
@@ -1150,7 +1172,7 @@ const Report = () => {
                     {
                       label:
                         incomeMetric === "attendance"
-                          ? "Attendance (count)"
+                          ? "Attended (count)"
                           : incomeMetric === "revenue"
                           ? "Revenue (₱)"
                           : "Income (₱)",
@@ -1180,7 +1202,7 @@ const Report = () => {
                         display: true,
                         text:
                           incomeMetric === "attendance"
-                            ? "Attendance (count)"
+                            ? "Attended (count)"
                             : incomeMetric === "revenue"
                             ? "Revenue (₱)"
                             : "Income (₱)",
@@ -1195,25 +1217,25 @@ const Report = () => {
             <div className="mt-3 text-xs text-gray-500">
               {incomeMetric === "income" && <span>Income is based only on paid registrations.</span>}
               {incomeMetric === "revenue" && <span>Revenue = Income − Cost. Costs come from each event's recorded cost.</span>}
-              {incomeMetric === "attendance" && <span>Total number of registrations per event.</span>}
+              {incomeMetric === "attendance" && <span>Total number of users who actually attended each event.</span>}
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-5 max-w-2xl mx-auto">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <h2 className="text-2xl font-bold text-center">Generate Event Report</h2>
-              <span className="text-sm text-gray-500" aria-hidden>📝</span>
+          <div className="bg-white rounded-lg shadow p-2 sm:p-3 lg:p-4 max-w-2xl mx-auto">
+            <div className="flex items-center justify-center gap-1 mb-2 sm:mb-3">
+              <h2 className="text-sm sm:text-base lg:text-lg font-bold text-center">Generate Event Report</h2>
+              <span className="text-xs text-gray-500" aria-hidden>📝</span>
             </div>
-            <div className="mb-6">
+            <div className="mb-3 sm:mb-4">
               <label
                 htmlFor="selectEvent"
-                className="block text-sm font-medium text-gray-700 mb-1 text-center"
+                className="block text-xs font-medium text-gray-700 mb-1 text-center"
               >
                 Choose Event
               </label>
               <div className="relative">
                 <select
                   id="selectEvent"
-                  className="appearance-none p-3 pr-10 border border-gray-300 rounded-lg w-full bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="appearance-none p-1.5 sm:p-2 pr-6 sm:pr-8 border border-gray-300 rounded-lg w-full bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 text-xs sm:text-sm"
                   value={selectedEventId || ""}
                   onChange={(e) => setSelectedEventId(e.target.value)}
                   aria-label="Select event for report"
@@ -1225,10 +1247,10 @@ const Report = () => {
                     </option>
                   ))}
                 </select>
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm" aria-hidden>▾</span>
+                <span className="pointer-events-none absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 text-gray-500 text-xs" aria-hidden>▾</span>
               </div>
               {!selectedEventId && (
-                <p className="mt-2 text-xs text-gray-500 text-center">Select a past event to generate a detailed report.</p>
+                <p className="mt-1 text-xs text-gray-500 text-center">Select a past event to generate a detailed report.</p>
               )}
             </div>
             {selectedEvent && (
@@ -1247,9 +1269,9 @@ const Report = () => {
                 </div>
               </div>
             )}
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
           <button
-                className={`bg-blue-600 text-white px-6 py-2 rounded-lg shadow transition w-full sm:w-auto ${isLoadingFeedback ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+                className={`bg-blue-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg shadow transition w-full sm:w-auto text-xs sm:text-sm ${isLoadingFeedback ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'}`}
             onClick={() => {
               if (!selectedEvent) return;
               setGeneratedReport({
@@ -1262,18 +1284,18 @@ const Report = () => {
             disabled={!selectedEventId || isLoadingFeedback}
           >
             {isLoadingFeedback ? (
-                  <span className="flex items-center justify-center gap-2">
-                <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                  <span className="flex items-center justify-center gap-1">
+                <span className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></span>
                 Generating...
               </span>
             ) : (
-              'Generate Complete Report'
+              'Generate Report'
             )}
           </button>
               {selectedEventId && (
                 <button
                   type="button"
-                  className="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="px-2 sm:px-3 py-1.5 sm:py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm w-full sm:w-auto"
                   onClick={() => { setSelectedEventId(""); setEventSummary(""); setGeneratedReport(null); setFeedbackData(null); setFeedbackAnalytics(null); }}
                 >
                   Clear
@@ -1779,36 +1801,36 @@ const Report = () => {
 
         {/* Graphs Modal */}
         {graphsEvent && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
             <div className="absolute inset-0 bg-black/50" onClick={() => setGraphsEventId(null)}></div>
-            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-5xl mx-4 p-6">
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="text-2xl font-bold text-gray-900">{graphsEvent.title} - Graphs</h3>
-                <button className="text-gray-500 hover:text-gray-800 text-xl" onClick={() => setGraphsEventId(null)}>×</button>
+            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-5xl mx-2 sm:mx-4 p-3 sm:p-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-start justify-between mb-3 sm:mb-4">
+                <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 pr-2">{graphsEvent.title} - Graphs</h3>
+                <button className="text-gray-500 hover:text-gray-800 text-xl flex-shrink-0" onClick={() => setGraphsEventId(null)}>×</button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="rounded-lg border border-gray-200 p-4">
-                  <h4 className="font-semibold mb-3 text-gray-800">Attendance</h4>
-                  <div className="relative w-full" style={{ height: "300px" }}>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+                <div className="rounded-lg border border-gray-200 p-3 sm:p-4">
+                  <h4 className="font-semibold mb-2 sm:mb-3 text-gray-800 text-sm sm:text-base">Attendance</h4>
+                  <div className="relative w-full" style={{ height: "250px" }}>
                     <Pie data={getAttendanceChartData(graphsEvent)} options={chartOptions} />
                   </div>
                 </div>
-                <div className="rounded-lg border border-gray-200 p-4">
-                  <h4 className="font-semibold mb-3 text-gray-800">Attendees by Role</h4>
-                  <div className="relative w-full" style={{ height: "300px" }}>
+                <div className="rounded-lg border border-gray-200 p-3 sm:p-4">
+                  <h4 className="font-semibold mb-2 sm:mb-3 text-gray-800 text-sm sm:text-base">Attendees by Role</h4>
+                  <div className="relative w-full" style={{ height: "250px" }}>
                     <Pie data={getRoleChartData(graphsEvent)} options={chartOptions} />
                   </div>
                 </div>
               </div>
-              <div className="mt-6 flex items-center justify-end gap-3">
+              <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-end gap-2 sm:gap-3">
                 <button
-                  className="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="px-3 sm:px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm sm:text-base w-full sm:w-auto"
                   onClick={() => setGraphsEventId(null)}
                 >
                   Close
                 </button>
                 <button
-                  className={`px-4 py-2 rounded bg-blue-600 text-white ${isDownloading ? "opacity-70" : "hover:bg-blue-700"}`}
+                  className={`px-3 sm:px-4 py-2 rounded bg-blue-600 text-white text-sm sm:text-base w-full sm:w-auto ${isDownloading ? "opacity-70" : "hover:bg-blue-700"}`}
                   onClick={() => handleDownloadServerReport(graphsEvent._id, graphsEvent.title)}
                   disabled={isDownloading}
                 >
@@ -1824,7 +1846,8 @@ const Report = () => {
             <span className="text-sm text-gray-700">Preparing PDF...</span>
           </div>
         )}
-      </main>
+        </main>
+      </div>
     </div>
   );
 };

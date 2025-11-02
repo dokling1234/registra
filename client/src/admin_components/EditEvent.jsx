@@ -37,7 +37,7 @@ const EditEvent = () => {
           address,
         });
         const { lat, lon, display_name } = geoRes.data;
-        // Prepare the new event data object
+
         const newEventData = {
           title: event.title || "",
           about: event.about || "",
@@ -51,12 +51,9 @@ const EditEvent = () => {
           coordinates: newEventData.coordinates,
           location: display_name,
         });
-        setEventData(newEventData); // <-- Set eventData after fetching
+        setEventData(newEventData);
       } catch (err) {
-        console.error(
-          "Failed to fetch event:",
-          err.response?.data || err.message
-        );
+        console.error("Failed to fetch event:", err.response?.data || err.message);
       }
     };
 
@@ -153,7 +150,6 @@ const EditEvent = () => {
     };
 
     const debounce = setTimeout(updateCoordinates, 600);
-
     return () => clearTimeout(debounce);
   }, [eventData.location, isEditing]);
 
@@ -161,27 +157,24 @@ const EditEvent = () => {
     setEventData({ ...eventData, [e.target.name]: e.target.value });
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    await axios.put(`/api/events/${id}`, eventData);
-    setOriginalData(eventData);
-    setIsEditing(false);
-    Swal.fire({
-      icon: "success",
-      title: "Event Saved",
-      text: "The event has been updated successfully!",
-      timer: 1000,
-      showConfirmButton: false,
-    });
-    navigate(`/admin/events`);
-  } catch (err) {
-    console.error(
-      "Failed to update event:",
-      err.response?.data || err.message
-    );
-  }
-};
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`/api/events/${id}`, eventData);
+      setOriginalData(eventData);
+      setIsEditing(false);
+      Swal.fire({
+        icon: "success",
+        title: "Event Saved",
+        text: "The event has been updated successfully!",
+        timer: 1000,
+        showConfirmButton: false,
+      });
+      navigate(`/admin/events`);
+    } catch (err) {
+      console.error("Failed to update event:", err.response?.data || err.message);
+    }
+  };
 
   const handleCancel = () => {
     setEventData(originalData);
@@ -189,24 +182,24 @@ const handleSubmit = async (e) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-white flex flex-col items-center py-12 px-4">
-      <div className="w-full max-w-5xl">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-white flex flex-col items-center py-6 px-3 sm:py-10 sm:px-6">
+      <div className="w-full max-w-md sm:max-w-4xl md:max-w-5xl">
+        <div className="bg-white rounded-2xl shadow-2xl p-5 sm:p-8">
           <div className="mb-8">
             <button
               onClick={() => navigate(-1)}
-              className="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-200 shadow mb-4"
+              className="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-200 shadow mb-4 w-full sm:w-auto"
             >
               ← Back
             </button>
-            <div className="bg-gradient-to-r from-blue-600 to-blue-400 rounded-xl p-6 mb-6 shadow flex items-center">
-              <h1 className="text-3xl font-extrabold text-white tracking-wide">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-400 rounded-xl p-4 sm:p-6 mb-6 shadow text-center sm:text-left">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-wide">
                 Edit Event
               </h1>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6 w-full">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block mb-2 font-semibold text-gray-700">
                 Title
@@ -216,9 +209,10 @@ const handleSubmit = async (e) => {
                 value={eventData.title}
                 onChange={handleChange}
                 placeholder={originalData.title || "Title"}
-                className="w-full border border-gray-300 px-4 py-3 rounded-lg text-lg focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                className="w-full border border-gray-300 px-4 py-3 rounded-lg text-base sm:text-lg focus:ring-2 focus:ring-blue-300 focus:outline-none"
               />
             </div>
+
             <div>
               <label className="block mb-2 font-semibold text-gray-700">
                 About
@@ -228,14 +222,15 @@ const handleSubmit = async (e) => {
                 value={eventData.about}
                 onChange={handleChange}
                 placeholder={originalData.about || "About the Event"}
-                className="w-full border border-gray-300 px-4 py-3 rounded-lg text-base focus:ring-2 focus:ring-blue-300 focus:outline-none min-h-[80px]"
+                className="w-full border border-gray-300 px-4 py-3 rounded-lg text-base focus:ring-2 focus:ring-blue-300 focus:outline-none min-h-[100px]"
               />
             </div>
+
             <div>
               <label className="block mb-2 font-semibold text-gray-700">
                 Location
               </label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <input
                   name="location"
                   value={eventData.location}
@@ -245,14 +240,12 @@ const handleSubmit = async (e) => {
                 />
                 <button
                   type="button"
-                  className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                  className="w-full sm:w-auto bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 transition"
                   onClick={async () => {
                     try {
                       const res = await axios.post(
                         "/api/events/location/geocode",
-                        {
-                          address: eventData.location,
-                        }
+                        { address: eventData.location }
                       );
                       const { lat, lon, display_name } = res.data;
                       setEventData((prev) => ({
@@ -269,21 +262,23 @@ const handleSubmit = async (e) => {
                 </button>
               </div>
             </div>
+
             <div
-              className="h-64 w-full rounded-lg overflow-hidden border border-gray-200 mb-2"
+              className="h-56 sm:h-64 w-full rounded-lg overflow-hidden border border-gray-200 mb-4"
               ref={mapContainerRef}
             />
-            <div className="flex space-x-4 w-full">
+
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 type="submit"
-                className="flex-1 bg-gradient-to-r from-green-500 to-green-400 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:from-green-600 hover:to-green-500 transition shadow"
+                className="flex-1 bg-gradient-to-r from-green-500 to-green-400 text-white px-6 py-3 rounded-lg font-semibold text-base sm:text-lg hover:from-green-600 hover:to-green-500 transition shadow"
               >
                 Save Changes
               </button>
               <button
                 type="button"
                 onClick={handleCancel}
-                className="flex-1 bg-gradient-to-r from-gray-400 to-gray-300 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:from-gray-500 hover:to-gray-400 transition shadow"
+                className="flex-1 bg-gradient-to-r from-gray-400 to-gray-300 text-white px-6 py-3 rounded-lg font-semibold text-base sm:text-lg hover:from-gray-500 hover:to-gray-400 transition shadow"
               >
                 Cancel
               </button>

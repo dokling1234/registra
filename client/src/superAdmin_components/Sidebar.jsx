@@ -1,306 +1,251 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AppContent } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { assets } from "../assets/assets";
 import Swal from "sweetalert2";
+import { motion, AnimatePresence } from "framer-motion";
 
-const Sidebar = () => {
+axios.defaults.withCredentials = true;
+
+const SuperAdminSidebar = ({ isOpen, setIsOpen }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { userData, backendUrl, setUserData, setIsLoggedin } =
+  const [isCompact, setIsCompact] = useState(false);
+  const [showDesktopSidebar, setShowDesktopSidebar] = useState(
+    window.innerWidth >= 1280
+  );
+ 
+
+  const { backendUrl, setUserData, setIsLoggedin, userData } =
     useContext(AppContent);
-  const [showChangeModal, setShowChangeModal] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
-  const [icpepId, setIcpepId] = useState("");
-  const [changeLoading, setChangeLoading] = useState(false);
 
-  const logout = async () => {
-    try {
-      const result = await Swal.fire({
-        title: "Are you sure?",
-        text: "You will be logged out of your account",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, logout",
-        cancelButtonText: "Cancel",
-      });
+  // Compact mode detection
+  useEffect(() => {
+    const checkHeight = () => setIsCompact(window.innerHeight <= 667);
+    checkHeight();
+    window.addEventListener("resize", checkHeight);
+    return () => window.removeEventListener("resize", checkHeight);
+  }, []);
 
-      if (result.isConfirmed) {
-        axios.defaults.withCredentials = true;
-        const { data } = await axios.post(backendUrl + "/api/auth/logout");
+  // Show/hide sidebar based on width
+  useEffect(() => {
+    const handleResize = () => {
+      const isXL = window.innerWidth >= 1280;
+      setShowDesktopSidebar(isXL);
+      if (isXL) setIsOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [setIsOpen]);
+
+  // Logout
+  const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: "Logout?",
+      text: "Are you sure you want to log out?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Logout",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const { data } = await axios.post(`${backendUrl}/api/auth/logout`);
         if (data.success) {
           setIsLoggedin(false);
           setUserData(null);
           Swal.fire(
-            "Logged Out!",
-            "You have been successfully logged out.",
+            "Logged Out",
+            "You have been safely logged out.",
             "success"
           );
           navigate("/admin");
         }
+      } catch (error) {
+        toast.error(error.message);
       }
-    } catch (error) {
-      toast.error(error.message);
     }
   };
 
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
+  const isActive = (path) => location.pathname === path;
 
-  // const handleChangePassword = async (e) => {
-  //   e.preventDefault();
-  //   setChangeLoading(true);
-  //   try {
-  //     // Only send newPassword and icpepId, do NOT send email (backend uses logged-in user)
-  //     const { data } = await axios.post(
-  //       backendUrl + "/api/auth/change-password",
-  //       { newPassword, icpepId, email: userData.email },
-  //       { withCredentials: true }
-  //     );
-  //     if (data.success) {
-  //       Swal.fire("Success", "Account updated successfully!", "success");
-  //       setShowChangeModal(false);
-  //       setNewPassword("");
-  //       setIcpepId("");
-  //     } else {
-  //       Swal.fire("Error", data.message || "Failed to update account", "error");
-  //     }
-  //   } catch (error) {
-  //     Swal.fire(
-  //       "Error",
-  //       error.response?.data?.message || error.message,
-  //       "error"
-  //     );
-  //   } finally {
-  //     setChangeLoading(false);
-  //   }
-  // };
-
-  return (
-    <div className="h-screen w-64 bg-gray-900 text-white flex flex-col justify-between fixed">
-      <div>
-        <div className="text-center">
-          <img
-            src={assets.logo}
-            alt="Logo"
-            className="w-32 h-auto object-contain hover:scale-105 transition-transform duration-300 mx-auto"
-          />
-        </div>
-        <div className="mt-4 bg-gray-800/50 rounded-lg mx-3">
-          <nav className="flex flex-col gap-1 p-2">
-            <button
-              onClick={() => navigate("/superadmin/dashboard")}
-              className={`text-left p-3 rounded-lg transition-colors ${
-                isActive("/superadmin/dashboard")
-                  ? "bg-gray-700"
-                  : "hover:bg-gray-700"
-              } flex items-center gap-2`}
-            >
-              <img
-                src={assets.dashboard_icon}
-                alt="Dashboard Icon"
-                className="w-5 h-5"
-              />
-              Dashboard
-            </button>
-            <button
-              onClick={() => navigate("/superadmin/report")}
-              className={`text-left p-3 rounded-lg transition-colors ${
-                isActive("/superadmin/report")
-                  ? "bg-gray-700"
-                  : "hover:bg-gray-700"
-              } flex items-center gap-2`}
-            >
-              <img
-                src={assets.reports_icon}
-                alt="Reports Icon"
-                className="w-5 h-5"
-              />
-              Reports
-            </button>
-            <button
-              onClick={() => navigate("/superadmin/feedback")}
-              className={`text-left p-3 rounded-lg transition-colors ${
-                isActive("/superadmin/feedback")
-                  ? "bg-gray-700"
-                  : "hover:bg-gray-700"
-              } flex items-center gap-2`}
-            >
-              <img
-                src={assets.feedback_icon}
-                alt="Feedback Icon"
-                className="w-5 h-5"
-              />
-              Feedbacks
-            </button>
-            <button
-              onClick={() => navigate("/superadmin/events")}
-              className={`text-left p-3 rounded-lg transition-colors ${
-                isActive("/superadmin/events")
-                  ? "bg-gray-700"
-                  : "hover:bg-gray-700"
-              } flex items-center gap-2`}
-            >
-              <img
-                src={assets.events_icon}
-                alt="Events Icon"
-                className="w-5 h-5"
-              />
-              Events
-            </button>
-            <button
-              onClick={() => navigate("/superadmin/receipt")}
-              className={`text-left p-3 rounded-lg transition-colors ${
-                isActive("/superadmin/receipt")
-                  ? "bg-gray-700"
-                  : "hover:bg-gray-700"
-              } flex items-center gap-2`}
-            >
-              <img
-                src={assets.receipt_icon}
-                alt="Receipt Icon"
-                className="w-5 h-5"
-              />
-              Receipts
-            </button>
-
-            <button
-              onClick={() => navigate("/superadmin/certificate")}
-              className={`text-left p-3 rounded-lg transition-colors ${
-                isActive("/superadmin/certificate")
-                  ? "bg-gray-700"
-                  : "hover:bg-gray-700"
-              } flex items-center gap-2`}
-            >
-              <img
-                src={assets.certificate_icon}
-                alt="Certificate Icon"
-                className="w-5 h-5"
-              />
-              Certificates
-            </button>
-            <button
-              onClick={() => navigate("/superadmin/userlist")}
-              className={`text-left p-3 rounded-lg transition-colors ${
-                isActive("/superadmin/userlist")
-                  ? "bg-gray-700"
-                  : "hover:bg-gray-700"
-              } flex items-center gap-2`}
-            >
-              <img
-                src={assets.userlist_icon}
-                alt="Users Icon"
-                className="w-5 h-5"
-              />
-              Users
-            </button>
-            <button
-              onClick={() => navigate("/superadmin/adminlist")}
-              className={`text-left p-3 rounded-lg transition-colors ${
-                isActive("/superadmin/adminlist")
-                  ? "bg-gray-700"
-                  : "hover:bg-gray-700"
-              } flex items-center gap-2`}
-            >
-              <img
-                src={assets.userlist_icon}
-                alt="Users Icon"
-                className="w-5 h-5"
-              />
-              Administrators
-            </button>
-            <button
-              onClick={() => navigate("/superadmin/activity-logs")}
-              className={`text-left p-3 rounded-lg transition-colors ${
-                isActive("/superadmin/activity-logs")
-                  ? "bg-gray-700"
-                  : "hover:bg-gray-700"
-              } flex items-center gap-2`}
-            >
-              <img
-                src={assets.reports_icon}
-                alt="Logs Icon"
-                className="w-5 h-5"
-              />
-              Activity Logs
-            </button>
-            {/* <button
-              onClick={() => setShowChangeModal(true)}
-              className="text-left hover:bg-gray-700 p-3 rounded-lg w-full transition-colors flex items-center gap-2"
-            >
-              <img
-                src={assets.userlist_icon}
-                alt="Change Password Icon"
-                className="w-5 h-5"
-              />
-              Change Password
-            </button> */}
-          </nav>
-        </div>
-      </div>
-      <div className="mt-4 bg-gray-800/50 rounded-lg mx-3 mb-4">
-        <div className="p-2">
-          <button
-            onClick={logout}
-            className="text-left hover:bg-gray-700 p-3 rounded-lg w-full transition-colors flex items-center gap-2"
-          >
-            <img
-              src={assets.logout_icon}
-              alt="Log Out Icon"
-              className="w-5 h-5"
-            />
-            Log out
-          </button>
-        </div>
-      </div>
-      {showChangeModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white text-gray-900 p-6 rounded-lg shadow-lg w-full max-w-sm">
-            <h2 className="text-lg font-bold mb-4">Change Password</h2>
-            <form onSubmit={handleChangePassword} className="space-y-3">
-              <input
-                type="text"
-                placeholder="ICPEP ID"
-                value={icpepId}
-                onChange={(e) => setIcpepId(e.target.value)}
-                required
-                className="w-full border px-3 py-2 rounded"
-              />
-              <input
-                type="password"
-                placeholder="New Password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                className="w-full border px-3 py-2 rounded"
-              />
-              <div className="flex justify-between gap-4 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowChangeModal(false)}
-                  className="w-full py-2 border rounded text-gray-600 hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={changeLoading}
-                  className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {changeLoading ? "Saving..." : "Save"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+  const MenuItem = ({ path, label, icon, closeOnClick }) => (
+    <div className="relative group">
+      <button
+        onClick={() => {
+          navigate(path);
+          if (closeOnClick) setIsOpen(false);
+        }}
+        className={`w-full flex items-center ${
+          isCompact ? "justify-center p-2" : "gap-3 px-3 py-2"
+        } rounded-lg transition-all duration-200 ${
+          isActive(path)
+            ? "bg-gray-700 text-white"
+            : "text-gray-300 hover:bg-gray-700 hover:text-white"
+        }`}
+      >
+        <img src={icon} alt={label} className="w-5 h-5" />
+        {!isCompact && (
+          <span className="text-sm sm:text-base font-normal">{label}</span>
+        )}
+      </button>
+      {isCompact && (
+        <span className="absolute left-full ml-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50">
+          {label}
+        </span>
       )}
     </div>
   );
+
+  const SidebarContent = ({ closeOnClick = false }) => (
+    <div className="flex flex-col h-full justify-between overflow-y-auto max-h-screen scrollbar-hide">
+      {/* Logo */}
+      <div className="text-center mt-6 mb-4">
+        <img
+          src={assets.logo}
+          alt="Logo"
+          className={`${isCompact ? "w-10" : "w-32"} mx-auto object-contain`}
+        />
+      </div>
+
+      {/* Navigation */}
+      <nav
+        className={`flex flex-col gap-1 px-2 py-2 mx-2 bg-gray-800/50 rounded-lg ${
+          isCompact ? "text-xs" : "text-sm sm:text-base"
+        }`}
+      >
+        <MenuItem
+          path="/superadmin/dashboard"
+          label="Dashboard"
+          icon={assets.dashboard_icon}
+          closeOnClick={closeOnClick}
+        />
+        <MenuItem
+          path="/superadmin/report"
+          label="Reports"
+          icon={assets.reports_icon}
+          closeOnClick={closeOnClick}
+        />
+        <MenuItem
+          path="/superadmin/feedback"
+          label="Feedbacks"
+          icon={assets.feedback_icon}
+          closeOnClick={closeOnClick}
+        />
+        <MenuItem
+          path="/superadmin/events"
+          label="Events"
+          icon={assets.events_icon}
+          closeOnClick={closeOnClick}
+        />
+        <MenuItem
+          path="/superadmin/receipt"
+          label="Receipts"
+          icon={assets.receipt_icon}
+          closeOnClick={closeOnClick}
+        />
+        <MenuItem
+          path="/superadmin/certificate"
+          label="Certificates"
+          icon={assets.certificate_icon}
+          closeOnClick={closeOnClick}
+        />
+        <MenuItem
+          path="/superadmin/userlist"
+          label="Users"
+          icon={assets.userlist_icon}
+          closeOnClick={closeOnClick}
+        />
+        <MenuItem
+          path="/superadmin/adminlist"
+          label="Administrators"
+          icon={assets.userlist_icon}
+          closeOnClick={closeOnClick}
+        />
+        <MenuItem
+          path="/superadmin/activity-logs"
+          label="Activity Logs"
+          icon={assets.reports_icon}
+          closeOnClick={closeOnClick}
+        />
+      </nav>
+
+      {/* Footer */}
+      <div className="mt-4 border-t border-gray-700 pt-3 px-2 mx-2">
+        <motion.button
+          onClick={handleLogout}
+          whileHover={{ x: 4, scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          transition={{ type: "spring", stiffness: 300, damping: 15 }}
+          className={`w-full flex items-center justify-center ${
+            isCompact ? "p-2" : "gap-3 px-3 py-2"
+          } rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition-all duration-200 shadow-md`}
+        >
+          <img src={assets.logout_icon} alt="Logout" className="w-5 h-5" />
+          {!isCompact && <span>Logout</span>}
+        </motion.button>
+
+        {!isCompact && (
+          <div className="text-center text-gray-500 text-xs sm:text-sm mt-4 mb-2 select-none">
+            <p className="opacity-70">IcpepRegistra SuperAdmin</p>
+            <p className="opacity-50">© {new Date().getFullYear()}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* --- Mobile Sidebar --- */}
+      <AnimatePresence>
+        {isOpen && !showDesktopSidebar && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setIsOpen(false)}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm xl:hidden z-[9998]"
+            />
+            <motion.div
+              initial={{ x: -300 }}
+              animate={{ x: 0 }}
+              exit={{ x: -300 }}
+              transition={{ duration: 0.3 }}
+              className={`fixed top-0 left-0 h-screen ${
+                isCompact ? "w-16" : "w-56 sm:w-64"
+              } bg-gray-900 text-white shadow-2xl z-[9999] flex flex-col`}
+            >
+              <SidebarContent closeOnClick />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* --- Desktop Sidebar --- */}
+      <AnimatePresence>
+        {showDesktopSidebar && (
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -40 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className={`hidden xl:flex h-screen ${
+              isCompact ? "w-16" : "w-56 sm:w-64"
+            } bg-gray-900 text-white flex-col justify-between fixed left-0 top-0 z-[998] shadow-lg`}
+          >
+            <SidebarContent />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
 };
 
-export default Sidebar;
+export default SuperAdminSidebar;

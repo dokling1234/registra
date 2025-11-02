@@ -96,8 +96,8 @@ const Reschedule = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6">
-      <div className="w-full max-w-xl bg-white p-8 rounded-2xl shadow-xl space-y-8">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4 sm:p-6">
+      <div className="w-full max-w-xl bg-white p-6 sm:p-8 rounded-2xl shadow-xl space-y-8">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-800 mb-2">
             Reschedule Event
@@ -116,7 +116,7 @@ const Reschedule = () => {
         </div>
 
         {/* Date & Time Inputs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           <div>
             <label className="block mb-2 font-semibold text-gray-700">
               New Date
@@ -147,7 +147,7 @@ const Reschedule = () => {
         </div>
 
         {/* Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <button
             onClick={handleReschedule}
             disabled={isLoading}

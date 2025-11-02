@@ -293,8 +293,8 @@ const FeedbackBuilder = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-white flex flex-col items-center py-12 px-4">
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl p-10 flex flex-col items-center">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-white flex flex-col items-center py-8 sm:py-12 px-3 sm:px-4">
+      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl p-6 sm:p-10 flex flex-col items-center">
         <div className="bg-gradient-to-r from-blue-600 to-blue-400 rounded-xl p-6 mb-8 shadow w-full flex items-center justify-center">
           <h2 className="text-2xl font-extrabold text-white tracking-wide text-center">
             Event Feedback Builder
@@ -367,7 +367,7 @@ const FeedbackBuilder = () => {
             </div>
             <button
               onClick={handleSubmit}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow mt-2"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white px-4 sm:px-6 py-3 rounded-lg font-semibold text-lg shadow mt-2"
             >
               Update Feedback Form
             </button>
@@ -393,7 +393,7 @@ const FeedbackBuilder = () => {
             </div>
             <button
               onClick={handleSubmit}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow mt-2"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white px-4 sm:px-6 py-3 rounded-lg font-semibold text-lg shadow mt-2"
             >
               Submit Feedback Form
             </button>

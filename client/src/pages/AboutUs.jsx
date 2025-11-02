@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AppContent } from "../context/AppContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import "./AboutUs.css";
+import { motion } from "framer-motion";
 
 const AboutUs = () => {
   const { isAdmin } = useContext(AppContent);
@@ -15,43 +15,126 @@ const AboutUs = () => {
     }
   }, [isAdmin, navigate]);
 
+  // ✅ Parent container for stagger
+  const container = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.3 }, // delay each child
+    },
+  };
+
+  // ✅ Children fade-in-up
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 40 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" },
+    },
+  };
+
   return (
     <>
       <Navbar />
 
-      {/* Hero Section */}
-      <section id="home" className="hero">
-        <div className="container">
-          <p className="lead">ABOUT US</p>
-          <h1 className="mb-4">Connecting CpEs</h1>
-          <a
+      {/* ✅ Hero Section */}
+      <section
+        id="home"
+        className="relative flex flex-col justify-center items-center text-white text-center px-4 overflow-hidden"
+        style={{
+          minHeight: "70vh",
+          height: "100vh",
+        }}
+      >
+        {/* Animated Background with Parallax Zoom */}
+        <motion.div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage:
+              "url('https://www.icpepncr.org/storage/images/bg.jpg')",
+          }}
+          initial={{ scale: 1.1 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 2, ease: "easeOut" }}
+        />
+        <div className="absolute inset-0 bg-black/40"></div>
+
+        {/* Motion Content */}
+        <motion.div
+          className="relative z-10 flex flex-col items-center"
+          initial={{ opacity: 0, scale: 0.95, y: 40 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+        >
+          {/* ABOUT US */}
+          <motion.p
+            className="font-semibold mb-4"
+            style={{
+              fontSize: "clamp(1.5rem, 3vw, 3rem)",
+              textShadow: "0px 0px 10px rgba(0, 0, 0, 0.6)",
+            }}
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.8 }}
+          >
+            ABOUT US
+          </motion.p>
+
+          {/* Connecting CpEs */}
+          <motion.h1
+            className="font-bold mb-6 leading-tight"
+            style={{
+              fontSize: "clamp(2.2rem, 6vw, 6rem)",
+              textShadow:
+                "0px 0px 12px rgba(255, 255, 255, 0.8), 0px 0px 24px rgba(0, 0, 0, 0.6)",
+            }}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 1 }}
+          >
+            Connecting CpEs
+          </motion.h1>
+
+          {/* Button */}
+          <motion.a
             href="https://www.icpepncr.org/aboutus"
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-primary hero-btn"
+            className="bg-[#1a4870] hover:bg-[#f7941d] text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg shadow-md transition transform hover:-translate-y-1 font-medium text-sm sm:text-base"
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9, duration: 1 }}
           >
             Visit Official About Us Page
-          </a>
-        </div>
+          </motion.a>
+        </motion.div>
       </section>
 
-      <div className="container main-content">
-        {/* Mission Section */}
-        <section id="mission" className="mb-5 pt-5">
-          <h1 className="section-heading mt-5">Mission</h1>
-          <div className="card">
-            <div className="card-body">
-              <p>ICpEP aims to:</p>
-              <ul>
+      {/* ✅ Main Content with Stagger */}
+      <div className="bg-[#e3f4f4] py-12 sm:py-16">
+        <motion.div
+          className="max-w-6xl mx-auto px-4 space-y-12"
+          variants={container}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          {/* Mission */}
+          <motion.section id="mission" variants={fadeInUp}>
+            <h1 className="text-3xl sm:text-4xl font-bold text-[#1a4870] text-center mb-6 relative after:content-[''] after:block after:w-16 after:h-1 after:bg-[#f7941d] after:mx-auto after:mt-2">
+              Mission
+            </h1>
+            <div className="bg-white shadow-md rounded-lg p-6 sm:p-8">
+              <p className="mb-4">ICpEP aims to:</p>
+              <ul className="list-disc list-inside space-y-2">
                 <li>
                   Build a network of professionals and graduates of computer
-                  engineering in the country through member interaction and open
-                  communication. This is directed to the industry, academe, and
-                  government.
+                  engineering through industry, academe, and government.
                 </li>
                 <li>
-                  Support the professional career of members through relevant
-                  training and exposure.
+                  Support the professional career of members through training
+                  and exposure.
                 </li>
                 <li>
                   Expand knowledge and specialization in computer engineering
@@ -59,31 +142,32 @@ const AboutUs = () => {
                 </li>
               </ul>
             </div>
-          </div>
-        </section>
+          </motion.section>
 
-        {/* Vision Section */}
-        <section id="vision" className="mb-5 pt-5">
-          <h1 className="section-heading mt-5">Vision</h1>
-          <div className="card">
-            <div className="card-body">
+          {/* Vision */}
+          <motion.section id="vision" variants={fadeInUp}>
+            <h1 className="text-3xl sm:text-4xl font-bold text-[#1a4870] text-center mb-6 relative after:content-[''] after:block after:w-16 after:h-1 after:bg-[#f7941d] after:mx-auto after:mt-2">
+              Vision
+            </h1>
+            <div className="bg-white shadow-md rounded-lg p-6 sm:p-8">
               <p>
                 ICpEP envisions itself as the foundation of world-class Filipino
-                computer engineering professionals and the motivator of interest
-                towards excellence in computer engineering as a field of
-                specialization.
+                computer engineering professionals and a motivator of excellence
+                in the field.
               </p>
             </div>
-          </div>
-        </section>
+          </motion.section>
 
-        {/* Officers Section */}
-        <section id="officers" className="mb-5 pt-5">
-          <h1 className="section-heading mt-5">ICpEP NCR Officers 2024</h1>
-          <div className="card officers-card">
-            <div className="card-body">
-              <h5>Executive Members</h5>
-              <ul>
+          {/* Officers */}
+          <motion.section id="officers" variants={fadeInUp}>
+            <h1 className="text-3xl sm:text-4xl font-bold text-[#1a4870] text-center mb-6 relative after:content-[''] after:block after:w-16 after:h-1 after:bg-[#f7941d] after:mx-auto after:mt-2">
+              ICpEP NCR Officers 2024
+            </h1>
+            <div className="bg-white shadow-md rounded-lg p-6 sm:p-8">
+              <h5 className="text-xl font-semibold text-[#1a4870] mb-4">
+                Executive Members
+              </h5>
+              <ul className="list-disc list-inside space-y-2">
                 <li>Dr. Roben A. Juanatas, PCpE — President</li>
                 <li>Dr. Irish C. Juanatas, PCpE — VP for Internal Affairs</li>
                 <li>Dr. Marie Luvett I. Goh, PCpE — VP for External Affairs</li>
@@ -93,8 +177,10 @@ const AboutUs = () => {
                 <li>Engr. Heintjie N. Vicente, PCpE — Auditor</li>
               </ul>
 
-              <h5 className="mt-4">Committee Members</h5>
-              <ul>
+              <h5 className="text-xl font-semibold text-[#1a4870] mt-6 mb-4">
+                Committee Members
+              </h5>
+              <ul className="list-disc list-inside space-y-2">
                 <li>Dr. Joselito Eduard E. Goh, PCpE</li>
                 <li>Dr. Nelson C. Rodelas, PCpE</li>
                 <li>Dr. Jocelyn F. Villaverde, PCpE</li>
@@ -106,15 +192,15 @@ const AboutUs = () => {
                 <li>Engr. Kenn Arion B. Wong, PCpE</li>
               </ul>
             </div>
-          </div>
-        </section>
+          </motion.section>
 
-        {/* Past Presidents Section */}
-        <section id="past-presidents" className="mb-5 pt-5">
-          <h1 className="section-heading mt-5">Past Presidents</h1>
-          <div className="card presidents-card">
-            <div className="card-body">
-              <ul>
+          {/* Past Presidents */}
+          <motion.section id="past-presidents" variants={fadeInUp}>
+            <h1 className="text-3xl sm:text-4xl font-bold text-[#1a4870] text-center mb-6 relative after:content-[''] after:block after:w-16 after:h-1 after:bg-[#f7941d] after:mx-auto after:mt-2">
+              Past Presidents
+            </h1>
+            <div className="bg-white shadow-md rounded-lg p-6 sm:p-8">
+              <ul className="list-disc list-inside space-y-2">
                 <li>Dr. Irish C. Juanatas, PCpE — 2021-2022</li>
                 <li>Engr. Maria Cecille A. Venal, PCpE — 2018-2020</li>
                 <li>Engr. Noel B. Linsangan, PCpE — 2014-2017</li>
@@ -123,102 +209,57 @@ const AboutUs = () => {
                 <li>Engr. Erwin G. Mendoza, PCpE — 2008-2010</li>
               </ul>
             </div>
-          </div>
-        </section>
+          </motion.section>
 
-        {/* History Section */}
-        <section id="history" className="mb-5 pt-5">
-          <h1 className="section-heading mt-5">History</h1>
-          <div className="card">
-            <div className="card-body">
-              <h5>The Early Years</h5>
-              <p>
-                In 1992, a group of computer engineers formed the Philippine
-                Institute of Computer Engineers, Inc. (PhICEs). PhICEs initially
-                gathered a number of professional members and held conventions,
-                seminars, and symposia in various regions across Luzon and
-                Visayas. However, after some years of activity, the organization
-                became inactive.
-              </p>
+          {/* History */}
+          <motion.section id="history" variants={fadeInUp}>
+            <h1 className="text-3xl sm:text-4xl font-bold text-[#1a4870] text-center mb-6 relative after:content-[''] after:block after:w-16 after:h-1 after:bg-[#f7941d] after:mx-auto after:mt-2">
+              History
+            </h1>
+            <div className="space-y-6">
+              {[
+                {
+                  title: "The Early Years",
+                  text: "In 1992, a group of computer engineers formed PhICEs... later became inactive.",
+                },
+                {
+                  title: "Revival and Rebranding",
+                  text: "In 2008, engineers revived the org, renamed ICpEP.",
+                },
+                {
+                  title: "Industry Partnerships",
+                  text: "Partnered with Intel, Microsoft, HP, Lenovo, Epson, Red Fox, and more.",
+                },
+                {
+                  title: "Academic Expansion",
+                  text: "Formed ICpEP.SE, from 11 schools to 68 nationwide.",
+                },
+                {
+                  title: "Regional Chapters",
+                  text: "Established regional chapters with student counterparts.",
+                },
+                {
+                  title: "NCR Chapter",
+                  text: "Includes prominent institutions fostering community in NCR.",
+                },
+              ].map((item, idx) => (
+                <motion.div
+                  key={idx}
+                  variants={fadeInUp}
+                  className="bg-white shadow-md rounded-lg p-6 sm:p-8"
+                >
+                  <h5 className="text-lg font-semibold text-[#f7941d] mb-2">
+                    {item.title}
+                  </h5>
+                  <p>{item.text}</p>
+                </motion.div>
+              ))}
             </div>
-          </div>
-          <div className="card">
-            <div className="card-body">
-              <h5>Revival and Rebranding</h5>
-              <p>
-                In 2008, computer engineers from different organizations, led by
-                Engr. Erwin G. Mendoza and Engr. Alexander B. Ybasco, came
-                together to revive the organization. After several meetings, the
-                group decided to change the name to the Institute of Computer
-                Engineers of the Philippines, Inc. (ICpEP), marking a fresh start
-                for the professional body.
-              </p>
-            </div>
-          </div>
-          <div className="card">
-            <div className="card-body">
-              <h5>Industry Partnerships</h5>
-              <p>
-                Since then, ICpEP has established strong partnerships with the
-                industry. Leading companies such as Intel, Microsoft, HP, Lenovo,
-                Epson, and Red Fox recognize ICpEP as the sole organization for
-                computer engineers in the Philippines. Additionally, ICpEP
-                collaborated with SM Mall of Asia and NIDO Fortified Science
-                Discovery Center to promote research and development through
-                exhibitions of notable computer engineering projects.
-              </p>
-            </div>
-          </div>
-          <div className="card">
-            <div className="card-body">
-              <h5>Academic Expansion</h5>
-              <p>
-                In 2008, ICpEP expanded its reach into academia by forming the
-                ICpEP Student Edition (ICpEP.SE). Starting with 11 schools,
-                ICpEP.SE has since grown to include over 68 schools nationwide.
-              </p>
-            </div>
-          </div>
-          <div className="card">
-            <div className="card-body">
-              <h5>Regional Chapters</h5>
-              <p>
-                In 2014, ICpEP expanded its structure by establishing regional
-                chapters across the Philippines, each with its own ICpEP Student
-                Edition (ICpEP.SE) counterpart. This expansion enabled the
-                organization to better serve the diverse needs of computer
-                engineering students and professionals in various regions,
-                strengthening its nationwide reach.
-              </p>
-            </div>
-          </div>
-          <div className="card">
-            <div className="card-body">
-              <h5>NCR Chapter</h5>
-              <p>
-                The NCR Chapter has a strong presence and includes affiliations
-                with several prominent institutions. These institutions actively
-                participate in ICpEP activities, helping to foster a strong
-                community of computer engineering students and professionals
-                within the region.
-              </p>
-            </div>
-          </div>
-        </section>
+          </motion.section>
+        </motion.div>
       </div>
 
-      <Footer>
-        <p className="footer-link">
-          Official ICpEP NCR About Us:{" "}
-          <a
-            href="https://www.icpepncr.org/aboutus"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            icpepncr.org/aboutus
-          </a>
-        </p>
-      </Footer>
+      <Footer />
     </>
   );
 };
