@@ -205,6 +205,102 @@ const adminLogin = async (req, res) => {
   }
 };
 
+const unifiedLogin = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.json({ success: false, message: "Please fill all fields" });
+  }
+
+  try {
+    // 🔹 1. Try to find in admin collection first
+    let account = await adminModel.findOne({ email });
+    let isAdmin = false;
+    let accountType = "user";
+
+    if (account) {
+      // Found in admin collection
+      isAdmin = true;
+      accountType = account.userType || "admin";
+
+      // Block disabled admins
+      if (account.disabled === true) {
+        return res.json({
+          success: false,
+          message: "Your account has been disabled. Contact support.",
+        });
+      }
+
+      // Only allow admin or superadmin types
+      if (account.userType !== "admin" && account.userType !== "superadmin") {
+        return res.json({ success: false, message: "Unauthorized user type" });
+      }
+    } else {
+      // 🔹 2. Try user collection if not found in admin
+      account = await userModel.findOne({ email });
+      accountType = account ? account.userType || "user" : "user";
+    }
+
+    // 🔹 3. If account not found at all
+    if (!account) {
+      return res.json({
+        success: false,
+        message: "Incorrect Email or Password",
+      });
+    }
+
+    // 🔹 4. Check password
+    const isMatch = await bcrypt.compare(password, account.password);
+    if (!isMatch) {
+      return res.json({
+        success: false,
+        message: "Incorrect Email or Password",
+      });
+    }
+
+    // 🔹 5. Generate JWT
+    const token = jwt.sign(
+      {
+        id: account._id,
+        email: account.email,
+        fullName: account.fullName,
+        userType: accountType,
+        isAdmin,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+
+    // 🔹 6. Set cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    // 🔹 7. Return unified response
+    return res.json({
+      success: true,
+      message:
+        (isAdmin ? `${account.userType || "Admin"} ` : "") + "login successful",
+      passwordChangeRequired: account.passwordChangeRequired || false,
+      user: {
+        id: account._id,
+        fullName: account.fullName,
+        email: account.email,
+        userType: accountType,
+        isVerified: account.isVerified ?? true,
+        isAdmin,
+      },
+      token,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    return res.json({ success: false, message: error.message });
+  }
+};
+
 // logout controller
 const logout = async (req, res) => {
   try {
@@ -574,6 +670,7 @@ const adminChangePassword = async (req, res) => {
 };
 
 module.exports = {
+  unifiedLogin,
   register,
   login,
   logout,

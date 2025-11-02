@@ -86,7 +86,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             "You have been safely logged out.",
             "success"
           );
-          navigate("/admin");
+          navigate("/");
         }
       } catch (error) {
         toast.error(error.message);

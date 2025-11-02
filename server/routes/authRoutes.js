@@ -1,12 +1,13 @@
 const express = require('express');
-const {isAuthenticated, login, logout, register, resetPassword, verifyResetOtp, sendResetOtp, sendVerifyOtp, verifyEmail, adminLogin, mobileAdminLogin, adminChangePassword, resendOTP,} = require('../controllers/authController.js');
+const {isAuthenticated, login, unifiedLogin, logout, register, resetPassword, verifyResetOtp, sendResetOtp, sendVerifyOtp, verifyEmail, adminLogin, mobileAdminLogin, adminChangePassword, resendOTP,} = require('../controllers/authController.js');
 const userAuth = require('../middleware/userAuth.js');
 
 const authRouter = express.Router();
 
 authRouter.post('/register', register);
-authRouter.post('/login', login);
+//authRouter.post('/login', login);
 authRouter.post('/admin-login', adminLogin);
+authRouter.post('/login', unifiedLogin);
 authRouter.post('/mobile/admin-login', mobileAdminLogin);
 authRouter.post('/logout', logout);
 authRouter.post('/send-verify-otp', userAuth, sendVerifyOtp);

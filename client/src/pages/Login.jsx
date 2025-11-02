@@ -137,9 +137,11 @@ const Login = () => {
   };
 
   const onSubmitHandler = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    setSubmitError("");
+  setSubmitError("");
+  if (state === "Sign Up") {
+    // --- SIGNUP FLOW ---
     if (!validateForm()) {
       if (!errors.email) {
         setSubmitError("Please fill in all required fields correctly");
@@ -147,178 +149,120 @@ const Login = () => {
       return;
     }
 
-    setLoading(true); // ⏳ disable button and show spinner
+    setLoading(true);
     axios.defaults.withCredentials = true;
 
     try {
-      if (state === "Sign Up") {
-        let formattedContact = contactNumber.trim().replace(/[\s-()]/g, "");
+      let formattedContact = contactNumber.trim().replace(/[\s-()]/g, "");
 
-        // Validate number starts with 09 and has 11 digits
-        if (!/^09\d{9}$/.test(formattedContact)) {
-          setSubmitError(
-            "Invalid mobile number. Please enter a valid PH number (e.g., 09291234567)"
-          );
-          return;
-        }
+      if (!/^09\d{9}$/.test(formattedContact)) {
+        setSubmitError(
+          "Invalid mobile number. Please enter a valid PH number (e.g., 09291234567)"
+        );
+        setLoading(false);
+        return;
+      }
 
-        const { data } = await axios.post(`${backendUrl}/api/auth/register`, {
-          fullName,
-          email,
-          password,
-          contactNumber: formattedContact,
-          icpepId,
-          userType,
-        });
+      const { data } = await axios.post(`${backendUrl}/api/auth/register`, {
+        fullName,
+        email,
+        password,
+        contactNumber: formattedContact,
+        icpepId,
+        userType,
+      });
 
-        if (data.success) {
-          // 🔹 remove this if backend already sends OTP
-          await axios.post(`${backendUrl}/api/auth/send-verify-otp`, { email });
-          // keep success feedback for signup via navigation only
-          navigate("/email-verify");
-        } else {
-          // Map server signup errors under specific fields
-          const serverMsg = (
-            data.message || "Registration failed"
-          ).toLowerCase();
-          const newFieldErrors = {};
-          if (serverMsg.includes("email")) {
-            newFieldErrors.email =
-              data.message || "Email is invalid or already in use";
-          }
-          if (serverMsg.includes("password")) {
-            newFieldErrors.password =
-              data.message || "Password does not meet requirements";
-          }
-          if (serverMsg.includes("icpep")) {
-            newFieldErrors.icpepId = data.message || "Invalid ICPEP ID";
-          }
-          if (Object.keys(newFieldErrors).length > 0) {
-            setErrors((prev) => ({ ...prev, ...newFieldErrors }));
-            setSubmitError("");
-          } else {
-            setSubmitError(data.message || "Registration failed");
-          }
-        }
+      if (data.success) {
+        await axios.post(`${backendUrl}/api/auth/send-verify-otp`, { email });
+        navigate("/email-verify");
       } else {
-        const { data } = await axios.post(`${backendUrl}/api/auth/login`, {
-          email,
-          password,
-        });
-
-        if (data.success) {
-          const userResponse = await axios.get(
-            `${backendUrl}/api/user/alldata`,
-            {
-              withCredentials: true,
-            }
-          );
-          const currentUser = userResponse.data.users.find(
-            (user) => user.email === email
-          );
-
-          if (currentUser?.disabled) {
-            Swal.fire({
-              icon: "error",
-              title: "Account Disabled",
-              text: "Your account has been disabled. Please contact the administrator.",
-            });
-            return;
-          }
-
-          if (!data.user?.isVerified) {
-            // 🔹 remove this if backend already sends OTP
-            await axios.post(`${backendUrl}/api/auth/send-verify-otp`, {
-              email,
-            });
-            setSubmitError("Please verify your email first.");
-            navigate("/email-verify");
-            return;
-          }
-
-          if (rememberMe) {
-            localStorage.setItem("userEmail", email);
-            localStorage.setItem("userPassword", password);
-          } else {
-            localStorage.removeItem("userEmail");
-            localStorage.removeItem("userPassword");
-          }
-
-          setIsAdmin(false);
-          setIsLoggedin(true);
-          await getUserData();
-          toast.success(data.message || "Login successful");
-          navigate("/splash?to=%2Fhome", {
-            replace: true,
-            state: { to: "/home" },
-          });
-        } else {
-          // Determine specific field error by checking if email exists in system
-          try {
-            const userResponse = await axios.get(
-              `${backendUrl}/api/user/alldata`,
-              {
-                withCredentials: true,
-              }
-            );
-            const exists = userResponse.data.users.some(
-              (u) => u.email === email
-            );
-            if (!exists) {
-              setErrors((prev) => ({
-                ...prev,
-                email: data.message || "Email not found",
-              }));
-              setSubmitError("");
-            } else {
-              setErrors((prev) => ({
-                ...prev,
-                password: data.message || "Incorrect password",
-              }));
-              setSubmitError("");
-            }
-          } catch {
-            const msg = data.message || "Invalid email or password";
-            setSubmitError(msg);
-          }
-        }
+        setSubmitError(data.message || "Registration failed");
       }
     } catch (error) {
-      const status = error.response?.status;
-      const serverMsg = error.response?.data?.message;
-      if (status === 401) {
-        // Try to infer whether email or password is wrong
-        try {
-          const userResponse = await axios.get(
-            `${backendUrl}/api/user/alldata`,
-            {
-              withCredentials: true,
-            }
-          );
-          const exists = userResponse.data.users.some((u) => u.email === email);
-          if (!exists) {
-            setErrors((prev) => ({
-              ...prev,
-              email: serverMsg || "Email not found",
-            }));
-          } else {
-            setErrors((prev) => ({
-              ...prev,
-              password: serverMsg || "Incorrect password",
-            }));
-          }
-          setSubmitError("");
-        } catch {
-          setSubmitError(serverMsg || "Incorrect email or password");
-        }
-      } else {
-        const msg = serverMsg || error.message || "Something went wrong";
-        setSubmitError(msg);
-      }
+      setSubmitError(error.response?.data?.message || "Signup failed");
     } finally {
-      setLoading(false); // ✅ re-enable button when done
+      setLoading(false);
     }
-  };
+
+    return; // end signup block
+  }
+
+  // --- LOGIN FLOW ---
+  setLoading(true);
+  axios.defaults.withCredentials = true;
+
+  try {
+    const { data } = await axios.post(`${backendUrl}/api/auth/login`, {
+      email,
+      password,
+    });
+
+    if (!data.success) {
+      setSubmitError(data.message || "Invalid email or password");
+      setLoading(false);
+      return;
+    }
+
+    const user = data.user;
+
+    // Handle disabled users (admins only)
+    if (user.disabled) {
+      Swal.fire({
+        icon: "error",
+        title: "Account Disabled",
+        text: "Your account has been disabled. Please contact support.",
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Handle unverified users
+    if (!user.isVerified && !user.isAdmin) {
+      await axios.post(`${backendUrl}/api/auth/send-verify-otp`, { email });
+      setSubmitError("Please verify your email first.");
+      navigate("/email-verify");
+      setLoading(false);
+      return;
+    }
+
+    // ✅ Remember Me
+    if (rememberMe) {
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem("userPassword", password);
+    } else {
+      localStorage.removeItem("userEmail");
+      localStorage.removeItem("userPassword");
+    }
+
+    // ✅ Update global states
+    setIsAdmin(user.isAdmin);
+    setIsLoggedin(true);
+    await getUserData(user.isAdmin);
+
+    toast.success(data.message || "Login successful");
+
+    // ✅ Redirect by role
+    let to = "/home"; // default user route
+    if (user.isAdmin) {
+      if (user.userType === "superadmin") to = "/superadmin/dashboard";
+      else if (user.userType === "admin") to = "/admin/dashboard";
+    }
+
+    navigate(`/splash?to=${encodeURIComponent(to)}`, {
+      replace: true,
+      state: { to },
+    });
+  } catch (error) {
+    const msg =
+      error.response?.data?.message ||
+      error.message ||
+      "Something went wrong";
+    setSubmitError(msg);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const [showPreSplash, setShowPreSplash] = useState(true);
 

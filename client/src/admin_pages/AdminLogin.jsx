@@ -475,4 +475,3 @@ const AdminLogin = () => {
 };
 
 export default AdminLogin;
-p

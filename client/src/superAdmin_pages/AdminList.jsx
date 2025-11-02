@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "../admin_components/Sidebar";
+import Sidebar from "../superAdmin_components/Sidebar";
 import { assets } from "../assets/assets";
 import { AppContent } from "../context/AppContext";
 import axios from "axios";
