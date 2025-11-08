@@ -14,6 +14,9 @@ const {
 const register = async (req, res) => {
   const {
     fullName,
+    firstName,
+    middleName,
+    lastName,
     email,
     password,
     contactNumber,
@@ -40,6 +43,9 @@ const register = async (req, res) => {
 
     const user = new userModel({
       fullName,
+      firstName,
+      middleName,
+      lastName,
       email,
       password: hashedPassword,
       contactNumber,
