@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { AppContent } from "../context/AppContext";
 import Navbar from "../components/Navbar";
-import "./RegisteredEventDetail.css";
 import html2pdf from "html2pdf.js";
 import Swal from "sweetalert2";
 import html2canvas from "html2canvas";
@@ -86,61 +85,32 @@ const Certificate = ({ templateUrl, userName }) => {
   };
 
   return (
-    <div className="certificate-container">
+    <div className="mt-8 flex flex-col items-center p-8 bg-slate-50 rounded-2xl shadow-lg">
       {/* Hidden overlay for rendering */}
       <div
         ref={certRef}
-        style={{
-          position: "absolute",
-          left: "-9999px",
-          top: 0,
-          width: 1056,
-          height: 816,
-          pointerEvents: "none",
-        }}
+        className="absolute -left-full top-0 w-[1056px] h-[816px] pointer-events-none"
       >
         <div
+          className="relative w-full h-full bg-white rounded-2xl overflow-hidden"
           style={{
-            position: "relative",
-            width: 1056,
-            height: 816,
             background: pngUrl
               ? `url('${pngUrl}') center center / cover no-repeat`
               : "#fff",
-            borderRadius: "1rem",
-            overflow: "hidden",
           }}
         >
           <img
             src={pngUrl}
             alt="Certificate"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              borderRadius: "1rem",
-              visibility: "hidden",
-              position: "absolute",
-              left: 0,
-              top: 0,
-            }}
+            className="w-full h-full object-cover rounded-2xl invisible absolute left-0 top-0"
             crossOrigin="anonymous"
           />
           {/* User name overlay */}
           <div
+            className="absolute top-[34%] left-0 w-full text-center text-5xl font-bold text-black pointer-events-none select-none"
             style={{
-              position: "absolute",
-              top: "34%", // Adjust as needed for your template
-              left: 0,
-              width: "100%",
-              textAlign: "center",
-              fontSize: "3rem",
-              fontWeight: "bold",
-              color: "#000000",
               fontFamily: "Times New Roman",
               textShadow: "0 2px 8px #fff, 0 2px 8px #fff",
-              pointerEvents: "none",
-              userSelect: "none",
             }}
           >
             {userName}
@@ -148,29 +118,21 @@ const Certificate = ({ templateUrl, userName }) => {
         </div>
       </div>
       {/* Display the final PNG */}
-      <div className="certificate flex justify-center items-center">
+      <div className="w-full max-w-4xl mx-auto bg-white rounded-2xl overflow-hidden shadow-lg">
         {finalPng ? (
           <img
             src={finalPng}
             alt="Certificate Preview"
-            style={{
-              width: "100%",
-              maxWidth: 1056,
-              maxHeight: 816,
-              borderRadius: "1rem",
-              boxShadow: "0 2px 8px #0002",
-              background: "#fff",
-              objectFit: "contain",
-            }}
+            className="w-full max-w-full max-h-[816px] rounded-2xl shadow-md bg-white object-contain"
           />
         ) : (
-          <div>Loading certificate preview...</div>
+          <div className="text-center py-8 text-gray-600">Loading certificate preview...</div>
         )}
       </div>
-      <div className="flex gap-4 mt-4 justify-center">
+      <div className="flex flex-col sm:flex-row gap-4 mt-6 justify-center">
         <button
           onClick={handleDownloadPDF}
-          className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors inline-block text-center"
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-lg font-semibold"
         >
           Download as PDF
         </button>
@@ -189,6 +151,8 @@ const RegisteredEventDetail = () => {
   const [showCertificate, setShowCertificate] = useState(false);
   const [certificate, setCertificate] = useState(null);
   const [certificateTemplate, setCertificateTemplate] = useState(null);
+  const [isGeneratingCertificate, setIsGeneratingCertificate] = useState(false);
+  const [waitingForFeedback, setWaitingForFeedback] = useState(false);
   const { userData, backendUrl } = useContext(AppContent);
   const navigate = useNavigate();
   const certificateRef = useRef(null);
@@ -276,29 +240,41 @@ const RegisteredEventDetail = () => {
         if (eventDate < currentDate) {
           setIsPastEvent(true);
 
-          // Fetch feedback form and submission status
-          const feedbackRes = await axios.get(
-            `${backendUrl}/api/feedback/getFeedback/${fetchedEvent._id}`
-          );
-          setFeedbackForm(feedbackRes.data || null);
-          // Check if user has submitted feedback
-          const submissionRes = await axios.get(
-            `${backendUrl}/api/feedback/checkSubmission/${fetchedEvent._id}`
-          );
-          setHasSubmittedFeedback(submissionRes.data.hasSubmitted || false);
+          // Try to fetch feedback form and submission status
+          try {
+            const feedbackRes = await axios.get(
+              `${backendUrl}/api/feedback/getFeedback/${fetchedEvent._id}`
+            );
+            setFeedbackForm(feedbackRes.data || null);
+          } catch (err) {
+            // Feedback form not found - this is normal for some events
+            console.log("No feedback form available for this event:", err.response?.data?.message || err.message);
+            setFeedbackForm(null);
+          }
 
-          // If feedback is submitted, fetch the certificate template
-          if (submissionRes.data.hasSubmitted) {
-            try {
-              const templateRes = await axios.get(
-                `${backendUrl}/api/certificate/template/${fetchedEvent._id}`
-              );
-              if (templateRes.data.success) {
-                setCertificateTemplate(templateRes.data.template);
+          try {
+            // Check if user has submitted feedback
+            const submissionRes = await axios.get(
+              `${backendUrl}/api/feedback/checkSubmission/${fetchedEvent._id}`
+            );
+            setHasSubmittedFeedback(submissionRes.data.hasSubmitted || false);
+
+            // If feedback is submitted, fetch the certificate template
+            if (submissionRes.data.hasSubmitted) {
+              try {
+                const templateRes = await axios.get(
+                  `${backendUrl}/api/certificate/template/${fetchedEvent._id}`
+                );
+                if (templateRes.data.success) {
+                  setCertificateTemplate(templateRes.data.template);
+                }
+              } catch (err) {
+                console.error("Error fetching certificate template:", err);
               }
-            } catch (err) {
-              console.error("Error fetching certificate template:", err);
             }
+          } catch (err) {
+            console.log("Error checking feedback submission status:", err.response?.data?.message || err.message);
+            setHasSubmittedFeedback(false);
           }
         }
 
@@ -316,6 +292,8 @@ const RegisteredEventDetail = () => {
 
   const handleFeedbackSubmit = async (e) => {
     e.preventDefault();
+    setIsGeneratingCertificate(true);
+    
     const formData = new FormData(e.target);
     const answers = [];
 
@@ -445,6 +423,7 @@ const RegisteredEventDetail = () => {
         }
 
         setHasSubmittedFeedback(true);
+        setIsGeneratingCertificate(false);
         Swal.fire({
           icon: "success",
           title: "Success!",
@@ -455,6 +434,7 @@ const RegisteredEventDetail = () => {
       }
     } catch (err) {
       console.error("Failed to submit feedback:", err);
+      setIsGeneratingCertificate(false);
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -464,54 +444,109 @@ const RegisteredEventDetail = () => {
     }
   };
 
-  if (loading || !event) return <div className="loading">Loading...</div>;
+  if (loading || !event) return (
+    <div className="bg-gradient-to-br from-blue-50 to-white min-h-screen flex justify-center items-center">
+      <div className="text-xl text-gray-600 animate-pulse">Loading...</div>
+    </div>
+  );
 
   return (
-    <>
+    <div className="bg-gradient-to-br from-blue-50 to-white min-h-screen">
       <Navbar />
-      <div className="event-detail-container">
-        <h1 className="event-title">{event.title}</h1>
-        <p className="event-date-time">
-          {new Date(event.date).toLocaleDateString()} at {event.time}
-        </p>
-        <p className="event-location">{event.location}</p>
-        <p className="event-about">{event.about}</p>
-        <div className="event-price">₱{event.price}</div>
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
+        <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
+          <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
+            {/* Event Header */}
+            <div className="mb-8">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold mb-4 text-gray-800 leading-tight">
+                {event.title}
+              </h1>
+              
+              {/* Event Meta Info */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-sm sm:text-base font-medium">
+                    {new Date(event.date).toLocaleDateString()} at {event.time}
+                  </span>
+                </div>
+                
+                {event.eventType?.toLowerCase() !== "webinar" && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span className="text-sm sm:text-base font-medium">{event.location}</span>
+                  </div>
+                )}
+              </div>
 
-        {isPastEvent ? (
-          <div className="past-event-message">
-            {!hasSubmittedFeedback ? (
-              <>
-                <p className="past-event-heading">
-                  This event has already passed. Please provide your feedback
-                  below to receive your certificate.
-                </p>
-                {feedbackForm ? (
-                  <form
-                    className="feedback-form"
-                    onSubmit={handleFeedbackSubmit}
-                  >
-                    {feedbackForm.questions.map((q, index) => (
-                      <div key={index} className="feedback-question mb-4">
-                        <label className="block font-semibold mb-2">
-                          {q.text}
-                        </label>
+              {/* Event Description */}
+              <div className="bg-gray-50 rounded-xl p-4 sm:p-6 mb-6">
+                <p className="text-sm sm:text-base text-gray-700 leading-relaxed">{event.about}</p>
+              </div>
+
+              {/* Price */}
+              <div className="flex items-center justify-between bg-blue-50 rounded-xl p-4 sm:p-6">
+                <span className="text-lg sm:text-xl font-semibold text-gray-700">Event Price:</span>
+                <span className="text-2xl sm:text-3xl font-bold text-blue-600">₱{event.price}</span>
+              </div>
+            </div>
+
+            {isPastEvent ? (
+              <div className="mt-8">
+                {!hasSubmittedFeedback ? (
+                  <>
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-6 mb-8">
+                      <div className="flex items-center gap-3 mb-3">
+                        <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                        <h2 className="text-lg sm:text-xl font-bold text-amber-800">Event Completed</h2>
+                      </div>
+                      <p className="text-sm sm:text-base text-amber-700">
+                        This event has already passed. Please provide your feedback below to receive your certificate.
+                      </p>
+                    </div>
+                    
+                    {feedbackForm ? (
+                      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 sm:px-6 py-4 border-b border-gray-200">
+                          <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Feedback Form</h3>
+                          <p className="text-sm text-gray-600 mt-1">Help us improve by sharing your experience</p>
+                        </div>
+                        <form
+                          className="p-4 sm:p-6 space-y-6"
+                          onSubmit={handleFeedbackSubmit}
+                        >
+                          {feedbackForm.questions.map((q, index) => (
+                            <div key={index} className="bg-gray-50 border border-gray-200 rounded-xl p-4 sm:p-6">
+                              <label className="block text-sm sm:text-base font-semibold mb-4 text-gray-800">
+                                <span className="inline-flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 text-xs font-bold rounded-full mr-3">
+                                  {index + 1}
+                                </span>
+                                {q.text}
+                              </label>
 
                         {/* Choice - Radio Buttons */}
                         {q.type === "Choice" && q.options?.length > 0 && (
-                          <div>
+                          <div className="space-y-2">
                             {q.options.map((option, i) => (
                               <label
                                 key={i}
-                                className="flex items-center gap-2 mb-1"
+                                className="flex items-center gap-3 cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors"
                               >
                                 <input
                                   type="radio"
                                   name={q.text}
                                   value={option}
+                                  className="w-4 h-4 text-blue-600"
                                   required
-                                />{" "}
-                                {option}
+                                />
+                                <span className="text-sm sm:text-base text-gray-700">{option}</span>
                               </label>
                             ))}
                           </div>
@@ -521,27 +556,29 @@ const RegisteredEventDetail = () => {
                         {q.type === "Text" && (
                           <textarea
                             name={q.text}
-                            className="border p-2 w-full"
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                             placeholder="Your answer..."
+                            rows={4}
                             required
                           />
                         )}
 
                         {/* Rating (1–5) */}
                         {q.type === "Rating" && (
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-3 justify-center sm:justify-start">
                             {[1, 2, 3, 4, 5].map((n) => (
                               <label
                                 key={n}
-                                className="flex items-center gap-1"
+                                className="flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100 p-3 rounded-lg border-2 border-gray-300 hover:border-blue-500 transition-all duration-200 min-w-[60px]"
                               >
                                 <input
                                   type="radio"
                                   name={q.text}
                                   value={n}
+                                  className="w-4 h-4 text-blue-600 hidden"
                                   required
-                                />{" "}
-                                {n}
+                                />
+                                <span className="text-lg font-semibold text-gray-700">{n}</span>
                               </label>
                             ))}
                           </div>
@@ -551,62 +588,167 @@ const RegisteredEventDetail = () => {
                         {q.type === "Likert" &&
                           q.statements?.length > 0 &&
                           q.options?.length > 0 && (
-                            <table className="w-full mb-4 border">
-                              <thead>
-                                <tr>
-                                  <th></th>
-                                  {q.options.map((opt, i) => (
-                                    <th key={i} className="text-center px-2">
-                                      {opt}
-                                    </th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
+                            <div className="space-y-4">
+                              {/* Mobile/Tablet View - Card Layout */}
+                              <div className="block sm:hidden space-y-3">
                                 {q.statements.map((stmt, sIdx) => (
-                                  <tr key={sIdx}>
-                                    <td className="px-2">{stmt}</td>
-                                    {q.options.map((opt, oIdx) => (
-                                      <td key={oIdx} className="text-center">
-                                        <input
-                                          type="radio"
-                                          name={`${q.text}-${sIdx}`}
-                                          value={opt}
-                                          required
-                                        />
-                                      </td>
-                                    ))}
-                                  </tr>
+                                  <div key={sIdx} className="bg-white border border-gray-200 rounded-lg p-4">
+                                    <p className="text-sm font-medium text-gray-800 mb-3">{stmt}</p>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                      {q.options.map((opt, oIdx) => (
+                                        <label
+                                          key={oIdx}
+                                          className="flex items-center justify-center gap-2 p-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                                        >
+                                          <input
+                                            type="radio"
+                                            name={`${q.text}-${sIdx}`}
+                                            value={opt}
+                                            className="w-4 h-4 text-blue-600"
+                                            required
+                                          />
+                                          <span className="text-xs font-medium text-gray-700">{opt}</span>
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
                                 ))}
-                              </tbody>
-                            </table>
+                              </div>
+
+                              {/* Tablet View - Hybrid Layout */}
+                              <div className="hidden sm:block lg:hidden">
+                                <div className="space-y-3">
+                                  {q.statements.map((stmt, sIdx) => (
+                                    <div key={sIdx} className="bg-white border border-gray-200 rounded-lg p-4">
+                                      <p className="text-sm font-medium text-gray-800 mb-3">{stmt}</p>
+                                      <div className="flex flex-wrap gap-2 justify-center">
+                                        {q.options.map((opt, oIdx) => (
+                                          <label
+                                            key={oIdx}
+                                            className="flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-colors min-w-[80px]"
+                                          >
+                                            <input
+                                              type="radio"
+                                              name={`${q.text}-${sIdx}`}
+                                              value={opt}
+                                              className="w-4 h-4 text-blue-600"
+                                              required
+                                            />
+                                            <span className="text-xs font-medium text-gray-700">{opt}</span>
+                                          </label>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Desktop View - Table Layout */}
+                              <div className="hidden lg:block overflow-x-auto">
+                                <div className="min-w-full">
+                                  <table className="w-full border border-gray-300 rounded-lg overflow-hidden">
+                                    <thead className="bg-gray-100">
+                                      <tr>
+                                        <th className="p-3 text-left font-semibold text-gray-800 min-w-[200px]">Statement</th>
+                                        {q.options.map((opt, i) => (
+                                          <th key={i} className="p-3 text-center font-semibold text-gray-800 border-l border-gray-300 whitespace-nowrap">
+                                            {opt}
+                                          </th>
+                                        ))}
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {q.statements.map((stmt, sIdx) => (
+                                        <tr key={sIdx} className="border-t border-gray-300 hover:bg-gray-50">
+                                          <td className="p-3 text-sm text-gray-700 align-top">{stmt}</td>
+                                          {q.options.map((opt, oIdx) => (
+                                            <td key={oIdx} className="p-3 text-center border-l border-gray-300">
+                                              <label className="cursor-pointer">
+                                                <input
+                                                  type="radio"
+                                                  name={`${q.text}-${sIdx}`}
+                                                  value={opt}
+                                                  className="w-4 h-4 text-blue-600"
+                                                  required
+                                                />
+                                              </label>
+                                            </td>
+                                          ))}
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            </div>
                           )}
                       </div>
                     ))}
 
-                    <button
-                      type="submit"
-                      className="bg-blue-600 text-white px-4 py-2 rounded mt-4"
-                    >
-                      Submit Feedback
-                    </button>
-                  </form>
-                ) : (
-                  <p>No feedback form available for this event.</p>
-                )}
+                          <div className="flex justify-center pt-6 border-t border-gray-200">
+                            <button
+                              type="submit"
+                              disabled={isGeneratingCertificate}
+                              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl font-semibold transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-xl flex items-center justify-center gap-2"
+                            >
+                              {isGeneratingCertificate ? (
+                                <>
+                                  <svg className="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                  </svg>
+                                  Generating Certificate...
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                  </svg>
+                                  Submit Feedback
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    ) : (
+                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-8 text-center">
+                        <div className="animate-pulse">
+                          <svg className="w-16 h-16 text-blue-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <h3 className="text-lg font-semibold text-blue-800 mb-3">Feedback Form Coming Soon</h3>
+                        <p className="text-blue-700 mb-4">
+                          We're preparing a feedback form for this event. Please check back later or contact the event organizers.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                          <div className="flex items-center gap-2 text-sm text-blue-600">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                            <span>Waiting for feedback form</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
               </>
-            ) : (
-              <>
-                <p className="past-event-heading">
-                  Thank you for your feedback! Your certificate is being
-                  generated.
-                </p>
+              ) : (
+                <>
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-4 sm:p-6 mb-8">
+                    <div className="flex items-center gap-3 mb-3">
+                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <h2 className="text-lg sm:text-xl font-bold text-green-800">Feedback Submitted Successfully!</h2>
+                    </div>
+                    <p className="text-sm sm:text-base text-green-700">
+                      Thank you for your feedback! Your certificate is ready for download.
+                    </p>
+                  </div>
                 {certificateTemplate &&
                 certificateTemplate.templates &&
                 certificateTemplate.templates.length > 0 ? (
-                  <div className="flex flex-row justify-center items-start w-full">
+                  <div className="flex flex-col lg:flex-row justify-center items-start w-full gap-6">
                     {/* Main Certificate Preview */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="flex-1 min-w-0 w-full">
                       <Certificate
                         templateUrl={
                           (activeTemplateId
@@ -618,11 +760,8 @@ const RegisteredEventDetail = () => {
                         userName={userData?.fullName || "Your Name"}
                       />
                     </div>
-                    {/* Template Thumbnails on the Side */}
-                    <div
-                      className="flex flex-col items-center ml-8"
-                      style={{ minWidth: 140 }}
-                    >
+                    {/* Template Thumbnails */}
+                    <div className="flex flex-row lg:flex-col items-center lg:items-center gap-4 lg:gap-0 lg:ml-8 min-w-[140px]">
                       {certificateTemplate.templates.map((tpl) => {
                         // Show a PNG preview if available, else fallback to PDF icon
                         let pngUrl = tpl.url.replace(/\.pdf$/, ".png");
@@ -630,26 +769,22 @@ const RegisteredEventDetail = () => {
                         return (
                           <div
                             key={tpl.templateId}
-                            className={`flex flex-col items-center bg-white p-2 mb-4 rounded shadow cursor-pointer ${
+                            className={`flex flex-col items-center bg-white p-2 mb-4 rounded-lg shadow-md cursor-pointer transition-all duration-200 hover:shadow-lg ${
                               activeTemplateId === tpl.templateId
-                                ? "ring-2 ring-blue-500"
-                                : ""
+                                ? "ring-2 ring-blue-500 bg-blue-50"
+                                : "hover:bg-gray-50"
                             }`}
                             style={{ minWidth: 100 }}
                             onClick={() => setActiveTemplateId(tpl.templateId)}
                             title={`Preview ${tpl.templateId}`}
                           >
-                            <div className="mb-1 text-xs font-semibold">
+                            <div className="mb-2 text-xs font-semibold text-gray-700">
                               {tpl.templateId}
                             </div>
                             <img
                               src={pngUrl}
                               alt={`Preview ${tpl.templateId}`}
-                              style={{
-                                maxWidth: 150,
-                                border: "1px solid #ccc",
-                                borderRadius: 6,
-                              }}
+                              className="max-w-[120px] border border-gray-300 rounded"
                               onError={(e) => {
                                 e.target.onerror = null;
                                 e.target.src = "/pdf-icon.png";
@@ -660,7 +795,7 @@ const RegisteredEventDetail = () => {
                       })}
                       {activeTemplateId && (
                         <button
-                          className="mt-2 px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 text-sm"
+                          className="mt-2 px-3 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm font-medium transition-colors duration-200"
                           onClick={() => setActiveTemplateId(null)}
                         >
                           Back to Default View
@@ -669,41 +804,142 @@ const RegisteredEventDetail = () => {
                     </div>
                   </div>
                 ) : (
-                  <p>Loading certificate template...</p>
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-8 text-center">
+                    <div className="animate-pulse">
+                      <svg className="w-16 h-16 text-purple-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-purple-800 mb-3">Generating Your Certificate</h3>
+                    <p className="text-purple-700 mb-4">
+                      Thank you for your feedback! We're currently generating your personalized certificate. This may take a few moments.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                      <div className="flex items-center gap-2 text-sm text-purple-600">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                        <span>Processing certificate...</span>
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <div className="w-full bg-purple-200 rounded-full h-2">
+                        <div className="bg-purple-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </>
             )}
           </div>
-        ) : (
-          <div className="event-registration-info text-center mt-4">
-            <p className="registered-message text-lg font-medium mb-2">
-              You are registered for this event.
-            </p>
-            {event.ticketUrl ? (
-              <div className="flex justify-center items-center mt-4">
-                <img
-                  src={event.ticketUrl}
-                  alt="Your Ticket / QR Code"
-                  className="w-48 h-48 object-contain shadow-md rounded-lg"
-                />
-              </div>
             ) : (
-              <div className="flex flex-col items-center mt-4">
-                <p className="text-red-600 font-semibold mb-2">
-                  Ticket request was rejected or not generated.
-                </p>
-                <button
-                  onClick={handleResendTicket}
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                  Resend Ticket Request
-                </button>
+              <div className="mt-8">
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4 sm:p-6 mb-8 text-center">
+                  <div className="flex items-center justify-center gap-3 mb-3">
+                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h2 className="text-lg sm:text-xl font-bold text-green-800">Registration Confirmed</h2>
+                  </div>
+                  <p className="text-sm sm:text-base text-green-700">
+                    You are successfully registered for this event.
+                  </p>
+                </div>
+                {/* 🎯 Webinar vs In-person display */}
+                {event.eventType?.toLowerCase() === "webinar" ? (
+                  <div className="flex flex-col items-center text-center">
+                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 sm:p-8 max-w-md w-full">
+                      <div className="mb-6">
+                        <svg className="w-16 h-16 text-blue-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-2">Webinar Access</h3>
+                        <p className="text-sm text-gray-600">Click below to join the webinar</p>
+                      </div>
+                      <a
+                        href={event.webinarLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-xl flex items-center justify-center gap-2"
+                        onClick={async () => {
+                          try {
+                            await axios.post(
+                              `${backendUrl}/api/events/markAttendance/${event._id}`,
+                              { userId: userData._id },
+                              {
+                                headers: {
+                                  Authorization: `Bearer ${localStorage.getItem(
+                                    "token"
+                                  )}`,
+                                },
+                              }
+                            );
+                            Swal.fire({
+                              icon: "success",
+                              title: "Attendance Recorded",
+                              text: "You have joined the webinar!",
+                              timer: 2000,
+                              showConfirmButton: false,
+                            });
+                          } catch (err) {
+                            console.error("Error marking attendance:", err);
+                          }
+                        }}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Join Webinar
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center">
+                    {event.ticketUrl ? (
+                      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 sm:p-8 text-center max-w-md w-full">
+                        <div className="mb-6">
+                          <svg className="w-16 h-16 text-green-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                          </svg>
+                          <h3 className="text-lg font-semibold text-gray-800 mb-2">Your Event Ticket</h3>
+                          <p className="text-sm text-gray-600 mb-4">Present this QR code at the event entrance</p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <img
+                            src={event.ticketUrl}
+                            alt="Your Ticket / QR Code"
+                            className="w-48 h-48 sm:w-56 sm:h-56 mx-auto object-contain"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-white border border-red-200 rounded-xl shadow-sm p-6 sm:p-8 text-center max-w-md w-full">
+                        <div className="mb-6">
+                          <svg className="w-16 h-16 text-red-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                          </svg>
+                          <h3 className="text-lg font-semibold text-red-800 mb-2">Ticket Not Available</h3>
+                          <p className="text-sm text-red-600 mb-4">
+                            Ticket request was rejected or not generated.
+                          </p>
+                        </div>
+                        <button
+                          onClick={handleResendTicket}
+                          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-xl flex items-center justify-center gap-2"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                          </svg>
+                          Resend Ticket Request
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 
