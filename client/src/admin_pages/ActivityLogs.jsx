@@ -19,7 +19,7 @@ const ActivityLogs = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [total, setTotal] = useState(0);
-  const logsPerPage = 20;
+  const logsPerPage = 10;
 
   useEffect(() => {
     fetchLogs();

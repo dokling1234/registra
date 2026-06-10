@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
 import Sidebar from "../admin_components/Sidebar";
 import html2pdf from "html2pdf.js";
 import axios from "axios";
@@ -6,7 +6,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { AppContent } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import { Bar, Pie } from "react-chartjs-2";
-import { Menu } from "lucide-react";
+import { Menu, X, AlertCircle } from "lucide-react";
 
 
 import {
@@ -45,12 +45,93 @@ const Report = () => {
   const [generatedReport, setGeneratedReport] = useState(null);
   const [feedbackData, setFeedbackData] = useState(null);
   const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
+  const [feedbackError, setFeedbackError] = useState(null);
   const [feedbackAnalytics, setFeedbackAnalytics] = useState(null);
   const [isAnalyzingFeedback, setIsAnalyzingFeedback] = useState(false);
   const [analyticsError, setAnalyticsError] = useState(null);
   const [showEventReport, setShowEventReport] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [reportStatus, setReportStatus] = useState({ type: "", message: "" });
+  const generatedReportRef = useRef(null);
+  const analyticsRef = useRef(null);
+  const [popupState, setPopupState] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    variant: "error",
+  });
+
+  const getFriendlyFeedbackError = (errorText) => {
+    const message = String(errorText || "").toLowerCase();
+    if (message.includes("no feedback form")) {
+      return "This event has no feedback yet.";
+    }
+    if (message.includes("network error")) {
+      return "We could not connect right now. Please check your internet and try again.";
+    }
+    if (message.includes("timeout")) {
+      return "This is taking too long. Please try again.";
+    }
+    return "We could not load feedback right now. Please try again later.";
+  };
+
+  const getFriendlyReportError = (errorText) => {
+    const message = String(errorText || "").toLowerCase();
+    if (message.includes("failed to fetch") || message.includes("network")) {
+      return "We could not connect right now. Please check your internet and try again.";
+    }
+    if (message.includes("timeout")) {
+      return "This is taking too long. Please try again.";
+    }
+    if (message.includes("unauthorized") || message.includes("forbidden")) {
+      return "You are not allowed to do this action.";
+    }
+    return "We could not complete this right now. Please try again.";
+  };
+
+  const parseResponseError = async (response) => {
+    try {
+      const data = await response.json();
+      return data?.message || data?.error || `Request failed (${response.status})`;
+    } catch (_) {
+      return `Request failed (${response.status})`;
+    }
+  };
+
+  const scrollToSection = (ref) => {
+    if (!ref?.current) return;
+    ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const showPopup = (title, message, variant = "error") => {
+    setPopupState({ isOpen: true, title, message, variant });
+  };
+
+  const closePopup = () => {
+    setPopupState((prev) => ({ ...prev, isOpen: false }));
+  };
+
+  useEffect(() => {
+    if (!popupState.isOpen) return;
+    const timer = setTimeout(() => {
+      closePopup();
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, [popupState.isOpen]);
+
+  useEffect(() => {
+    if (feedbackError) {
+      showPopup("We couldn't load feedback", feedbackError, "error");
+    }
+  }, [feedbackError]);
+
+  useEffect(() => {
+    if (analyticsError) {
+      showPopup("We couldn't analyze feedback", analyticsError, "error");
+    }
+  }, [analyticsError]);
 
   useEffect(() => {
         if (!isAdmin) {
@@ -97,18 +178,33 @@ const Report = () => {
   }, [events, selectedType, startDate, endDate]);
 
   const fetchFeedbackData = async (eventId) => {
-    if (!eventId) return;
-    
+    if (!eventId) return false;
+
     setIsLoadingFeedback(true);
+    setFeedbackError(null);
     try {
       const response = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/feedback/getEventFeedbackData/${eventId}`,
         { withCredentials: false }
       );
-      setFeedbackData(response.data);
+
+      if (response.data && response.data.success === false) {
+        setFeedbackError(getFriendlyFeedbackError(response.data.message || response.data.error));
+        setFeedbackData(null);
+        return false;
+      } else {
+        setFeedbackData(response.data);
+        return true;
+      }
     } catch (error) {
       console.error("Error fetching feedback data:", error);
       setFeedbackData(null);
+      setFeedbackError(
+        getFriendlyFeedbackError(
+          error.response?.data?.message || error.response?.data?.error || error.message
+        )
+      );
+      return false;
     } finally {
       setIsLoadingFeedback(false);
     }
@@ -136,7 +232,9 @@ const Report = () => {
       }
     } catch (error) {
       console.error("Error analyzing feedback data:", error);
-      setAnalyticsError(error.response?.data?.error || "Failed to analyze feedback data");
+      setAnalyticsError(
+        error.response?.data?.message || error.response?.data?.error || "Failed to analyze feedback data"
+      );
     } finally {
       setIsAnalyzingFeedback(false);
     }
@@ -165,11 +263,14 @@ const Report = () => {
     setGeneratedReport(null);
     setFeedbackData(null);
     setFeedbackAnalytics(null);
+    setFeedbackError(null);
     setAnalyticsError(null);
     setIsAnalyzingFeedback(false);
     setIsLoadingFeedback(false);
     setEventSummary("");
     setShowEventReport(false);
+    setIsGeneratingReport(false);
+    setReportStatus({ type: "", message: "" });
   }, [selectedEventId]);
 
   // Process feedback data for charts - moved outside component for reuse
@@ -355,10 +456,13 @@ const Report = () => {
 
   const handleDownloadServerReport = async (eventId, title) => {
     try {
+      setReportStatus({ type: "", message: "" });
       setIsDownloading(true);
       const url = `${import.meta.env.VITE_BACKEND_URL}/api/admin/events/${eventId}/report`;
       const response = await fetch(url, { credentials: "include" });
-      if (!response.ok) throw new Error("Failed to download");
+      if (!response.ok) {
+        throw new Error(await parseResponseError(response));
+      }
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -368,11 +472,59 @@ const Report = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(blobUrl);
+      setReportStatus({ type: "success", message: "Your PDF report is ready." });
     } catch (e) {
       console.error(e);
+      const downloadError = getFriendlyReportError(e?.message);
+      setReportStatus({
+        type: "error",
+        message: downloadError,
+      });
+      showPopup("Download did not work", downloadError, "error");
     } finally {
       setIsDownloading(false);
     }
+  };
+
+  const handleGenerateReport = async () => {
+    if (!selectedEvent) return;
+
+    setReportStatus({ type: "", message: "" });
+    setIsGeneratingReport(true);
+
+    const feedbackLoaded = await fetchFeedbackData(selectedEvent._id);
+    if (feedbackLoaded) {
+      setGeneratedReport({
+        ...selectedEvent,
+        eventSummary,
+      });
+      setShowEventReport(true);
+      setReportStatus({
+        type: "success",
+        message: "Your report is ready. You can view it below.",
+      });
+      setTimeout(() => scrollToSection(generatedReportRef), 120);
+    } else {
+      setGeneratedReport(null);
+      setShowEventReport(false);
+      setReportStatus({
+        type: "error",
+        message: "Sorry, we can't make a report yet because this event has no feedback.",
+      });
+      showPopup(
+        "Report not created",
+        "This event has no feedback yet, so the report could not be created.",
+        "error"
+      );
+    }
+    setIsGeneratingReport(false);
+  };
+
+  const handleRunAnalytics = async () => {
+    if (!selectedEventId) return;
+    setTimeout(() => scrollToSection(analyticsRef), 100);
+    await analyzeFeedbackData(selectedEventId, selectedEvent?.title);
+    setTimeout(() => scrollToSection(analyticsRef), 120);
   };
 
   const AttendeePieChart = ({ registrations }) => {
@@ -504,33 +656,35 @@ const Report = () => {
           if (!questionData) return null;
 
           return (
-            <div key={index} className="mb-8 p-6 bg-white rounded-lg shadow relative">
-              <h4 className="text-lg font-semibold mb-4 pr-60">{question.text || `Question ${index + 1}`}</h4>
-              <div className="absolute top-4 right-4 flex items-center gap-2">
-                {questionData.type !== 'text' && (
+            <div key={index} className="mb-8 p-6 bg-white rounded-lg shadow">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <h4 className="text-lg font-semibold mb-0">{question.text || `Question ${index + 1}`}</h4>
+                <div className="flex flex-wrap items-center gap-2">
+                  {questionData.type !== 'text' && (
+                    <button
+                      className="text-xs px-3 py-1 border border-gray-300 rounded hover:bg-gray-50"
+                      onClick={() => setOpenGraph((s) => ({ ...s, [index]: s[index] === false ? true : false }))}
+                    >
+                      {openGraph[index] === false ? 'Show Graph' : 'Hide Graph'}
+                    </button>
+                  )}
+                  {questionData.type === 'text' && (
+                    <button
+                      className="text-xs px-3 py-1 border border-gray-300 rounded hover:bg-gray-50"
+                      onClick={() => setOpenResponses((s) => ({ ...s, [index]: s[index] === false ? true : false }))}
+                    >
+                      {openResponses[index] === false ? 'Show Responses' : 'Hide Responses'}
+                    </button>
+                  )}
                   <button
-                    className="text-xs px-3 py-1 border border-gray-300 rounded hover:bg-gray-50"
-                    onClick={() => setOpenGraph((s) => ({ ...s, [index]: s[index] === false ? true : false }))}
+                    className={`text-xs px-3 py-1 border border-gray-300 rounded ${downloadingQ === index ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-50'}`}
+                    onClick={() => downloadQuestionPDF(index, question)}
+                    disabled={downloadingQ === index}
+                    aria-label="Download question as PDF"
                   >
-                    {openGraph[index] === false ? 'Show Graph' : 'Hide Graph'}
+                    {downloadingQ === index ? 'Preparing...' : 'Download PDF'}
                   </button>
-                )}
-                {questionData.type === 'text' && (
-                  <button
-                    className="text-xs px-3 py-1 border border-gray-300 rounded hover:bg-gray-50"
-                    onClick={() => setOpenResponses((s) => ({ ...s, [index]: s[index] === false ? true : false }))}
-                  >
-                    {openResponses[index] === false ? 'Show Responses' : 'Hide Responses'}
-                  </button>
-                )}
-                <button
-                  className={`text-xs px-3 py-1 border border-gray-300 rounded ${downloadingQ === index ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-50'}`}
-                  onClick={() => downloadQuestionPDF(index, question)}
-                  disabled={downloadingQ === index}
-                  aria-label="Download question as PDF"
-                >
-                  {downloadingQ === index ? 'Preparing...' : 'Download PDF'}
-                </button>
+                </div>
               </div>
 
               {questionData.type === "choice" && (
@@ -926,6 +1080,46 @@ const Report = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
+      {popupState.isOpen && (
+        <div className="fixed inset-0 z-[80] flex items-start justify-center px-4 pt-6 pointer-events-none">
+          <div
+            className={`pointer-events-auto w-full max-w-md rounded-xl border shadow-2xl ${
+              popupState.variant === "warning"
+                ? "border-yellow-200 bg-yellow-50"
+                : "border-red-200 bg-red-50"
+            }`}
+            role="alert"
+            aria-live="assertive"
+          >
+            <div className="flex items-start gap-3 p-4">
+              <AlertCircle
+                size={20}
+                className={popupState.variant === "warning" ? "text-yellow-700 mt-0.5" : "text-red-700 mt-0.5"}
+              />
+              <div className="flex-1">
+                <p className={`font-semibold ${popupState.variant === "warning" ? "text-yellow-900" : "text-red-900"}`}>
+                  {popupState.title}
+                </p>
+                <p className={`text-sm mt-1 ${popupState.variant === "warning" ? "text-yellow-800" : "text-red-800"}`}>
+                  {popupState.message}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closePopup}
+                className={`rounded p-1 transition ${
+                  popupState.variant === "warning"
+                    ? "text-yellow-700 hover:bg-yellow-100"
+                    : "text-red-700 hover:bg-red-100"
+                }`}
+                aria-label="Dismiss popup message"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Sidebar */}
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
@@ -1269,21 +1463,18 @@ const Report = () => {
                 </div>
               </div>
             )}
+            {selectedEvent && (
+              <div className="mb-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+                Tip: Generate the report first, then download PDF after reviewing charts and feedback.
+              </div>
+            )}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
           <button
-                className={`bg-blue-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg shadow transition w-full sm:w-auto text-xs sm:text-sm ${isLoadingFeedback ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'}`}
-            onClick={() => {
-              if (!selectedEvent) return;
-              setGeneratedReport({
-                ...selectedEvent,
-                eventSummary,
-              });
-              // Fetch feedback data when generating report
-              fetchFeedbackData(selectedEvent._id);
-            }}
-            disabled={!selectedEventId || isLoadingFeedback}
+                className={`bg-blue-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg shadow transition w-full sm:w-auto text-xs sm:text-sm ${(isLoadingFeedback || isGeneratingReport) ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+            onClick={handleGenerateReport}
+            disabled={!selectedEventId || isLoadingFeedback || isGeneratingReport}
           >
-            {isLoadingFeedback ? (
+            {(isLoadingFeedback || isGeneratingReport) ? (
                   <span className="flex items-center justify-center gap-1">
                 <span className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></span>
                 Generating...
@@ -1296,12 +1487,42 @@ const Report = () => {
                 <button
                   type="button"
                   className="px-2 sm:px-3 py-1.5 sm:py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm w-full sm:w-auto"
-                  onClick={() => { setSelectedEventId(""); setEventSummary(""); setGeneratedReport(null); setFeedbackData(null); setFeedbackAnalytics(null); }}
+                  onClick={() => { setSelectedEventId(""); setEventSummary(""); setGeneratedReport(null); setFeedbackData(null); setFeedbackAnalytics(null); setFeedbackError(null); setReportStatus({ type: "", message: "" }); }}
                 >
                   Clear
                 </button>
               )}
+              {selectedEventId && (
+                <button
+                  type="button"
+                  className="px-2 sm:px-3 py-1.5 sm:py-2 rounded border border-blue-300 text-blue-700 hover:bg-blue-50 text-xs sm:text-sm w-full sm:w-auto"
+                  onClick={handleGenerateReport}
+                  disabled={isLoadingFeedback || isGeneratingReport}
+                >
+                  Retry
+                </button>
+              )}
             </div>
+
+            {reportStatus.message && (
+              <div
+                className={`mt-3 p-3 rounded-lg border text-sm ${
+                  reportStatus.type === "error"
+                    ? "border-red-200 bg-red-50 text-red-800"
+                    : reportStatus.type === "warning"
+                    ? "border-yellow-200 bg-yellow-50 text-yellow-800"
+                    : "border-green-200 bg-green-50 text-green-800"
+                }`}
+              >
+                {reportStatus.message}
+              </div>
+            )}
+
+            {feedbackError && (
+              <div className="mt-3 p-3 rounded-lg border border-red-200 bg-red-50 text-red-800 text-sm">
+                {feedbackError}
+              </div>
+            )}
 
           {/* Loading indicator */}
           {isLoadingFeedback && (
@@ -1332,7 +1553,7 @@ const Report = () => {
           <div className="mt-3">
               <button
                 className="bg-purple-600 text-white px-6 py-2 rounded shadow hover:bg-purple-700 transition flex items-center gap-2"
-                onClick={() => analyzeFeedbackData(selectedEventId, selectedEvent?.title)}
+                onClick={handleRunAnalytics}
                 disabled={isAnalyzingFeedback || getAnalyzableTextResponsesCount(feedbackData) === 0}
               >
                 {isAnalyzingFeedback ? (
@@ -1359,11 +1580,12 @@ const Report = () => {
           )}
 
           {selectedEvent && generatedReport && (
-            <div>
-              <div className="mb-4">
+            <div ref={generatedReportRef} className="mt-6 rounded-xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm">
+              <div className="mb-4 flex items-center justify-between gap-2 border-b border-gray-100 pb-3">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-800">Generated Event Report</h3>
                 <button
                   onClick={() => setShowEventReport((v) => !v)}
-                  className="border border-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-50 transition"
+                  className="border border-gray-300 text-gray-800 px-3 py-1.5 rounded hover:bg-gray-50 transition text-sm"
                 >
                   {showEventReport ? 'Hide Event Report' : 'Show Event Report'}
                 </button>
@@ -1371,7 +1593,7 @@ const Report = () => {
               {showEventReport && (
               <div
                 id="downloadableReport"
-                className="bg-white p-8 rounded shadow-md text-black max-w-4xl mx-auto"
+                className="bg-white p-4 sm:p-8 rounded-lg border border-gray-100 text-black max-w-4xl mx-auto overflow-hidden break-words"
               >
                 <h1 className="text-2xl font-bold mb-4 text-center">
                   Event Report
@@ -1757,10 +1979,10 @@ const Report = () => {
               </div>
               )}
 
-              <div className="flex justify-center mt-6 gap-4">
+              <div className="flex flex-wrap justify-center mt-6 gap-2 sm:gap-4">
                 <button
                   onClick={handleDownload}
-                  className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
+                  className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded hover:bg-blue-700 transition text-sm sm:text-base"
                 >
                   Download PDF
                 </button>
@@ -1776,7 +1998,7 @@ const Report = () => {
                         window.location.reload();
                       }
                     }}
-                    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
+                    className="bg-green-600 text-white px-4 sm:px-6 py-2 rounded hover:bg-green-700 transition text-sm sm:text-base"
                   >
                     Print Report with Feedback
                   </button>
@@ -1792,11 +2014,13 @@ const Report = () => {
 
         {/* AI Analytics Report */}
         {selectedEvent && (
-          <FeedbackAnalytics 
-            analytics={feedbackAnalytics}
-            error={analyticsError}
-            isLoading={isAnalyzingFeedback}
-          />
+          <div ref={analyticsRef}>
+            <FeedbackAnalytics 
+              analytics={feedbackAnalytics}
+              error={analyticsError}
+              isLoading={isAnalyzingFeedback}
+            />
+          </div>
         )}
 
         {/* Graphs Modal */}

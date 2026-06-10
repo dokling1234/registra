@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
 import { assets } from "../assets/assets";
-import Sidebar from "../superAdmin_components/Sidebar";
+import Sidebar from "../superadmin_components/Sidebar";
+import { Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppContent } from "../context/AppContext";
 import axios from "axios";
@@ -44,23 +45,19 @@ const Certificate = () => {
   const [templateId, setTemplateId] = useState("gold");
   const [templatePreviews, setTemplatePreviews] = useState([]);
   const [activePreviewId, setActivePreviewId] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // For PDF generation
   const certificateRef = React.useRef();
 
+  // redirect non-admins
   useEffect(() => {
-        if (!isAdmin) {
-          // Not an admin, redirect to home or another page
-          navigate("/admin");
-        }
-      }, [isAdmin, navigate]);
+    if (!isAdmin) navigate("/admin");
+  }, [isAdmin, navigate]);
 
+  // fetch template previews
   useEffect(() => {
     const fetchTemplatePreview = async () => {
-      if (!selectedEventId) {
-        setTemplatePreviews([]);
-        return;
-      }
+      if (!selectedEventId) return setTemplatePreviews([]);
       try {
         const res = await axios.get(
           `${backendUrl}/api/certificate/template/${selectedEventId}`,
@@ -82,12 +79,12 @@ const Certificate = () => {
     fetchTemplatePreview();
   }, [selectedEventId, backendUrl]);
 
+  // fetch events
   useEffect(() => {
     const fetchAllEvents = async () => {
       try {
         const res = await axios.get(`${backendUrl}/api/events`);
         if (res.data.success) setAllEvents(res.data.events || []);
-        else setAllEvents([]);
       } catch {
         setAllEvents([]);
       }
@@ -95,19 +92,19 @@ const Certificate = () => {
     fetchAllEvents();
   }, [backendUrl]);
 
+  // select event
   useEffect(() => {
     if (selectedEventId) {
       const found = allEvents.find((e) => e._id === selectedEventId);
       setSelectedEvent(found || null);
-    } else {
-      setSelectedEvent(null);
-    }
+    } else setSelectedEvent(null);
   }, [selectedEventId, allEvents]);
 
+  // update organizers
   useEffect(() => {
     if (selectedEvent) {
       setOrganizers(
-        selectedEvent.organizers && selectedEvent.organizers.length > 0
+        selectedEvent.organizers?.length
           ? selectedEvent.organizers.map((o) => ({ ...o }))
           : [{ name: "Organizer Name", label: "Organizer", signature: null }]
       );
@@ -121,16 +118,13 @@ const Certificate = () => {
   };
 
   const handleOrganizerSignature = (idx, file) => {
-    if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      setOrganizers((orgs) =>
-        orgs.map((org, i) =>
-          i === idx
-            ? { ...org, signature: previewUrl, signatureFile: file }
-            : org
-        )
-      );
-    }
+    if (!file) return;
+    const previewUrl = URL.createObjectURL(file);
+    setOrganizers((orgs) =>
+      orgs.map((org, i) =>
+        i === idx ? { ...org, signature: previewUrl, signatureFile: file } : org
+      )
+    );
   };
 
   const addOrganizer = () => {
@@ -269,7 +263,6 @@ const Certificate = () => {
     }
     setSaving(false);
   };
-
   // Clean up temporary URLs when component unmounts
   useEffect(() => {
     return () => {
@@ -283,54 +276,73 @@ const Certificate = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <Sidebar />
-      <div className="flex flex-row flex-1 ml-64">
-        <main className="p-6 flex-1">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">Certificate</h1>
+      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 xl:ml-64 transition-all duration-300">
+        {/* Mobile Header */}
+        <div className="bg-gray-900 text-white flex items-center justify-between p-4 shadow-md xl:hidden sticky top-0 z-50">
+          <button onClick={() => setIsSidebarOpen(true)}>
+            <Menu size={24} />
+          </button>
+          <h1 className="text-lg font-semibold">Certificate</h1>
+          <div className="w-6" />
+        </div>
+
+        <main className="p-4 sm:p-6 flex-1">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+            <div className="hidden xl:block">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                Certificate
+              </h1>
+            </div>
+
             {userData ? (
-              <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-lg shadow-sm">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold text-lg">
+              <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-lg shadow-sm w-full sm:w-auto justify-center sm:justify-end">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <span className="text-blue-600 font-semibold text-base sm:text-lg">
                     {userData.fullName.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <div className="flex flex-col">
-                  <p className="text-sm text-gray-500">Welcome back,</p>
-                  <p className="text-lg font-semibold text-gray-800">
+                <div className="flex flex-col items-center sm:items-start">
+                  <p className="text-xs sm:text-sm text-gray-500">
+                    Welcome back,
+                  </p>
+                  <p className="text-sm sm:text-lg font-semibold text-gray-800">
                     {userData.fullName}
                   </p>
                 </div>
               </div>
             ) : (
               <button
-                onClick={() => navigate("/")}
-                className="flex items-center gap-2 border border-gray-500 rounded-full px-6 py-2 text-gray-800 hover:bg-gray-100 transition-all"
+                onClick={() => navigate("/admin")}
+                className="flex items-center gap-2 border border-gray-500 rounded-full px-4 py-2 sm:px-6 text-gray-800 hover:bg-gray-100 transition-all text-sm sm:text-base justify-center"
               >
                 Login <img src={assets.arrow_icon} alt="" />
               </button>
             )}
           </div>
-          <div className="mb-6 flex gap-4 items-center">
+
+          {/* Event & Template Select */}
+          <div className="mb-6 flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center w-full">
             <label className="font-semibold">Select Event:</label>
             <select
-              className="border px-3 py-2 rounded min-w-[220px]"
+              className="border px-3 py-2 rounded min-w-[220px] w-full sm:w-auto"
               value={selectedEventId}
               onChange={(e) => setSelectedEventId(e.target.value)}
             >
               <option value="">-- Select an Event --</option>
-              {allEvents
-                .filter((ev) => new Date(ev.date) >= new Date())
-                .map((ev) => (
-                  <option key={ev._id} value={ev._id}>
-                    {ev.title} ({new Date(ev.date).toLocaleDateString()})
-                  </option>
-                ))}
+              {allEvents.map((ev) => (
+                <option key={ev._id} value={ev._id}>
+                  {ev.title} ({new Date(ev.date).toLocaleDateString()})
+                </option>
+              ))}
             </select>
 
-            <label className="font-semibold ml-4">Template:</label>
+            <label className="font-semibold sm:ml-4">Template:</label>
             <select
-              className="border px-3 py-2 rounded min-w-[180px]"
+              className="border px-3 py-2 rounded min-w-[180px] w-full sm:w-auto"
               value={templateId}
               onChange={(e) => setTemplateId(e.target.value)}
               disabled={!editing}
@@ -350,7 +362,7 @@ const Certificate = () => {
           </div>
 
           {editing && (
-            <div className="mb-4 flex">
+            <div className="mb-4">
               <button
                 className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 disabled:opacity-50"
                 onClick={handleSaveOrganizers}
@@ -361,26 +373,19 @@ const Certificate = () => {
             </div>
           )}
 
+          {/* Certificate Preview */}
           {selectedEvent && (
-            <div className="flex flex-row justify-center items-start w-full">
-              {/* Certificate Preview */}
+            <div className="flex flex-col lg:flex-row justify-center items-start w-full">
               <div
-                className="certificate relative bg-white rounded-2xl shadow-xl flex flex-col items-center border-0 print:bg-white print:shadow-none"
+                className="certificate relative bg-white rounded-2xl shadow-xl flex flex-col items-center border-0 print:bg-white print:shadow-none
+    w-full sm:w-[95%] md:w-[85%] lg:w-[1056px] transition-all duration-300"
                 style={{
-                  width: 1056,
-                  height: 816,
-                  padding: 0,
+                  aspectRatio: window.innerWidth < 768 ? "3/4" : "4/3",
                   overflow: "auto",
-                  border: "4px solid #000",
-                  boxSizing: "content-box",
-                  display: "block",
                   background: "#fff",
-                  maxWidth: "100%",
-                  maxHeight: "80vh",
                 }}
               >
                 {(() => {
-                  // If a preview is selected, show it as an image
                   if (activePreviewId) {
                     const tpl = templatePreviews.find(
                       (t) => t.templateId === activePreviewId
@@ -395,19 +400,14 @@ const Certificate = () => {
                         <img
                           src={pngUrl}
                           alt={`Preview ${tpl.templateId}`}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "contain",
-                            borderRadius: "1rem",
-                          }}
+                          className="w-full h-full object-contain rounded-2xl"
                           onClick={() => setActivePreviewId(null)}
                           title="Click to return to editable view"
                         />
                       );
                     }
                   }
-                  // Otherwise, show the editable template
+
                   const TemplateComponent =
                     templateMap[templateId] || GoldTemplate;
                   return (
@@ -424,12 +424,10 @@ const Certificate = () => {
                   );
                 })()}
               </div>
-              {/* Template Previews Inline (Right Side) */}
+
+              {/* Template previews side */}
               {templatePreviews.length > 0 && (
-                <div
-                  className="flex flex-col items-center ml-8"
-                  style={{ minWidth: 140 }}
-                >
+                <div className="flex flex-wrap justify-center lg:flex-col items-center gap-4 w-full lg:w-auto mt-4 lg:mt-0">
                   {templatePreviews.map((tpl) => {
                     let pngUrl = tpl.url.replace(/\.pdf$/, ".png");
                     pngUrl = pngUrl.replace("/upload/", "/upload/w_120/");
@@ -441,9 +439,7 @@ const Certificate = () => {
                             ? "ring-2 ring-blue-500"
                             : ""
                         }`}
-                        style={{ minWidth: 100 }}
                         onClick={() => setActivePreviewId(tpl.templateId)}
-                        title="Click to preview"
                       >
                         <div className="mb-1 text-xs font-semibold">
                           {tpl.templateId}
@@ -451,11 +447,7 @@ const Certificate = () => {
                         <img
                           src={pngUrl}
                           alt={`Preview ${tpl.templateId}`}
-                          style={{
-                            maxWidth: 150,
-                            border: "1px solid #ccc",
-                            borderRadius: 6,
-                          }}
+                          className="max-w-[150px] border border-gray-300 rounded"
                         />
                       </div>
                     );
@@ -473,6 +465,15 @@ const Certificate = () => {
             </div>
           )}
         </main>
+         {/* 📱 Floating Mobile Edit Button */}
+         {!editing && (
+          <button
+            className="fixed bottom-6 right-6 bg-blue-600 text-white rounded-full p-4 shadow-lg xl:hidden z-50"
+            onClick={() => setEditing(true)}
+          >
+            ✏️
+          </button>
+        )}
       </div>
     </div>
   );

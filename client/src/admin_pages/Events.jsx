@@ -21,6 +21,8 @@ const Events = () => {
   const [events, setEvents] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const eventsPerPage = 10;
 
   const [eventData, setEventData] = useState({
     title: "",
@@ -34,16 +36,6 @@ const Events = () => {
     eventType: "",
     eventTarget: "",
   });
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
-
-  const totalPages = Math.max(1, Math.ceil(events.length / pageSize));
-
-  const paginatedEvents = events.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
-  );
 
   useEffect(() => {
     if (!isAdmin) {
@@ -66,12 +58,16 @@ const Events = () => {
     fetchEvents();
   }, []);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [events]);
-
   const handleChange = (e) => {
-    setEventData({ ...eventData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    // Limit price to max 5 digits
+    if (name === "price") {
+      if (value.length > 5) return; // block extra input
+      if (!/^\d*$/.test(value)) return; // allow only numbers
+    }
+
+    setEventData({ ...eventData, [name]: value });
   };
 
   const handleSubmit = async (e) => {
@@ -274,6 +270,12 @@ const Events = () => {
     }
   };
   const isPast = (date) => new Date(date) < new Date();
+
+  // Pagination logic
+  const startIndex = (currentPage - 1) * eventsPerPage;
+  const paginatedEvents = events.slice(startIndex, startIndex + eventsPerPage);
+  const totalPages = Math.ceil(events.length / eventsPerPage);
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
@@ -455,6 +457,33 @@ const Events = () => {
             </form>
           )}
 
+          {/* Pagination - Above Table */}
+          {events.length > 0 && (
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                  className="px-3 py-2 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-100 transition"
+                  title="Previous page"
+                >
+                  ← Prev
+                </button>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  className="px-3 py-2 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-100 transition"
+                  title="Next page"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Event Table */}
           <div className="bg-white shadow-md rounded-lg overflow-hidden">
             {/* Desktop / Tablet Table */}
@@ -478,7 +507,7 @@ const Events = () => {
 
                       return (
                         <tr
-                          key={event._id || idx}
+                          key={idx}
                           className="border-t hover:bg-gray-50 transition"
                         >
                           <td className="px-4 py-3 font-medium">
@@ -494,6 +523,7 @@ const Events = () => {
                             {event.registrations?.length || 0}
                           </td>
                           <td className="px-4 py-3 text-center">
+                            {/* No actions for past events */}
                             {past ? (
                               <span className="text-gray-400 italic">
                                 Past Event
@@ -514,7 +544,6 @@ const Events = () => {
                                 >
                                   ✏️
                                 </button>
-
                                 <button
                                   onClick={() => handleReschedule(event._id)}
                                   className="text-indigo-600 hover:text-indigo-700"
@@ -522,7 +551,6 @@ const Events = () => {
                                 >
                                   📅
                                 </button>
-
                                 <button
                                   onClick={() => handleCancel(event._id)}
                                   className="text-red-600 hover:text-red-700"
@@ -548,83 +576,36 @@ const Events = () => {
                   )}
                 </tbody>
               </table>
-              {events.length > pageSize && (
-                <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-lg shadow-sm">
-                  <div className="text-sm text-gray-700">
-                    Showing{" "}
-                    {Math.min((currentPage - 1) * pageSize + 1, events.length)}-
-                    {Math.min(currentPage * pageSize, events.length)} of{" "}
-                    {events.length} events
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.max(prev - 1, 1))
-                      }
-                      disabled={currentPage === 1}
-                      className={`px-3 py-2 rounded-md border text-sm ${
-                        currentPage === 1
-                          ? "border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed"
-                          : "border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
-                      }`}
-                    >
-                      Previous
-                    </button>
-
-                    <span className="text-sm text-gray-700">
-                      Page {currentPage} of {totalPages}
-                    </span>
-
-                    <button
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                      }
-                      disabled={currentPage >= totalPages}
-                      className={`px-3 py-2 rounded-md border text-sm ${
-                        currentPage >= totalPages
-                          ? "border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed"
-                          : "border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
-                      }`}
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
 
-            {/* Mobile Cards */}
             <div className="block sm:hidden p-4 space-y-4">
               {paginatedEvents.length > 0 ? (
                 paginatedEvents.map((event, idx) => {
+                  const isPastEvent = new Date(event.date) < new Date();
                   const past = isPast(event.date);
-
                   return (
                     <div
-                      key={event._id || idx}
+                      key={idx}
                       className="border rounded-lg p-4 bg-white shadow-sm flex flex-col gap-2"
                     >
                       <div>
                         <h3 className="font-semibold text-gray-900">
                           {event.title}
                         </h3>
-
                         <p className="text-xs text-gray-500">
                           {new Date(event.date).toLocaleDateString()} •{" "}
                           {event.time}
                         </p>
-
                         <p className="text-xs text-gray-500">
                           Type: {event.eventType} • ₱{event.price}
                         </p>
-
                         <p className="text-xs text-gray-500">
                           Participants: {event.registrations?.length || 0}
                         </p>
                       </div>
 
                       <div className="flex justify-between items-center border-t pt-2 mt-1">
+                        {/* No actions for past events */}
                         {past ? (
                           <span className="text-gray-400 italic text-sm">
                             Past Event
@@ -645,7 +626,6 @@ const Events = () => {
                             >
                               ✏️
                             </button>
-
                             <button
                               onClick={() => handleReschedule(event._id)}
                               className="text-indigo-600 hover:text-indigo-700"
@@ -653,7 +633,6 @@ const Events = () => {
                             >
                               📅
                             </button>
-
                             <button
                               onClick={() => handleCancel(event._id)}
                               className="text-red-600 hover:text-red-700"
@@ -671,35 +650,6 @@ const Events = () => {
                 <p className="text-center text-gray-500">No events found.</p>
               )}
             </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-4 p-4 border-t bg-gray-50">
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-
-                <span className="text-sm font-medium">
-                  Page {currentPage} of {totalPages}
-                </span>
-
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                  }
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-            )}
           </div>
         </main>
       </div>

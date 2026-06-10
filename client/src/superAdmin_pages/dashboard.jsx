@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from "react";
 import { assets } from "../assets/assets";
-import Sidebar from "../superAdmin_components/Sidebar";
+import Sidebar from "../superadmin_components/Sidebar";
 import { useNavigate } from "react-router-dom";
 import { AppContent } from "../context/AppContext";
 import axios from "axios";
@@ -17,6 +17,7 @@ import {
   Legend,
 } from "chart.js";
 import { Line, Bar, Pie } from "react-chartjs-2";
+import { Menu } from "lucide-react";
 
 ChartJS.register(
   CategoryScale,
@@ -51,7 +52,7 @@ const Dashboard = () => {
       localStorage.removeItem("isAdmin");
       localStorage.removeItem("userData");
       localStorage.removeItem("isLoggedin");
-      navigate("/admin");
+      navigate("/superadmin");
     }
   }, [isAdmin, navigate]);
 
@@ -161,21 +162,21 @@ const Dashboard = () => {
 
       {/* Main content */}
       <div className="flex flex-col flex-1 xl:ml-64 overflow-y-auto max-w-full">
+        {/* Mobile top bar (match old Activity Logs style, no logo) */}
+        <div className="bg-gray-900 text-white flex items-center justify-between p-4 shadow-md xl:hidden sticky top-0 z-50">
+          <button onClick={() => setIsSidebarOpen(true)}>
+            <Menu size={24} />
+          </button>
+          <h1 className="text-lg font-semibold">Dashboard</h1>
+          <div className="w-6" />
+        </div>
+
         <main className="p-4 sm:p-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-            <div className="flex items-center justify-between w-full sm:w-auto">
-              <button
-                className="xl:hidden bg-gray-900 text-white p-2 rounded-lg shadow-lg hover:bg-gray-800 transition"
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              >
-                {isSidebarOpen ? "✖" : "☰"}
-              </button>
-              <h1 className="text-2xl sm:text-3xl font-bold ml-2 text-gray-900">
-                Dashboard
-              </h1>
+            <div className="hidden xl:block">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
             </div>
-
             {userData ? (
               <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-lg shadow-sm w-full sm:w-auto justify-center sm:justify-end">
                 <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-blue-100 flex items-center justify-center">
@@ -194,7 +195,7 @@ const Dashboard = () => {
               </div>
             ) : (
               <button
-                onClick={() => navigate("/admin")}
+                onClick={() => navigate("/superadmin")}
                 className="flex items-center gap-2 border border-gray-500 rounded-full px-4 py-2 sm:px-6 text-gray-800 hover:bg-gray-100 transition-all text-sm sm:text-base justify-center"
               >
                 Login <img src={assets.arrow_icon} alt="" />
