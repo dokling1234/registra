@@ -48,7 +48,7 @@ const Events = () => {
         setEvents(res.data.events);
       } catch (err) {
         console.error(
-          "Error fetching events:",
+          "Error fetching ehihivents:",
           err.response?.data || err.message
         );
       }
