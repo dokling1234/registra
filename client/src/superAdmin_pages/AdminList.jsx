@@ -641,7 +641,7 @@ const AdminList = () => {
                             </button>
                           ) : (
                             <p className="text-gray-500 italic text-xs mt-2 text-center">
-                              Super Admin – Cannot Edit
+                              Super Admin – Cannot Disable
                             </p>
                           )}
 
