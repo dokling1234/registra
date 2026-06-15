@@ -81,6 +81,9 @@ const updateUserData = async (req, res) => {
     }
   } catch (err) {
     console.error("Error updating user:", err);
+    if (err.code === 11000 && err.keyPattern && err.keyPattern.contactNumber) {
+      return res.status(400).json({ success: false, message: "Contact number already in use." });
+    }
     res.status(500).json({ success: false, message: "Internal server error." });
   }
 };
@@ -400,6 +403,9 @@ const updateProfile = async (req, res) => {
     res.status(200).json({ message: "Profile updated successfully" });
   } catch (error) {
     console.error("Update profile error:", error);
+    if (error.code === 11000 && error.keyPattern && error.keyPattern.contactNumber) {
+      return res.status(400).json({ message: "Contact number already in use" });
+    }
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -538,6 +544,15 @@ const mobileRegister = async (req, res, next) => {
         .status(400)
         .json({ status: false, message: "Invalid membership type", field: "membership" });
     }
+
+    // ensure contact number is unique before proceeding
+    const existingContact = await userModel.findOne({ contactNumber });
+    if (existingContact) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Contact number already registered", field: "contactNumber" });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     try {

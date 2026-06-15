@@ -177,12 +177,13 @@ const getEvents = async (req, res) => {
 
     // Role-based filtering
     if (userType === "student" || membership === "non-member") {
-      match.eventTarget = { $nin: ["Admin"] };
-    } else if (userType === "professional") {
-      match.eventTarget = { $in: ["professional", "Both"] };
-    } else if (userType === "admin") {
-      match.eventTarget = { $in: ["Admin", "Both"] };
-    }
+  match.eventTarget = { $nin: ["Admin"] };
+} else if (userType === "professional") {
+  match.eventTarget = { $in: ["professional", "Both"] };
+} else if (userType === "admin") {
+  match.eventTarget = { $in: ["student", "Both"] }; // ✅ updated from "Admin"
+}
+
 
     const pipeline = [];
 

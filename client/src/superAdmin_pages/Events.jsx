@@ -404,7 +404,7 @@ const Events = () => {
                 >
                   <option value="">Select Target</option>
                   <option value="professional">Professional</option>
-                  <option value="Admin">Admin</option>
+                  <option value="student">Student</option>
                   <option value="Both">Both</option>
                 </select>
               </div>

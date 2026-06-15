@@ -72,8 +72,11 @@ const Profile = () => {
 
   useEffect(() => {
     if (userData) {
+      console.log(userData)
       setFormData({
-        fullName: userData.fullName || "",
+        firstName: userData.firstName || "",
+        middleName: userData.middleName || "",
+        lastName: userData.lastName || "",
         email: userData.email || "",
         contactNumber: userData.contactNumber || "",
         userType: userData.userType || "",
@@ -133,7 +136,8 @@ const Profile = () => {
   // ================== PROFILE ==================
   const handleSaveProfile = async () => {
     if (
-      !String(formData.fullName || "").trim() ||
+      !String(formData.firstName || "").trim() ||
+      !String(formData.lastName || "").trim() ||
       !isValidPhilippineNumber(formData.contactNumber) ||
       isUploading
     ) {
@@ -515,7 +519,8 @@ const Profile = () => {
                       />
                     </div>
                     <h2 className="text-lg sm:text-xl font-bold text-gray-800">
-                      {formData.fullName}
+                      {formData.firstName} {formData.middleName}{" "}
+                      {formData.lastName}
                     </h2>
                     <p className="text-gray-500 text-sm">{formData.email}</p>
                     <p className="text-gray-500 text-sm">
@@ -590,12 +595,38 @@ const Profile = () => {
                     <div className="space-y-3 mt-3">
                       <div>
                         <label className="block text-sm font-medium">
-                          Full Name
+                          First Name
                         </label>
                         <input
                           type="text"
-                          name="fullName"
-                          value={formData.fullName}
+                          name="firstName"
+                          value={formData.firstName}
+                          onChange={handleChange}
+                          className="mt-1 w-full border px-3 py-2 rounded-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium">
+                          Middle Name
+                        </label>
+                        <input
+                          type="text"
+                          name="middleName"
+                          value={formData.middleName}
+                          onChange={handleChange}
+                          className="mt-1 w-full border px-3 py-2 rounded-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium">
+                          Last Name
+                        </label>
+                        <input
+                          type="text"
+                          name="lastName"
+                          value={formData.lastName}
                           onChange={handleChange}
                           className="mt-1 w-full border px-3 py-2 rounded-lg"
                         />
@@ -668,18 +699,21 @@ const Profile = () => {
                       <button
                         onClick={handleSaveProfile}
                         disabled={
-                          !String(formData.fullName || "").trim() ||
+                          !String(formData.firstName || "").trim() ||
+                          !String(formData.lastName || "").trim() ||
                           !isValidPhilippineNumber(formData.contactNumber) ||
                           isUploading ||
                           isSaving
                         }
                         className={`px-4 sm:px-6 py-2 rounded-lg w-full sm:w-auto text-white text-center ${
-                          !String(formData.fullName || "").trim() ||
+                          !String(formData.firstName || "").trim() ||
+                          !String(formData.lastName || "").trim() ||
                           !isValidPhilippineNumber(formData.contactNumber) ||
                           isUploading ||
                           isSaving
                             ? "bg-gray-400 cursor-not-allowed"
                             : "bg-green-600 hover:bg-green-700"
+                        }
                         } ${
                           isSaving
                             ? "flex items-center justify-center gap-2"

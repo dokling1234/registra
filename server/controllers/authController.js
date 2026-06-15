@@ -270,6 +270,9 @@ const unifiedLogin = async (req, res) => {
         id: account._id,
         email: account.email,
         fullName: account.fullName,
+        firstName: account.firstName || "",
+        middleName: account.middleName || "",
+        lastName: account.lastName || "",
         userType: accountType,
         isAdmin,
       },
@@ -293,7 +296,10 @@ const unifiedLogin = async (req, res) => {
       passwordChangeRequired: account.passwordChangeRequired || false,
       user: {
         id: account._id,
-        fullName: account.fullName,
+        fullName: account.fullName, // keep fullName
+        firstName: account.firstName || "",
+        middleName: account.middleName || "",
+        lastName: account.lastName || "",
         email: account.email,
         userType: accountType,
         isVerified: account.isVerified ?? true,
@@ -634,12 +640,10 @@ const adminChangePassword = async (req, res) => {
     }
 
     if (!icpepId || !newPassword) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "New ICPEP ID and new password are required.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "New ICPEP ID and new password are required.",
+      });
     }
 
     // Find user by their own email
@@ -652,12 +656,10 @@ const adminChangePassword = async (req, res) => {
 
     // Only allow admin or superadmin to change their own password and ICPEP ID
     if (!["admin", "superadmin"].includes(user.userType)) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Not authorized to change password for this user.",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to change password for this user.",
+      });
     }
 
     // Hash new password and update ICPEP ID

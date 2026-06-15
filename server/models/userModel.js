@@ -3,9 +3,9 @@ const mongoose = require("mongoose");
 const userSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   fullName: { type: String, required: true },  // Keep fullName
-  firstName: { type: String, required: true }, // New
+  firstName: { type: String }, // New
   middleName: { type: String },               // New, optional
-  lastName: { type: String, required: true }, // New
+  lastName: { type: String}, // New
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   contactNumber: { type: String },
