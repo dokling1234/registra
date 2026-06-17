@@ -67,6 +67,11 @@ const Events = () => {
       if (!/^\d*$/.test(value)) return; // allow only numbers
     }
 
+    if (name === "cost") {
+      if (value.length > 5) return; // block extra input
+      if (!/^\d*$/.test(value)) return; // allow only numbers
+    }
+
     setEventData({ ...eventData, [name]: value });
   };
 
@@ -387,25 +392,6 @@ const Events = () => {
                   <option value="Webinar">Webinar</option>
                   <option value="Activity">Activity</option>
                   <option value="Other">Other</option>
-                </select>
-              </div>
-
-              {/* Event Target (Role) */}
-              <div className="flex flex-col">
-                <label className="mb-1 font-semibold text-sm md:text-base">
-                  Target Audience
-                </label>
-                <select
-                  name="eventTarget"
-                  value={eventData.eventTarget}
-                  onChange={handleChange}
-                  className="border border-gray-300 rounded-md px-3 py-2 text-sm md:text-base"
-                  required
-                >
-                  <option value="">Select Target</option>
-                  <option value="professional">Professional</option>
-                  <option value="student">Student</option>
-                  <option value="Both">Both</option>
                 </select>
               </div>
 

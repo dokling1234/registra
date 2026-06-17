@@ -67,8 +67,14 @@ const Events = () => {
       if (!/^\d*$/.test(value)) return; // allow only numbers
     }
 
+    if (name === "cost") {
+      if (value.length > 5) return; // block extra input
+      if (!/^\d*$/.test(value)) return; // allow only numbers
+    }
+
     setEventData({ ...eventData, [name]: value });
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -390,10 +396,10 @@ const Events = () => {
                 </select>
               </div>
 
-               {/* Event Target (Role) */}
+              {/* Event Target */}
               <div className="flex flex-col">
                 <label className="mb-1 font-semibold text-sm md:text-base">
-                  Target Audience
+                  Event Target
                 </label>
                 <select
                   name="eventTarget"
@@ -403,8 +409,8 @@ const Events = () => {
                   required
                 >
                   <option value="">Select Target</option>
-                  <option value="professional">Professional</option>
-                  <option value="student">Student</option>
+                  <option value="Student">Student</option>
+                  <option value="Professional">Professional</option>
                   <option value="Both">Both</option>
                 </select>
               </div>
